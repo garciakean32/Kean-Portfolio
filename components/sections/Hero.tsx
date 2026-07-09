@@ -5,7 +5,7 @@ import { personal } from "@/lib/data";
 
 const roles = [
     "Full-Stack Developer",
-    "Fresh IT Graduate",
+    "IT Graduate",
     "Good Communicator eyy",
 ];
 
