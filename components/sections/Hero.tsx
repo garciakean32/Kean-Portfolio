@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown } from "lucide-react";
-import Link from "next/link";
 import { personal } from "@/lib/data";
 
 const roles = [
@@ -78,7 +76,7 @@ export default function Hero() {
                     className="font-mono text-sm mb-6 tracking-widest uppercase"
                     style={{ color: "var(--accent)" }}
                 >
-                    Available for work
+                    Welcome!, I'm
                 </p>
 
                 {/* Headline */}
@@ -120,32 +118,6 @@ export default function Hero() {
                 >
                     {personal.bio}
                 </p>
-
-                {/* CTAs */}
-                <div className="flex flex-wrap items-center gap-4 mb-16">
-                    <Link
-                        href="#projects"
-                        className="inline-flex items-center gap-2 px-8 py-4 font-mono text-sm font-medium transition-all duration-300 hover:gap-4"
-                        style={{ background: "var(--fg)", color: "var(--bg)" }}
-                    >
-                        View My Work
-                        <ArrowDown size={14} />
-                    </Link>
-                    <Link
-                        href="#contact"
-                        className="inline-flex items-center gap-2 px-8 py-4 font-mono text-sm border transition-all duration-300"
-                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-                        onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.background =
-                                "var(--surface-hover)";
-                        }}
-                        onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.background = "transparent";
-                        }}
-                    >
-                        Get In Touch
-                    </Link>
-                </div>
 
                 {/* Divider */}
                 <div className="divider" />
