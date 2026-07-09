@@ -2,51 +2,121 @@
 
 import { useEffect, useRef } from "react";
 
-const SECTION_IDS = ["hero", "about", "skills", "projects", "contact"];
+const DESKTOP_QUERY = "(min-width: 1024px)";
+const MIN_WHEEL_DELTA = 4;
+const SAME_DIRECTION_DELAY = 520;
+const SETTLE_DELAY = 720;
+
+const getSections = () =>
+    Array.from(document.querySelectorAll<HTMLElement>("main > section"));
+
+const getSectionTop = (section: HTMLElement) =>
+    section.getBoundingClientRect().top + window.scrollY;
+
+const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max);
+
+const getNearestSectionIndex = (sections: HTMLElement[]) => {
+    const currentY = window.scrollY;
+
+    return sections.reduce((nearestIndex, section, index) => {
+        const nearestDistance = Math.abs(
+            getSectionTop(sections[nearestIndex]) - currentY
+        );
+        const distance = Math.abs(getSectionTop(section) - currentY);
+
+        return distance < nearestDistance ? index : nearestIndex;
+    }, 0);
+};
+
+const isNativeScrollTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+
+    return Boolean(
+        target.closest("textarea, select, input, [data-native-scroll]")
+    );
+};
 
 export default function SectionSnap() {
-    const isScrolling = useRef(false);
+    const targetIndexRef = useRef<number | null>(null);
+    const directionRef = useRef<1 | -1 | null>(null);
+    const lastCommandAtRef = useRef(0);
+    const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
-        const handleWheel = (e: WheelEvent) => {
-            if (isScrolling.current) return;
+        const desktop = window.matchMedia(DESKTOP_QUERY);
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-            const scrollY = window.scrollY;
-            const sections = SECTION_IDS.map((id) =>
-                document.getElementById(id)
-            ).filter(Boolean) as HTMLElement[];
+        const clearSettleTimer = () => {
+            if (settleTimerRef.current) {
+                clearTimeout(settleTimerRef.current);
+                settleTimerRef.current = null;
+            }
+        };
 
-            // Find current section index
-            let currentIndex = 0;
-            sections.forEach((section, i) => {
-                const top = section.getBoundingClientRect().top;
-                if (top <= 10) currentIndex = i;
-            });
+        const settleAfterSlide = () => {
+            clearSettleTimer();
 
-            let targetIndex = currentIndex;
+            settleTimerRef.current = setTimeout(() => {
+                targetIndexRef.current = null;
+                directionRef.current = null;
+            }, SETTLE_DELAY);
+        };
 
-            if (e.deltaY > 0 && currentIndex < sections.length - 1) {
-                // Scrolling down
-                targetIndex = currentIndex + 1;
-            } else if (e.deltaY < 0 && currentIndex > 0) {
-                // Scrolling up
-                targetIndex = currentIndex - 1;
-            } else {
+        const handleWheel = (event: WheelEvent) => {
+            if (
+                event.ctrlKey ||
+                !desktop.matches ||
+                Math.abs(event.deltaY) < MIN_WHEEL_DELTA ||
+                isNativeScrollTarget(event.target)
+            ) {
                 return;
             }
 
-            e.preventDefault();
-            isScrolling.current = true;
+            const sections = getSections();
+            if (sections.length < 2) return;
 
-            sections[targetIndex].scrollIntoView({ behavior: "smooth" });
+            event.preventDefault();
 
-            setTimeout(() => {
-                isScrolling.current = false;
-            }, 900);
+            const now = performance.now();
+            const direction: 1 | -1 = event.deltaY > 0 ? 1 : -1;
+            const isSameDirection = directionRef.current === direction;
+            const currentIndex =
+                targetIndexRef.current ?? getNearestSectionIndex(sections);
+
+            if (
+                isSameDirection &&
+                now - lastCommandAtRef.current < SAME_DIRECTION_DELAY
+            ) {
+                return;
+            }
+
+            const targetIndex = clamp(
+                currentIndex + direction,
+                0,
+                sections.length - 1
+            );
+
+            if (targetIndex === currentIndex) return;
+
+            targetIndexRef.current = targetIndex;
+            directionRef.current = direction;
+            lastCommandAtRef.current = now;
+
+            sections[targetIndex].scrollIntoView({
+                behavior: reducedMotion.matches ? "auto" : "smooth",
+                block: "start",
+            });
+
+            settleAfterSlide();
         };
 
         window.addEventListener("wheel", handleWheel, { passive: false });
-        return () => window.removeEventListener("wheel", handleWheel);
+
+        return () => {
+            clearSettleTimer();
+            window.removeEventListener("wheel", handleWheel);
+        };
     }, []);
 
     return null;

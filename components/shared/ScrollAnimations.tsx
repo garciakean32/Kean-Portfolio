@@ -11,6 +11,8 @@ export default function ScrollAnimations() {
         // Fade up animation for all sections
         const sections = document.querySelectorAll(".gsap-fade-up");
         sections.forEach((el) => {
+            if (el.parentElement?.tagName.toLowerCase() === "main") return;
+
             gsap.fromTo(
                 el,
                 { opacity: 0, y: 60 },

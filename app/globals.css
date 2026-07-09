@@ -31,7 +31,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
@@ -40,6 +40,32 @@ body {
   font-family: 'Outfit', sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
+}
+
+@media (min-width: 1024px) {
+  html {
+    scroll-snap-type: y mandatory;
+  }
+
+  body {
+    overscroll-behavior-y: contain;
+  }
+
+  main>section {
+    min-height: 100dvh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  main>section {
+    scroll-snap-stop: normal;
+  }
 }
 
 ::selection {
@@ -66,13 +92,11 @@ body {
 
 .section-hidden {
   opacity: 0;
-  transform: translateY(40px);
 }
 
 .section-visible {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transition: opacity 0.45s ease;
 }
 
 .divider {
