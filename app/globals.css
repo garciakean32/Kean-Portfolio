@@ -56,6 +56,11 @@ body {
     scroll-snap-align: start;
     scroll-snap-stop: always;
   }
+
+  main>footer {
+    scroll-snap-align: end;
+    scroll-snap-stop: always;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

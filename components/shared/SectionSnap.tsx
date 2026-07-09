@@ -5,25 +5,38 @@ import { useEffect, useRef } from "react";
 const DESKTOP_QUERY = "(min-width: 1024px)";
 const MIN_WHEEL_DELTA = 4;
 const SAME_DIRECTION_DELAY = 520;
-const SETTLE_DELAY = 720;
+const SETTLE_DELAY = 250;
 
 const getSections = () =>
-    Array.from(document.querySelectorAll<HTMLElement>("main > section"));
-
-const getSectionTop = (section: HTMLElement) =>
-    section.getBoundingClientRect().top + window.scrollY;
+    Array.from(
+        document.querySelectorAll<HTMLElement>("main > section, main > footer")
+    );
 
 const clamp = (value: number, min: number, max: number) =>
     Math.min(Math.max(value, min), max);
+
+const getMaxScrollY = () =>
+    document.documentElement.scrollHeight - window.innerHeight;
+
+const getSnapTop = (section: HTMLElement) => {
+    const rect = section.getBoundingClientRect();
+    const sectionTop = rect.top + window.scrollY;
+    const snapAlign = window.getComputedStyle(section).scrollSnapAlign;
+    const targetTop = snapAlign.includes("end")
+        ? sectionTop + rect.height - window.innerHeight
+        : sectionTop;
+
+    return clamp(targetTop, 0, getMaxScrollY());
+};
 
 const getNearestSectionIndex = (sections: HTMLElement[]) => {
     const currentY = window.scrollY;
 
     return sections.reduce((nearestIndex, section, index) => {
         const nearestDistance = Math.abs(
-            getSectionTop(sections[nearestIndex]) - currentY
+            getSnapTop(sections[nearestIndex]) - currentY
         );
-        const distance = Math.abs(getSectionTop(section) - currentY);
+        const distance = Math.abs(getSnapTop(section) - currentY);
 
         return distance < nearestDistance ? index : nearestIndex;
     }, 0);
@@ -103,9 +116,9 @@ export default function SectionSnap() {
             directionRef.current = direction;
             lastCommandAtRef.current = now;
 
-            sections[targetIndex].scrollIntoView({
+            window.scrollTo({
+                top: getSnapTop(sections[targetIndex]),
                 behavior: reducedMotion.matches ? "auto" : "smooth",
-                block: "start",
             });
 
             settleAfterSlide();
