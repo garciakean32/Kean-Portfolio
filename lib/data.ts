@@ -28,8 +28,7 @@ export const projects = [
         description:
             "A full-stack Clothing E-commerce Platform with payment method | it has a separate Admin Website.",
         tags: ["Next.js", "PostgreSQL (via Supabase)", "Stripe/PayPal", "TypeScript"],
-        liveUrl: "https://yourproject.com",
-        githubUrl: "https://github.com/yourusername/project-alpha",
+        liveUrl: "https://k4threads.vercel.app",
         image: "/images/project-placeholder.png",
         featured: true,
     },
@@ -39,8 +38,7 @@ export const projects = [
         description:
             "A full-stack AI help desk platform with custom knowledge bases | it has a separate Admin Website.",
         tags: ["React", "Node.js", "MongoDB", "Tailwind"],
-        liveUrl: "https://yourproject2.com",
-        githubUrl: "https://github.com/yourusername/project-beta",
+        liveUrl: "https://deskmind-ai.vercel.app",
         image: "/images/project-placeholder.png",
         featured: false,
     },
