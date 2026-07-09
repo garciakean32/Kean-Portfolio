@@ -9,9 +9,9 @@ export const personal = {
     location: "Cagayan de Oro City, PH",
     resumeUrl: "/resume.pdf",
     social: {
-        github: "https://github.com/garciakean32",
-        instagram: "https://linkedin.com/in/yourusername",
-        facebook: "https://twitter.com/yourusername",
+        github: "",
+        instagram: "",
+        facebook: "",
     },
 };
 
