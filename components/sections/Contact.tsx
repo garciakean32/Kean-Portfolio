@@ -8,7 +8,7 @@ import { Send } from "lucide-react";
 export default function Contact() {
     const ref = useScrollReveal<HTMLElement>();
     const [form, setForm] = useState({ name: "", email: "", message: "" });
-    const [sent, setSent] = useState(false);
+    const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -16,12 +16,33 @@ export default function Contact() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.MouseEvent) => {
+    const handleSubmit = async (e: React.MouseEvent) => {
         e.preventDefault();
-        // TODO: wire up to your email service (Resend, EmailJS, etc.)
-        setSent(true);
-        setForm({ name: "", email: "", message: "" });
-        setTimeout(() => setSent(false), 4000);
+
+        if (!form.name || !form.email || !form.message) {
+            setStatus("error");
+            return;
+        }
+
+        setStatus("sending");
+
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(form),
+            });
+
+            if (res.ok) {
+                setStatus("sent");
+                setForm({ name: "", email: "", message: "" });
+                setTimeout(() => setStatus("idle"), 4000);
+            } else {
+                setStatus("error");
+            }
+        } catch {
+            setStatus("error");
+        }
     };
 
     return (
@@ -127,7 +148,7 @@ export default function Contact() {
                                 onChange={handleChange}
                                 placeholder="Tell me about your project..."
                                 rows={5}
-                                className="w-full px-4 py-3 font-mono text-sm border bg-transparent outline-none transition-colors duration-200 focus:border-[var(--fg)] resize-none"
+                                className="w-full px-4 py-3 text-sm border rounded-lg bg-transparent outline-none transition-colors duration-200 focus:border-[var(--fg)] resize-none"
                                 style={{
                                     borderColor: "var(--border)",
                                     color: "var(--fg)",
@@ -136,18 +157,24 @@ export default function Contact() {
                             />
                         </div>
 
+                        {/* Error message */}
+                        {status === "error" && (
+                            <p className="text-sm" style={{ color: "#EF4444" }}>
+                                Please fill in all fields and try again.
+                            </p>
+                        )}
+
                         <button
                             onClick={handleSubmit}
-                            className="inline-flex items-center justify-center gap-2 px-8 py-4 font-mono text-sm font-medium transition-all duration-300 mt-2"
+                            disabled={status === "sending"}
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-sm font-medium transition-all duration-300 mt-2 rounded-lg disabled:opacity-50"
                             style={{ background: "var(--fg)", color: "var(--bg)" }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.opacity = "0.85";
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.opacity = "1";
-                            }}
                         >
-                            {sent ? "Message Sent!" : (
+                            {status === "sending" ? (
+                                "Sending..."
+                            ) : status === "sent" ? (
+                                "Message Sent! ✓"
+                            ) : (
                                 <>
                                     Send Message <Send size={14} />
                                 </>
