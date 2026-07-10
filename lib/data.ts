@@ -7,7 +7,7 @@ export const personal = {
         "When I'm taking a break from coding, you'll usually find me watching animated series or playing video games. ( - ᴗ •́ )",
     email: "garcia.kean32@gmail.com",
     location: "Cagayan de Oro City, PH",
-    resumeUrl: "/resume.pdf",
+    resumeUrl: "/Kean Valgere E. Garcia_Resume.pdf",
     social: {
         github: "https://github.com/garciakean32",
         instagram: "https://www.instagram.com/kean.garcia32",
