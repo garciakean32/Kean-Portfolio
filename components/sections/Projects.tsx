@@ -44,14 +44,13 @@ export default function Projects() {
                                 className="relative w-full aspect-video overflow-hidden"
                                 style={{ background: "var(--surface-hover)" }}
                             >
-                                <div
-                                    className="absolute inset-0 flex items-center justify-center"
-                                    style={{ color: "var(--muted)" }}
-                                >
-                                    <span className="font-mono text-sm">
-                                        [ Project Image Here ]
-                                    </span>
-                                </div>
+                                <Image
+                                    src={project.image}
+                                    alt={project.title}
+                                    fill
+                                    sizes="(min-width: 768px) 50vw, 100vw"
+                                    className="object-cover"
+                                />
                                 {/* Overlay on hover */}
                                 <div
                                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4"

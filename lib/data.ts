@@ -26,22 +26,22 @@ export const projects = [
         id: 1,
         title: "K4 Threads",
         description:
-            "A full-stack Clothing E-commerce Platform with payment method | it has a separate Admin Website.",
+            "A full-stack clothing e-commerce platform | it has a separate admin website.",
         tags: ["Next.js", "PostgreSQL (via Supabase)", "Stripe/PayPal", "TypeScript"],
         liveUrl: "https://k4threads.vercel.app",
-        image: "/images/project-placeholder.png",
+        image: "/images/K4 Threads.png",
         featured: true,
     },
-    {
-        id: 2,
-        title: "DeskMind AI",
-        description:
-            "A full-stack AI help desk platform with custom knowledge bases | it has a separate Admin Website.",
-        tags: ["React", "Node.js", "MongoDB", "Tailwind"],
-        liveUrl: "https://deskmind-ai.vercel.app",
-        image: "/images/project-placeholder.png",
-        featured: false,
-    },
+    // {
+    //     id: 2,
+    //     title: "DeskMind AI",
+    //     description:
+    //         "A full-stack AI help desk platform with custom knowledge bases | it has a separate Admin Website.",
+    //     tags: ["React", "Node.js", "MongoDB", "Tailwind"],
+    //     liveUrl: "https://deskmind-ai.vercel.app",
+    //     image: "/images/project-placeholder.png",
+    //     featured: false,
+    // },
 ];
 
 export const stats = [
