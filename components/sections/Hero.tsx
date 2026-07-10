@@ -98,7 +98,7 @@ export default function Hero() {
                 </h1>
 
                 {/* Typewriter role */}
-                <div className="flex items-center gap-3 mb-10">
+                <div className="gap-3 mb-10">
                     <span
                         className="font-mono text-lg md:text-2xl"
                         style={{ color: "var(--fg)" }}
@@ -120,7 +120,7 @@ export default function Hero() {
                 </p>
 
                 {/* Divider */}
-                <div className="divider" />
+                <div className="divider hidden md:block" />
             </div>
 
             {/* Scroll indicator */}

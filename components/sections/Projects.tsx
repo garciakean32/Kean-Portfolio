@@ -28,7 +28,7 @@ export default function Projects() {
                     {projects.map((project, i) => (
                         <div
                             key={project.id}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden transition-all duration-300 group"
+                            className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden transition-all duration-100 group"
                             style={{ borderColor: "var(--border)" }}
                             onMouseEnter={(e) => {
                                 (e.currentTarget as HTMLElement).style.borderColor =
@@ -54,7 +54,7 @@ export default function Projects() {
                                 </div>
                                 {/* Overlay on hover */}
                                 <div
-                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4"
+                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4"
                                     style={{ background: "rgba(0,0,0,0.6)" }}
                                 >
                                     <a
