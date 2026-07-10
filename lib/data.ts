@@ -44,8 +44,30 @@ export const projects = [
     // },
 ];
 
+const getAge = () => {
+  const today = new Date();
+  const birthday = new Date(2002, 1, 28); // month is 0-indexed, so 1 = February
+  let age = today.getFullYear() - birthday.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birthday.getMonth() ||
+    (today.getMonth() === birthday.getMonth() && today.getDate() >= birthday.getDate());
+  if (!hasHadBirthdayThisYear) age--;
+  return age;
+};
+
+const getCodingYears = () => {
+  const today = new Date();
+  const started = new Date(2023, 2, 10); // month 0-indexed, 2 = March
+  let years = today.getFullYear() - started.getFullYear();
+  const hasPassed =
+    today.getMonth() > started.getMonth() ||
+    (today.getMonth() === started.getMonth() && today.getDate() >= started.getDate());
+  if (!hasPassed) years--;
+  return years < 1 ? "1" : `${years}+`;
+};
+
 export const stats = [
-    { value: "3+", label: "Years of experience" },
-    { value: "2", label: "Projects delivered" },
-    { value: "24", label: "Years of age" },
+  { value: `${getAge()}`, label: "Years of age" },
+  { value: "2", label: "Projects delivered" },
+  { value: getCodingYears(), label: "Years of coding" },
 ];
