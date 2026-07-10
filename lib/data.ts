@@ -67,7 +67,7 @@ const getCodingYears = () => {
 };
 
 export const stats = [
-  { value: `${getAge()}`, label: "Years of age" },
-  { value: "2", label: "Projects delivered" },
   { value: getCodingYears(), label: "Years of coding" },
+  { value: "2", label: "Projects delivered" },
+  { value: `${getAge()}`, label: "Years of age" },
 ];
