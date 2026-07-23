@@ -97,22 +97,6 @@ export default function Projects() {
                                         {project.description}
                                     </p>
                                 </div>
-
-                                {/* Tags */}
-                                <div className="flex flex-wrap gap-2">
-                                    {project.tags.map((tag) => (
-                                        <span
-                                            key={tag}
-                                            className="font-mono text-xs px-3 py-1 border"
-                                            style={{
-                                                borderColor: "var(--border)",
-                                                color: "var(--muted)",
-                                            }}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
                             </div>
                         </div>
                     ))}

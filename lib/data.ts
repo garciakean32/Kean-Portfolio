@@ -27,21 +27,19 @@ export const projects = [
         title: "K4 Threads",
         description:
             "A full-stack clothing e-commerce platform | it has a separate admin website.",
-        tags: ["Next.js", "PostgreSQL (via Supabase)", "Stripe/PayPal", "TypeScript"],
         liveUrl: "https://k4threads.vercel.app",
         image: "/images/K4 Threads.png",
         featured: true,
     },
-    // {
-    //     id: 2,
-    //     title: "DeskMind AI",
-    //     description:
-    //         "A full-stack AI help desk platform with custom knowledge bases | it has a separate Admin Website.",
-    //     tags: ["React", "Node.js", "MongoDB", "Tailwind"],
-    //     liveUrl: "https://deskmind-ai.vercel.app",
-    //     image: "/images/project-placeholder.png",
-    //     featured: false,
-    // },
+    {
+        id: 2,
+        title: "Askbrain",
+        description:
+            "A platform where users build their own chatbot — a brain — and feed it the knowledge it answers from. Each brain can be shared with customers through a link, a QR code, or embedded straight into a website with a script.",
+        liveUrl: "https://askbrain-user.vercel.app",
+        image: "/images/askbrain.png",
+        featured: true,
+    },
 ];
 
 const getAge = () => {
