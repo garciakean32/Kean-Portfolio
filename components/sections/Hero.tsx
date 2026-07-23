@@ -42,7 +42,7 @@ export default function Hero() {
                     {/* Center — portrait, faded at the edges so it blends into the page */}
                     <div className="order-1 lg:order-2 flex justify-center w-full">
                         <div
-                            className="relative w-full max-w-[15rem] sm:max-w-xs lg:w-[26rem] lg:max-w-none h-[34vh] sm:h-[44vh] lg:h-[72vh] overflow-hidden"
+                            className="relative w-full max-w-[16.5rem] sm:max-w-sm lg:w-[26rem] lg:max-w-none h-[42vh] sm:h-[52vh] lg:h-[72vh] overflow-hidden"
                             style={{
                                 WebkitMaskImage:
                                     "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
