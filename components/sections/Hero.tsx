@@ -40,7 +40,7 @@ export default function Hero() {
                     </div>
 
                     {/* Center — portrait, faded at the edges so it blends into the page */}
-                    <div className="order-1 lg:order-2 flex justify-center w-full">
+                    <div className="order-1 lg:order-2 flex justify-center w-full mt-6 lg:mt-0">
                         <div
                             className="relative w-full max-w-[16.5rem] sm:max-w-sm lg:w-[26rem] lg:max-w-none h-[42vh] sm:h-[52vh] lg:h-[72vh] overflow-hidden"
                             style={{
