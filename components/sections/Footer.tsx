@@ -68,14 +68,14 @@ export default function Footer() {
                     </div>
 
                     {/* Resume + Copyright */}
-                    <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
                         <a
                             href={personal.resumeUrl}
                             download
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-colors duration-200 hover:opacity-90"
+                            className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-semibold transition-colors duration-200 hover:opacity-90"
                             style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
                         >
-                            <Download size={12} />
+                            <Download size={12} className="shrink-0" />
                             Download Resume
                         </a>
                         <span className="text-xs" style={{ color: "var(--muted)" }}>

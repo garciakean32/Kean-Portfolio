@@ -14,7 +14,7 @@ export default function Hero() {
             <div className="w-full max-w-6xl mx-auto px-6 pt-16 lg:pt-20">
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-8 items-start">
                     {/* Left — availability + role */}
-                    <div className="order-2 lg:order-1 lg:self-start lg:pt-6">
+                    <div className="order-3 lg:order-1 lg:self-start lg:pt-6">
                         <span
                             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-5"
                             style={{
@@ -42,7 +42,7 @@ export default function Hero() {
                     {/* Center — portrait, faded at the edges so it blends into the page */}
                     <div className="order-1 lg:order-2 flex justify-center w-full">
                         <div
-                            className="relative w-full max-w-xs sm:max-w-sm lg:w-[26rem] lg:max-w-none h-[48vh] sm:h-[56vh] lg:h-[72vh] overflow-hidden"
+                            className="relative w-full max-w-[15rem] sm:max-w-xs lg:w-[26rem] lg:max-w-none h-[34vh] sm:h-[44vh] lg:h-[72vh] overflow-hidden"
                             style={{
                                 WebkitMaskImage:
                                     "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
@@ -64,7 +64,7 @@ export default function Hero() {
                     </div>
 
                     {/* Right — intro + CTA */}
-                    <div className="order-3 lg:self-start lg:pt-6 lg:justify-self-end lg:max-w-xs">
+                    <div className="order-4 lg:order-3 lg:self-start lg:pt-6 lg:justify-self-end lg:max-w-xs">
                         <p
                             className="text-sm md:text-base leading-relaxed mb-6"
                             style={{ color: "var(--muted)" }}
@@ -87,16 +87,16 @@ export default function Hero() {
                             See my works
                         </a>
                     </div>
+
+                    {/* Giant name — overlaps the bottom of the portrait */}
+                    <h1
+                        className="order-2 lg:order-4 lg:col-span-3 relative z-10 font-display font-black tracking-tight text-center leading-[0.8] select-none -mt-16 sm:-mt-24 lg:-mt-40 pb-4 text-[clamp(4rem,30vw,10rem)] lg:text-[clamp(3.5rem,15vw,16rem)]"
+                        style={{ color: "var(--fg)" }}
+                    >
+                        {personal.name.split(" ")[0]}
+                    </h1>
                 </div>
             </div>
-
-            {/* Giant name — overlaps the bottom of the portrait */}
-            <h1
-                className="relative z-10 font-display font-black tracking-tight text-center leading-[0.8] select-none -mt-20 sm:-mt-24 lg:-mt-32 pb-4"
-                style={{ color: "var(--fg)", fontSize: "clamp(3.5rem, 15vw, 16rem)" }}
-            >
-                {personal.name.split(" ")[0]}
-            </h1>
         </section>
     );
 }
