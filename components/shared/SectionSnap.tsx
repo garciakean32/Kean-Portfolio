@@ -6,6 +6,7 @@ const DESKTOP_QUERY = "(min-width: 1024px)";
 const MIN_WHEEL_DELTA = 4;
 const SAME_DIRECTION_DELAY = 520;
 const SETTLE_DELAY = 250;
+const NATIVE_SCROLL_RESUME_DELAY = 150;
 
 const getSections = () =>
     Array.from(
@@ -55,6 +56,7 @@ export default function SectionSnap() {
     const directionRef = useRef<1 | -1 | null>(null);
     const lastCommandAtRef = useRef(0);
     const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const nativeScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const desktop = window.matchMedia(DESKTOP_QUERY);
@@ -77,11 +79,27 @@ export default function SectionSnap() {
         };
 
         const handleWheel = (event: WheelEvent) => {
+            if (isNativeScrollTarget(event.target)) {
+                // Suspend CSS scroll-snap so the browser's native scroll over
+                // form inputs isn't hijacked into a section snap mid-scroll.
+                document.documentElement.style.scrollSnapType = "none";
+
+                if (nativeScrollTimerRef.current) {
+                    clearTimeout(nativeScrollTimerRef.current);
+                }
+
+                nativeScrollTimerRef.current = setTimeout(() => {
+                    document.documentElement.style.scrollSnapType = "";
+                    nativeScrollTimerRef.current = null;
+                }, NATIVE_SCROLL_RESUME_DELAY);
+
+                return;
+            }
+
             if (
                 event.ctrlKey ||
                 !desktop.matches ||
-                Math.abs(event.deltaY) < MIN_WHEEL_DELTA ||
-                isNativeScrollTarget(event.target)
+                Math.abs(event.deltaY) < MIN_WHEEL_DELTA
             ) {
                 return;
             }
@@ -128,6 +146,10 @@ export default function SectionSnap() {
 
         return () => {
             clearSettleTimer();
+            if (nativeScrollTimerRef.current) {
+                clearTimeout(nativeScrollTimerRef.current);
+            }
+            document.documentElement.style.scrollSnapType = "";
             window.removeEventListener("wheel", handleWheel);
         };
     }, []);
