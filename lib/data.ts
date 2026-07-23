@@ -26,9 +26,9 @@ export const projects = [
         id: 1,
         title: "K4 Threads",
         description:
-            "A full-stack clothing e-commerce platform | it has a separate admin website.",
+            "A e-commerce clothing platform designed to provide customers with a convenient and seamless online shopping experience.",
         liveUrl: "https://k4threads.vercel.app",
-        image: "/images/K4 Threads.png",
+        image: "/images/K4 Threads project.png",
         featured: true,
     },
     {
@@ -37,7 +37,7 @@ export const projects = [
         description:
             "A platform where users build their own chatbot — a brain — and feed it the knowledge it answers from. Each brain can be shared with customers through a link, a QR code, or embedded straight into a website with a script.",
         liveUrl: "https://askbrain-user.vercel.app",
-        image: "/images/askbrain.png",
+        image: "/images/askbrain project.png",
         featured: true,
     },
 ];

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Download } from "lucide-react";
 import { personal } from "@/lib/data";
@@ -13,86 +12,76 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-    const [scrolled, setScrolled] = useState(false);
-    const [mounted, setMounted] = useState(false);
-    const { theme, setTheme } = useTheme();
-
-    useEffect(() => {
-        setMounted(true);
-        const onScroll = () => setScrolled(window.scrollY > 40);
-        window.addEventListener("scroll", onScroll);
-        return () => window.removeEventListener("scroll", onScroll);
-    }, []);
+    const { resolvedTheme, setTheme } = useTheme();
 
     return (
-        <header
-            className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-            style={{
-                background: scrolled ? "var(--bg)" : "transparent",
-                borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
-            }}
-        >
-            <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-                {/* Logo */}
+        <header className="fixed top-4 left-0 right-0 z-50">
+            <nav className="max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between">
+                {/* Logo pill */}
                 <a
                     href="#"
-                    className="font-display text-lg font-bold tracking-tight"
-                    style={{ color: "var(--fg)" }}
+                    className="flex items-center gap-2 h-11 px-5 rounded-full font-display font-bold tracking-tight"
+                    style={{
+                        background: "var(--surface)",
+                        color: "var(--fg)",
+                        border: "1px solid var(--border)",
+                    }}
                 >
-                    {personal.name.split(" ")[0]}.
+                    <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: "var(--accent)" }}
+                    />
+                    {personal.name.split(" ")[0]}
                 </a>
 
-                {/* Links */}
-                <div className="hidden md:flex items-center gap-8">
+                {/* Links pill */}
+                <div
+                    className="hidden md:flex items-center gap-1 h-11 px-2 rounded-full"
+                    style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                    }}
+                >
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
-                            className="font-mono text-sm transition-colors duration-200"
+                            className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 hover:text-[var(--fg)] hover:bg-[var(--surface-hover)]"
                             style={{ color: "var(--muted)" }}
-                            onMouseEnter={(e) =>
-                                ((e.target as HTMLElement).style.color = "var(--fg)")
-                            }
-                            onMouseLeave={(e) =>
-                                ((e.target as HTMLElement).style.color = "var(--muted)")
-                            }
                         >
                             {link.label}
                         </Link>
                     ))}
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-4">
-                    {mounted && (
-                        <button
-                            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                            className="p-2 rounded-full transition-colors duration-200"
-                            style={{ color: "var(--muted)" }}
-                            aria-label="Toggle theme"
-                        >
-                            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                        </button>
-                    )}
+                {/* Actions pill */}
+                <div
+                    className="flex items-center gap-1 h-11 px-2 rounded-full"
+                    style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                    }}
+                >
+                    <button
+                        onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                        className="p-2 rounded-full transition-colors duration-200 hover:bg-[var(--surface-hover)]"
+                        style={{ color: "var(--muted)" }}
+                        aria-label="Toggle theme"
+                    >
+                        <Sun size={16} className="hidden dark:block" />
+                        <Moon size={16} className="dark:hidden" />
+                    </button>
                     <a
                         href={personal.resumeUrl}
                         download
-                        className="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm font-mono border transition-all duration-200"
-                        style={{ borderColor: "var(--border)", color: "var(--fg)" }}
-                        onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.background = "var(--fg)";
-                            (e.currentTarget as HTMLElement).style.color = "var(--bg)";
-                        }}
-                        onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.background = "transparent";
-                            (e.currentTarget as HTMLElement).style.color = "var(--fg)";
-                        }}
+                        className="hidden md:inline-flex items-center gap-2 pl-4 pr-5 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 hover:opacity-90"
+                        style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
                     >
                         <Download size={14} />
                         Resume
                     </a>
-                </div >
-            </nav >
-        </header >
+                </div>
+            </nav>
+        </header>
     );
 }

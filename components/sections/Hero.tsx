@@ -1,143 +1,102 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { personal } from "@/lib/data";
 
-const roles = [
-    "Full-Stack Developer",
-    "IT Graduate",
-    "Good Communicator eyy",
-];
-
 export default function Hero() {
-    const [roleIndex, setRoleIndex] = useState(0);
-    const [displayed, setDisplayed] = useState("");
-    const [deleting, setDeleting] = useState(false);
-    const [charIndex, setCharIndex] = useState(0);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    // Typewriter effect
-    useEffect(() => {
-        const current = roles[roleIndex];
-        let timeout: ReturnType<typeof setTimeout>;
-
-        if (!deleting && charIndex < current.length) {
-            timeout = setTimeout(() => {
-                setDisplayed(current.slice(0, charIndex + 1));
-                setCharIndex((i) => i + 1);
-            }, 80);
-        } else if (!deleting && charIndex === current.length) {
-            timeout = setTimeout(() => setDeleting(true), 2000);
-        } else if (deleting && charIndex > 0) {
-            timeout = setTimeout(() => {
-                setDisplayed(current.slice(0, charIndex - 1));
-                setCharIndex((i) => i - 1);
-            }, 40);
-        } else if (deleting && charIndex === 0) {
-            setDeleting(false);
-            setRoleIndex((i) => (i + 1) % roles.length);
-        }
-
-        return () => clearTimeout(timeout);
-    }, [charIndex, deleting, roleIndex]);
-
-    // Parallax on scroll
-    useEffect(() => {
-        const onScroll = () => {
-            if (containerRef.current) {
-                const y = window.scrollY;
-                containerRef.current.style.transform = `translateY(${y * 0.25}px)`;
-                containerRef.current.style.opacity = `${1 - y / 600}`;
-            }
-        };
-        window.addEventListener("scroll", onScroll, { passive: true });
-        return () => window.removeEventListener("scroll", onScroll);
-    }, []);
-
     return (
         <section
             id="hero"
-            className="relative min-h-screen flex flex-col justify-center overflow-hidden snap-start"
+            className="relative min-h-screen flex flex-col justify-end overflow-hidden snap-start pb-10 lg:pb-14"
             style={{ background: "var(--bg)" }}
         >
-            {/* Subtle grid background */}
-            <div
-                className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
-                style={{
-                    backgroundImage:
-                        "linear-gradient(var(--fg) 1px, transparent 1px), linear-gradient(90deg, var(--fg) 1px, transparent 1px)",
-                    backgroundSize: "60px 60px",
-                }}
-            />
+            <div className="w-full max-w-6xl mx-auto px-6 pt-16 lg:pt-20">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 lg:gap-8 items-start">
+                    {/* Left — availability + role */}
+                    <div className="order-2 lg:order-1 lg:self-start lg:pt-6">
+                        <span
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-5"
+                            style={{
+                                background: "var(--surface)",
+                                border: "1px solid var(--border)",
+                                color: "var(--fg)",
+                            }}
+                        >
+                            <span
+                                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                style={{ background: "var(--accent)" }}
+                            />
+                            Available for Work
+                        </span>
+                        <h2
+                            className="font-display text-2xl md:text-3xl font-semibold leading-snug"
+                            style={{ color: "var(--fg)" }}
+                        >
+                            Full-Stack Developer
+                            <br />
+                            based in the Philippines
+                        </h2>
+                    </div>
 
-            <div ref={containerRef} className="max-w-6xl mx-auto px-6 pt-24 pb-16">
-                {/* Tag */}
-                <p
-                    className="font-mono text-sm mb-6 tracking-widest uppercase"
-                    style={{ color: "var(--accent)" }}
-                >
-                    Welcome!, I'm
-                </p>
+                    {/* Center — portrait, faded at the edges so it blends into the page */}
+                    <div className="order-1 lg:order-2 flex justify-center w-full">
+                        <div
+                            className="relative w-full max-w-xs sm:max-w-sm lg:w-[26rem] lg:max-w-none h-[48vh] sm:h-[56vh] lg:h-[72vh] overflow-hidden"
+                            style={{
+                                WebkitMaskImage:
+                                    "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+                                WebkitMaskComposite: "source-in",
+                                maskImage:
+                                    "linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+                                maskComposite: "intersect",
+                            }}
+                        >
+                            <Image
+                                src="/images/kean hero.jpg"
+                                alt={personal.name}
+                                fill
+                                priority
+                                sizes="(min-width: 1024px) 26rem, 90vw"
+                                className="object-cover object-[center_20%]"
+                            />
+                        </div>
+                    </div>
 
-                {/* Headline */}
-                <h1
-                    className="font-display text-6xl md:text-8xl lg:text-9xl font-black leading-[0.9] tracking-tight mb-6"
-                    style={{ color: "var(--fg)" }}
-                >
-                    {personal.name.split(" ")[0]}
-                    <br />
-                    <span
-                        style={{
-                            color: "var(--muted)",
-                            fontStyle: "italic",
-                            fontWeight: 400,
-                        }}
-                    >
-                        {personal.name.split(" ").slice(1).join(" ")}
-                    </span>
-                </h1>
-
-                {/* Typewriter role */}
-                <div className="gap-3 mb-10">
-                    <span
-                        className="font-mono text-lg md:text-2xl"
-                        style={{ color: "var(--fg)" }}
-                    >
-                        {displayed}
-                    </span>
-                    <span
-                        className="inline-block w-[2px] h-6 animate-cursor-blink"
-                        style={{ background: "var(--accent)" }}
-                    />
+                    {/* Right — intro + CTA */}
+                    <div className="order-3 lg:self-start lg:pt-6 lg:justify-self-end lg:max-w-xs">
+                        <p
+                            className="text-sm md:text-base leading-relaxed mb-6"
+                            style={{ color: "var(--muted)" }}
+                        >
+                            Hi, I&apos;m {personal.name.split(" ")[0]} — a full-stack
+                            developer who enjoys turning ideas into clean, working web
+                            products from front to back.
+                        </p>
+                        <a
+                            href="#projects"
+                            className="inline-flex items-center gap-2 pl-2 pr-6 py-2 rounded-full text-sm font-semibold transition-colors duration-200 hover:opacity-90"
+                            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
+                        >
+                            <span
+                                className="flex items-center justify-center w-8 h-8 rounded-full"
+                                style={{ background: "var(--accent-fg)", color: "var(--accent)" }}
+                            >
+                                <ArrowRight size={14} />
+                            </span>
+                            See my works
+                        </a>
+                    </div>
                 </div>
-
-                {/* Description */}
-                <p
-                    className="max-w-xl text-lg leading-relaxed mb-12"
-                    style={{ color: "var(--muted)" }}
-                >
-                    {personal.bio}
-                </p>
-
-                {/* Divider */}
-                <div className="divider hidden md:block" />
             </div>
 
-            {/* Scroll indicator */}
-            <div
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-                style={{ color: "var(--muted)" }}
+            {/* Giant name — overlaps the bottom of the portrait */}
+            <h1
+                className="relative z-10 font-display font-black tracking-tight text-center leading-[0.8] select-none -mt-20 sm:-mt-24 lg:-mt-32 pb-4"
+                style={{ color: "var(--fg)", fontSize: "clamp(3.5rem, 15vw, 16rem)" }}
             >
-                <span className="font-mono text-xs tracking-widest uppercase">
-                    Scroll
-                </span>
-                <div
-                    className="w-[1px] h-12"
-                    style={{
-                        background: "linear-gradient(to bottom, var(--muted), transparent)",
-                    }}
-                />
-            </div>
+                {personal.name.split(" ")[0]}
+            </h1>
         </section>
     );
 }

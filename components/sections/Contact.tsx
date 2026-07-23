@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { useScrollReveal } from "@/lib/useScrollReveal";
 import { personal } from "@/lib/data";
-import { Send } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+
+const inputStyle = {
+    borderColor: "var(--border)",
+    color: "var(--fg)",
+    background: "var(--surface)",
+} as const;
 
 export default function Contact() {
     const ref = useScrollReveal<HTMLElement>();
@@ -49,32 +55,28 @@ export default function Contact() {
         <section
             id="contact"
             ref={ref}
-            className="py-32"
-            style={{ background: "var(--surface)" }}
+            className="py-24 md:py-28 snap-start flex flex-col justify-center"
+            style={{ background: "var(--bg)" }}
         >
-            <div className="max-w-6xl mx-auto px-6">
-                {/* Section label */}
-                <p
-                    className="font-mono text-sm tracking-widest uppercase mb-16"
-                    style={{ color: "var(--accent)" }}
-                >
-                    Get In Touch
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+            <div className="max-w-6xl w-full mx-auto px-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-16">
                     {/* Left */}
                     <div>
+                        <p
+                            className="text-sm tracking-widest uppercase font-medium mb-4"
+                            style={{ color: "var(--accent)" }}
+                        >
+                            Get In Touch
+                        </p>
                         <h2
-                            className="font-display text-4xl md:text-5xl font-bold leading-tight mb-6"
+                            className="font-display text-3xl md:text-5xl font-bold leading-tight mb-6"
                             style={{ color: "var(--fg)" }}
                         >
-                            Let's build something
-                            <span style={{ fontStyle: "italic", fontWeight: 400 }}>
-                                {" "}together.
-                            </span>
+                            Let&apos;s build something{" "}
+                            <span style={{ color: "var(--accent)" }}>together</span>
                         </h2>
                         <p
-                            className="text-lg leading-relaxed mb-8"
+                            className="text-base md:text-lg leading-relaxed mb-8"
                             style={{ color: "var(--muted)" }}
                         >
                             Whether you have a project in mind, a question, or just want to
@@ -82,7 +84,7 @@ export default function Contact() {
                         </p>
                         <a
                             href={`mailto:${personal.email}`}
-                            className="font-mono text-sm underline underline-offset-4 transition-colors duration-200"
+                            className="inline-block font-medium text-sm md:text-base underline underline-offset-4 transition-colors duration-200 hover:text-[var(--accent)]"
                             style={{ color: "var(--fg)" }}
                         >
                             {personal.email}
@@ -91,9 +93,9 @@ export default function Contact() {
 
                     {/* Right — Form */}
                     <div className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                             <label
-                                className="font-mono text-xs tracking-widest uppercase"
+                                className="text-xs tracking-widest uppercase font-medium"
                                 style={{ color: "var(--muted)" }}
                             >
                                 Name
@@ -104,18 +106,14 @@ export default function Contact() {
                                 value={form.name}
                                 onChange={handleChange}
                                 placeholder="Your Name"
-                                className="w-full px-4 py-3 text-sm border rounded-lg bg-transparent outline-none transition-colors duration-200 focus:border-[var(--fg)]"
-                                style={{
-                                    borderColor: "var(--border)",
-                                    color: "var(--fg)",
-                                    background: "var(--bg)",
-                                }}
+                                className="w-full px-5 py-3.5 text-sm border rounded-2xl outline-none transition-colors duration-200 focus:border-[var(--accent)]"
+                                style={inputStyle}
                             />
                         </div>
 
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                             <label
-                                className="font-mono text-xs tracking-widest uppercase"
+                                className="text-xs tracking-widest uppercase font-medium"
                                 style={{ color: "var(--muted)" }}
                             >
                                 Email
@@ -126,18 +124,14 @@ export default function Contact() {
                                 value={form.email}
                                 onChange={handleChange}
                                 placeholder="your@email.com"
-                                className="w-full px-4 py-3 text-sm border rounded-lg bg-transparent outline-none transition-colors duration-200 focus:border-[var(--fg)]"
-                                style={{
-                                    borderColor: "var(--border)",
-                                    color: "var(--fg)",
-                                    background: "var(--bg)",
-                                }}
+                                className="w-full px-5 py-3.5 text-sm border rounded-2xl outline-none transition-colors duration-200 focus:border-[var(--accent)]"
+                                style={inputStyle}
                             />
                         </div>
 
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                             <label
-                                className="font-mono text-xs tracking-widest uppercase"
+                                className="text-xs tracking-widest uppercase font-medium"
                                 style={{ color: "var(--muted)" }}
                             >
                                 Message
@@ -148,12 +142,8 @@ export default function Contact() {
                                 onChange={handleChange}
                                 placeholder="Tell me about your project..."
                                 rows={5}
-                                className="w-full px-4 py-3 text-sm border rounded-lg bg-transparent outline-none transition-colors duration-200 focus:border-[var(--fg)] resize-none"
-                                style={{
-                                    borderColor: "var(--border)",
-                                    color: "var(--fg)",
-                                    background: "var(--bg)",
-                                }}
+                                className="w-full px-5 py-3.5 text-sm border rounded-2xl outline-none transition-colors duration-200 focus:border-[var(--accent)] resize-none"
+                                style={inputStyle}
                             />
                         </div>
 
@@ -167,8 +157,8 @@ export default function Contact() {
                         <button
                             onClick={handleSubmit}
                             disabled={status === "sending"}
-                            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-sm font-medium transition-all duration-300 mt-2 rounded-lg disabled:opacity-50"
-                            style={{ background: "var(--fg)", color: "var(--bg)" }}
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full text-sm font-semibold transition-colors duration-200 mt-2 hover:opacity-90 disabled:opacity-50"
+                            style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
                         >
                             {status === "sending" ? (
                                 "Sending..."
@@ -176,13 +166,13 @@ export default function Contact() {
                                 "Message Sent! ✓"
                             ) : (
                                 <>
-                                    Send Message <Send size={14} />
+                                    Send Message <ArrowRight size={14} />
                                 </>
                             )}
                         </button>
                     </div>
                 </div>
             </div>
-        </section >
+        </section>
     );
 }

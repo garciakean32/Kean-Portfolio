@@ -15,8 +15,8 @@ const config: Config = {
                 mono: ['Outfit', 'sans-serif'],
             },
             colors: {
-                accent: '#2563EB',
-                'accent-dark': '#3B82F6',
+                accent: '#2C4A6E',
+                'accent-dark': '#6C93BE',
             },
             animation: {
                 'cursor-blink': 'blink 1s step-end infinite',

@@ -12,96 +12,97 @@ export default function Projects() {
         <section
             id="projects"
             ref={ref}
-            className="py-32"
+            className="py-24 md:py-28 snap-start flex flex-col justify-center"
             style={{ background: "var(--bg)" }}
         >
-            <div className="max-w-6xl mx-auto px-6">
-                {/* Section label */}
-                <p
-                    className="font-mono text-sm tracking-widest uppercase mb-16"
-                    style={{ color: "var(--accent)" }}
-                >
-                    Selected Work
-                </p>
+            <div className="max-w-6xl w-full mx-auto px-6">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-14">
+                    <div>
+                        <p
+                            className="text-sm tracking-widest uppercase font-medium mb-4"
+                            style={{ color: "var(--accent)" }}
+                        >
+                            Selected Work
+                        </p>
+                        <h2
+                            className="font-display text-3xl md:text-5xl font-bold leading-tight"
+                            style={{ color: "var(--fg)" }}
+                        >
+                            Projects I&apos;ve built
+                        </h2>
+                    </div>
+                    <p
+                        className="text-sm md:text-base max-w-xs"
+                        style={{ color: "var(--muted)" }}
+                    >
+                        Full-stack products, live and in use — click one to try it
+                        yourself.
+                    </p>
+                </div>
 
-                <div className="flex flex-col gap-6 gsap-stagger">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 gsap-stagger">
                     {projects.map((project, i) => (
-                        <div
+                        <a
                             key={project.id}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-0 border rounded-lg overflow-hidden transition-all duration-100 group"
-                            style={{ borderColor: "var(--border)" }}
-                            onMouseEnter={(e) => {
-                                (e.currentTarget as HTMLElement).style.borderColor =
-                                    "var(--fg)";
-                            }}
-                            onMouseLeave={(e) => {
-                                (e.currentTarget as HTMLElement).style.borderColor =
-                                    "var(--border)";
-                            }}
+                            href={project.liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex flex-col gap-5"
                         >
                             {/* Image */}
                             <div
-                                className="relative w-full aspect-video overflow-hidden"
-                                style={{ background: "var(--surface-hover)" }}
+                                className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden"
+                                style={{
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--border)",
+                                }}
                             >
                                 <Image
                                     src={project.image}
                                     alt={project.title}
                                     fill
                                     sizes="(min-width: 768px) 50vw, 100vw"
-                                    className="object-cover"
+                                    className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
                                 />
-                                {/* Overlay on hover */}
-                                <div
-                                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4"
-                                    style={{ background: "rgba(0,0,0,0.6)" }}
-                                >
-                                    <a
-                                        href={project.liveUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2 font-mono text-xs text-white border border-white hover:bg-white hover:text-black transition-all duration-200"
-                                    >
-                                        Live <ArrowUpRight size={12} />
-                                    </a>
-                                </div>
                             </div>
 
-                            {/* Content */}
-                            < div
-                                className="flex flex-col justify-between p-8 border-l"
-                                style={{ borderColor: "var(--border)" }}
-                            >
+                            {/* Meta */}
+                            <div className="flex items-start justify-between gap-4 px-1">
                                 <div>
-                                    {/* Project number */}
                                     <span
-                                        className="font-mono text-xs mb-4 block"
+                                        className="text-xs font-medium block mb-1"
                                         style={{ color: "var(--muted)" }}
                                     >
                                         {String(i + 1).padStart(2, "0")}
                                     </span>
-
-                                    {/* Title */}
                                     <h3
-                                        className="font-display text-2xl md:text-3xl font-bold mb-4"
+                                        className="font-display text-xl md:text-2xl font-bold mb-2"
                                         style={{ color: "var(--fg)" }}
                                     >
                                         {project.title}
                                     </h3>
-
-                                    {/* Description */}
                                     <p
-                                        className="text-base leading-relaxed mb-6"
+                                        className="text-sm md:text-base leading-relaxed"
                                         style={{ color: "var(--muted)" }}
                                     >
                                         {project.description}
                                     </p>
                                 </div>
+                                <span
+                                    className="flex items-center justify-center w-10 h-10 rounded-full shrink-0 mt-1 transition-colors duration-200 group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-fg)] group-hover:border-transparent"
+                                    style={{
+                                        border: "1px solid var(--border)",
+                                        color: "var(--fg)",
+                                    }}
+                                >
+                                    <ArrowUpRight size={16} />
+                                </span>
                             </div>
-                        </div>
+                        </a>
                     ))}
                 </div>
-            </div >
-        </section >
+            </div>
+        </section>
     );
 }
