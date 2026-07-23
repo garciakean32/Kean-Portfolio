@@ -56,7 +56,7 @@ export default function About() {
                 <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-10 lg:gap-16 items-start">
                     {/* Left — portrait */}
                     <div
-                        className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden"
+                        className="relative w-full aspect-square rounded-3xl overflow-hidden"
                         style={{
                             background: "var(--surface)",
                             border: "1px solid var(--border)",
@@ -66,8 +66,9 @@ export default function About() {
                             src="/images/kean about me.png"
                             alt={personal.name}
                             fill
+                            quality={95}
                             sizes="(min-width: 1024px) 340px, 100vw"
-                            className="object-cover object-[center_35%]"
+                            className="object-cover object-[center_30%]"
                         />
                     </div>
 
