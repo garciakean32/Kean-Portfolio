@@ -77,11 +77,17 @@ export default function Projects() {
                                         {String(i + 1).padStart(2, "0")}
                                     </span>
                                     <h3
-                                        className="font-display text-xl md:text-2xl font-bold mb-2"
+                                        className="font-display text-xl md:text-2xl font-bold mb-1"
                                         style={{ color: "var(--fg)" }}
                                     >
                                         {project.title}
                                     </h3>
+                                    <span
+                                        className="text-xs font-medium block mb-2"
+                                        style={{ color: "var(--accent)" }}
+                                    >
+                                        {project.type}
+                                    </span>
                                     <p
                                         className="text-sm md:text-base leading-relaxed"
                                         style={{ color: "var(--muted)" }}
