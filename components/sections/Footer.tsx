@@ -1,6 +1,7 @@
 "use client";
 
 import { personal } from "@/lib/data";
+import { scrollToHash } from "@/lib/scrollToHash";
 import { Download } from "lucide-react";
 
 export default function Footer() {
@@ -19,6 +20,10 @@ export default function Footer() {
                     {/* Logo */}
                     <a
                         href="#"
+                        onClick={(event) => {
+                            event.preventDefault();
+                            scrollToHash("#");
+                        }}
                         className="flex items-center gap-2 font-display text-2xl font-bold tracking-tight"
                         style={{ color: "var(--fg)" }}
                     >
