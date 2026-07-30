@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { personal } from "@/lib/data";
+import { scrollToHash } from "@/lib/scrollToHash";
 
 export default function Hero() {
     return (
@@ -75,6 +76,10 @@ export default function Hero() {
                         </p>
                         <a
                             href="#projects"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                scrollToHash("#projects");
+                            }}
                             className="inline-flex items-center gap-2 pl-2 pr-6 py-2 rounded-full text-sm font-semibold transition-colors duration-200 hover:opacity-90"
                             style={{ background: "var(--accent)", color: "var(--accent-fg)" }}
                         >
