@@ -3,7 +3,6 @@
 import { useTheme } from "next-themes";
 import { Sun, Moon, Download } from "lucide-react";
 import { personal } from "@/lib/data";
-import { scrollToHash } from "@/lib/scrollToHash";
 import Link from "next/link";
 
 const navLinks = [
@@ -21,10 +20,6 @@ export default function Navbar() {
                 {/* Logo pill */}
                 <a
                     href="#"
-                    onClick={(event) => {
-                        event.preventDefault();
-                        scrollToHash("#");
-                    }}
                     className="flex items-center gap-2 h-11 px-5 rounded-full font-display font-bold tracking-tight"
                     style={{
                         background: "var(--surface)",
@@ -51,10 +46,6 @@ export default function Navbar() {
                         <Link
                             key={link.href}
                             href={link.href}
-                            onClick={(event) => {
-                                event.preventDefault();
-                                scrollToHash(link.href);
-                            }}
                             className="px-4 py-1.5 rounded-full text-sm font-medium transition-colors duration-200 hover:text-[var(--fg)] hover:bg-[var(--surface-hover)]"
                             style={{ color: "var(--muted)" }}
                         >
