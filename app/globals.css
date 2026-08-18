@@ -1,125 +1,353 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   Tokens
+   Colours are stored as raw RGB channels so Tailwind's `/opacity`
+   modifier works on them (`bg-paper/80`). Consume as `rgb(var(--token))`.
+   ------------------------------------------------------------------ */
+
 :root {
-  --bg: #FAF8F5;
-  --fg: #1B1916;
-  --muted: #6F6A62;
-  --border: #E6E2DB;
-  --accent: #2C4A6E;
-  --accent-hover: #1F374F;
-  --accent-fg: #FFFFFF;
-  --surface: #FFFFFF;
-  --surface-hover: #F1EEE8;
+  /* Surfaces */
+  --paper: 246 246 245;
+  --paper-2: 255 255 255;
+  --paper-3: 235 235 234;
+
+  /* Foreground */
+  --ink: 24 24 27;
+  --ink-2: 63 63 70;
+  --ink-3: 90 90 99;
+  --on-ink: 250 250 250;
+
+  /* Structure */
+  --rule: 224 224 223;
+  --rule-strong: 196 196 195;
+
+  /* Accent */
+  --accent: 30 64 175;
+
+  /* Texture */
+  --grain: 0.035;
+
+  /* Layout */
+  --rail: 0px;
+  --gutter: 1.25rem;
+  --nav-h: 4.5rem;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.76, 0, 0.24, 1);
+
+  /* Japanese glyphs arrive as a `text` subset loaded in the root layout */
+  --font-noto-jp: "Noto Sans JP";
+
+  color-scheme: light;
 }
 
 .dark {
-  --bg: #161513;
-  --fg: #F4F2EE;
-  --muted: #A29D94;
-  --border: #2B2925;
-  --accent: #6C93BE;
-  --accent-hover: #82A6CE;
-  --accent-fg: #0C1A2A;
-  --surface: #201E1B;
-  --surface-hover: #262420;
+  /* Near-black rather than charcoal — the three steps stay close together
+     so the tonal drift between sections still reads, without any of them
+     drifting up into grey. */
+  --paper: 6 6 7;
+  --paper-2: 13 13 15;
+  --paper-3: 20 20 23;
+
+  --ink: 244 244 245;
+  --ink-2: 168 168 176;
+  --ink-3: 132 132 141;
+  --on-ink: 14 14 16;
+
+  --rule: 39 39 44;
+  --rule-strong: 58 58 64;
+
+  --accent: 109 147 240;
+
+  --grain: 0.05;
+
+  color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* ------------------------------------------------------------------
+   Light panels
+   The site runs dark. A section can invert to paper by carrying this
+   class: it re-declares the tokens for its own subtree, so every
+   `bg-paper` / `text-ink` inside resolves to the light values without
+   any component needing to know which mode it is in.
+   ------------------------------------------------------------------ */
+
+.light-panel {
+  --paper: 246 246 245;
+  --paper-2: 255 255 255;
+  --paper-3: 235 235 234;
+
+  --ink: 24 24 27;
+  --ink-2: 63 63 70;
+  --ink-3: 90 90 99;
+  --on-ink: 250 250 250;
+
+  --rule: 224 224 223;
+  --rule-strong: 196 196 195;
+
+  --accent: 30 64 175;
+
+  color-scheme: light;
+  background-color: rgb(var(--paper));
 }
 
-html {
-  scroll-behavior: auto;
-}
-
-body {
-  background-color: var(--bg);
-  color: var(--fg);
-  font-family: 'Outfit', sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  overflow-x: hidden;
+@media (min-width: 768px) {
+  :root {
+    --gutter: 2rem;
+  }
 }
 
 @media (min-width: 1024px) {
+  :root {
+    --rail: 3rem;
+    --gutter: 3rem;
+    --nav-h: 5.5rem;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+
+@layer base {
   html {
-    scroll-snap-type: y mandatory;
+    /* `clip` (not `hidden`) so sticky / ScrollTrigger pinning keeps working */
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    overscroll-behavior-y: contain;
+    background-color: rgb(var(--paper));
+    color: rgb(var(--ink));
+    font-family: var(--font-archivo), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
   }
 
-  main>section {
-    min-height: 100dvh;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+  ::selection {
+    background: rgb(var(--accent));
+    color: #fff;
   }
 
-  main>footer {
-    scroll-snap-align: end;
-    scroll-snap-stop: always;
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--rule-strong));
+    border-radius: 4px;
+  }
+
+  /* Lenis drives scroll position itself; native smooth-scroll (e.g. from an
+     in-page anchor jump) would fight its easing mid-frame. */
+  html.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+/* ------------------------------------------------------------------
+   Motion gate
+   Initial hidden states only apply when `data-motion="on"` is set by the
+   blocking script in <head>. If JS is off or the visitor prefers reduced
+   motion, nothing is ever hidden.
+   ------------------------------------------------------------------ */
 
-  main>section {
-    scroll-snap-stop: normal;
-  }
-}
-
-::selection {
-  background: var(--accent);
-  color: #fff;
-}
-
-::-webkit-scrollbar {
-  width: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
-}
-
-.section-hidden {
+html[data-motion="on"] [data-anim="fade"] {
   opacity: 0;
 }
 
-.section-visible {
-  opacity: 1;
-  transition: opacity 0.45s ease;
+html[data-motion="on"] [data-anim="mask"] > * {
+  /* Must exceed 100% + the mask's vertical padding, or the top of the line
+     peeks below the clip edge before it animates. Keep in step with
+     MASK_HIDDEN in lib/motion.ts. */
+  transform: translateY(135%);
 }
 
-.divider {
-  width: 100%;
-  height: 1px;
-  background: var(--border);
+html[data-motion="on"] [data-anim="wipe"] {
+  clip-path: inset(0 100% 0 0);
 }
 
-/* Infinite marquee strip */
+html[data-motion="on"] [data-anim="rise"] {
+  clip-path: inset(100% 0 0 0);
+}
+
+html[data-motion="on"] [data-anim="rule-x"] {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+html[data-motion="on"] [data-anim="rule-y"] {
+  transform: scaleY(0);
+  transform-origin: top center;
+}
+
+/* ------------------------------------------------------------------
+   Components
+   ------------------------------------------------------------------ */
+
+@layer components {
+  /* Editorial measure: the page's content column, offset by the rail */
+  .shell {
+    padding-left: calc(var(--rail) + var(--gutter));
+    padding-right: var(--gutter);
+  }
+
+  /* Line-mask wrapper for text reveals.
+     The padding/margin pair keeps descenders from being clipped. */
+  .mask {
+    display: block;
+    overflow: hidden;
+    padding-block: 0.22em;
+    margin-block: -0.22em;
+  }
+  .mask > * {
+    display: block;
+    will-change: transform;
+  }
+
+  /* Vertical Japanese setting */
+  .tate {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+
+  /* Underline that draws in from the left on hover/focus */
+  .link-rule {
+    position: relative;
+  }
+  .link-rule::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -0.2em;
+    height: 1px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right center;
+    transition: transform 0.45s var(--ease-out);
+  }
+  .link-rule:hover::after,
+  .link-rule:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+
+  /* Form fields read as fields: a real box, not a hairline */
+  .field {
+    width: 100%;
+    border: 1px solid rgb(var(--rule-strong));
+    border-radius: 6px;
+    background: rgb(var(--paper-2));
+    padding: 0.875rem 1rem;
+    color: rgb(var(--ink));
+    transition: border-color 0.25s var(--ease-out),
+      box-shadow 0.25s var(--ease-out), background-color 0.25s var(--ease-out);
+  }
+  .field::placeholder {
+    color: rgb(var(--ink-3));
+  }
+  .field:hover {
+    border-color: rgb(var(--ink-3));
+  }
+  .field:focus {
+    outline: none;
+    border-color: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.14);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Utilities
+   ------------------------------------------------------------------ */
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+/* Paper grain — one fixed layer, no per-element cost */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Horizontal tracks
+   A track only runs sideways while GSAP is there to move it, so the layout is
+   gated on the same motion flag as everything else: with motion off (or no
+   JS) the panels stay a plain vertical stack and every one of them is still
+   reachable by scrolling down.
+
+   The stage is held with `sticky`, not a pin — see `sideScroll` in
+   lib/motion.ts. The section around it carries no styles here; its height is
+   the scroll budget and is set from JS, since only JS knows how wide the
+   track turned out to be.
+
+   Panels size themselves off `--hs-w` / `--hs-h` so one rule covers both a
+   full-screen step and a narrower card. */
+@media (min-width: 1024px) {
+  html[data-motion="on"] .hscroll-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  html[data-motion="on"] .hscroll-track {
+    flex-direction: row;
+    align-items: center;
+    width: max-content;
+    height: 100%;
+    padding-bottom: 0;
+  }
+
+  html[data-motion="on"] .hscroll-panel {
+    flex-shrink: 0;
+    width: var(--hs-w, 100vw);
+    height: var(--hs-h, 100%);
+  }
+}
+
+/* Horizontal stack marquee */
 .marquee {
   display: flex;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
-  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
 }
 
 .marquee-track {
@@ -127,20 +355,32 @@ body {
   flex-shrink: 0;
   min-width: 100%;
   align-items: center;
-  animation: marquee 28s linear infinite;
+  animation: marquee 58s linear infinite;
 }
 
 @keyframes marquee {
   from {
     transform: translateX(0);
   }
-
   to {
     transform: translateX(-100%);
   }
 }
 
+/* ------------------------------------------------------------------
+   Reduced motion
+   ------------------------------------------------------------------ */
+
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .marquee-track {
     animation: none;
   }
