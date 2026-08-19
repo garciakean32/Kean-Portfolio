@@ -391,6 +391,11 @@ export const projects = [
         image: "/images/K4 Threads project.png",
         featured: true,
         type: "Personal Project",
+        status: {
+            label: "Not ready yet",
+            reason:
+                "Checkout is not live. Taking real payments means registering the payment method under a business, and I do not have those business credentials yet — everything up to the payment step works.",
+        },
         role: "Solo — design, frontend, backend",
         stack: ["Next.js", "TypeScript", "Tailwind CSS", "Supabase"],
         highlights: [
@@ -413,6 +418,11 @@ export const projects = [
         image: "/images/askbrain project.png",
         featured: true,
         type: "Personal Project",
+        status: {
+            label: "Not ready yet",
+            reason:
+                "The 7-day trial works, so you can build a brain and try it end to end. Paying after it runs out does not: the payment method needs business credentials I do not have yet.",
+        },
         role: "Solo — design, frontend, backend",
         stack: ["Next.js", "TypeScript", "Tailwind CSS", "Supabase"],
         highlights: [

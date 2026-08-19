@@ -31,6 +31,7 @@ const config: Config = {
                     strong: 'rgb(var(--rule-strong) / <alpha-value>)',
                 },
                 accent: 'rgb(var(--accent) / <alpha-value>)',
+                warn: 'rgb(var(--warn) / <alpha-value>)',
                 'on-ink': 'rgb(var(--on-ink) / <alpha-value>)',
             },
             fontSize: {

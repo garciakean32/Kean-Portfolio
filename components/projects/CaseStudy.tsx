@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { MaskLine } from "@/components/motion/Text";
+import ProjectStatus from "@/components/shared/ProjectStatus";
 import type { projects } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { gsap, riseMasks, useGsap } from "@/lib/motion";
@@ -112,6 +113,8 @@ export default function CaseStudy({
                         <h2 className="js-title mt-6 font-display text-d3 font-bold tracking-[-0.03em] text-ink">
                             <MaskLine>{project.title}</MaskLine>
                         </h2>
+
+                        <ProjectStatus status={project.status} className="js-detail mt-6" />
 
                         <p className="js-detail mt-5 max-w-measure font-serif text-lead text-ink-2">
                             {project.description}
