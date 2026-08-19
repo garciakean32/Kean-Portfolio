@@ -14,9 +14,8 @@ const STAGES = [
     { jp: "公開", en: "Ship" },
 ];
 
-/** Outlined type — the section's one graphic device, used for every Japanese mark. */
-const OUTLINE =
-    "font-jp font-medium leading-none text-transparent [-webkit-text-stroke:1px_rgb(var(--ink)/0.3)]";
+/** Quiet type — the section's one graphic device, used for every Japanese mark. */
+const OUTLINE = "font-jp font-medium leading-none text-ink/20";
 
 /**
  * The opening line above each answer. Deliberately the quietest thing in the
