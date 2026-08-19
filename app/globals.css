@@ -27,6 +27,9 @@
   /* Accent */
   --accent: 30 64 175;
 
+  /* Status — work that is live but not finished */
+  --warn: 180 83 9;
+
   /* Texture */
   --grain: 0.035;
 
@@ -63,6 +66,8 @@
 
   --accent: 109 147 240;
 
+  --warn: 251 191 36;
+
   --grain: 0.05;
 
   color-scheme: dark;
@@ -90,6 +95,8 @@
   --rule-strong: 196 196 195;
 
   --accent: 30 64 175;
+
+  --warn: 180 83 9;
 
   color-scheme: light;
   background-color: rgb(var(--paper));
@@ -364,6 +371,25 @@ html[data-motion="on"] [data-anim="rule-y"] {
   }
   to {
     transform: translateX(-100%);
+  }
+}
+
+/* The status tooltip pops out of its info icon rather than just appearing —
+   `transform-origin` is set per corner in ProjectStatus, this just supplies
+   the scale/fade. Covered by the reduced-motion block below like every other
+   animation on the page. */
+.tooltip-pop {
+  animation: tooltip-pop 180ms var(--ease-out) both;
+}
+
+@keyframes tooltip-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
