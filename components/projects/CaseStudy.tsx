@@ -5,7 +5,7 @@ import { MaskLine } from "@/components/motion/Text";
 import ProjectStatus from "@/components/shared/ProjectStatus";
 import type { projects } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { gsap, riseMasks, useGsap } from "@/lib/motion";
+import { gsap, reveal, riseMasks, useGsap } from "@/lib/motion";
 
 type Project = (typeof projects)[number];
 
@@ -26,15 +26,19 @@ export default function CaseStudy({
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
 
-        gsap.fromTo(
-            q(".js-shot"),
-            { clipPath: flipped ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)" },
-            {
-                clipPath: "inset(0 0% 0 0%)",
-                duration: 1.5,
-                ease: "power3.inOut",
-                scrollTrigger: { trigger: el, start: "top 76%" },
-            }
+        reveal(
+            (cue) =>
+                gsap.fromTo(
+                    q(".js-shot"),
+                    { clipPath: flipped ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)" },
+                    {
+                        clipPath: "inset(0 0% 0 0%)",
+                        duration: 1.5,
+                        ease: "power3.inOut",
+                        ...cue,
+                    }
+                ),
+            { trigger: el, start: "top 76%" }
         );
 
         gsap.fromTo(
@@ -49,29 +53,29 @@ export default function CaseStudy({
 
         riseMasks(q(".js-title .js-mask-inner"), { trigger: el, start: "top 74%", stagger: 0.09 });
 
-        gsap.fromTo(
-            q(".js-detail"),
-            { opacity: 0, y: 28 },
-            {
-                opacity: 1,
-                y: 0,
-                duration: 1,
-                ease: "power4.out",
-                stagger: 0.08,
-                scrollTrigger: { trigger: el, start: "top 70%" },
-            }
+        reveal(
+            (cue) =>
+                gsap.fromTo(q(".js-detail"), { opacity: 0, y: 28 }, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power4.out",
+                    stagger: 0.08,
+                    ...cue,
+                }),
+            { trigger: el, start: "top 70%" }
         );
 
-        gsap.fromTo(
-            q(".js-index"),
-            { opacity: 0, xPercent: flipped ? 30 : -30 },
-            {
-                opacity: 1,
-                xPercent: 0,
-                duration: 1.2,
-                ease: "power4.out",
-                scrollTrigger: { trigger: el, start: "top 78%" },
-            }
+        reveal(
+            (cue) =>
+                gsap.fromTo(q(".js-index"), { opacity: 0, xPercent: flipped ? 30 : -30 }, {
+                    opacity: 1,
+                    xPercent: 0,
+                    duration: 1.2,
+                    ease: "power4.out",
+                    ...cue,
+                }),
+            { trigger: el, start: "top 78%" }
         );
     });
 

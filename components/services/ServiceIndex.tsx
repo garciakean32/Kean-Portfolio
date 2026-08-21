@@ -5,7 +5,7 @@ import { useReducedMotion } from "framer-motion";
 import { MaskLine } from "@/components/motion/Text";
 import { services, servicesNote } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { fadeUp, gsap, MASK_HIDDEN, riseMasks, ScrollTrigger, useGsap } from "@/lib/motion";
+import { fadeUp, gsap, MASK_HIDDEN, reveal, riseMasks, ScrollTrigger, useGsap } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 
 /**
@@ -29,32 +29,36 @@ export default function ServiceIndex() {
                 onEnterBack: () => setActive(i),
             });
 
-            gsap.fromTo(
-                entry.querySelectorAll(".js-mask-inner"),
-                MASK_HIDDEN,
-                {
-                    yPercent: 0,
-                    duration: 1,
-                    ease: "power4.out",
-                    stagger: 0.07,
-                    scrollTrigger: { trigger: entry, start: "top 82%" },
-                }
+            reveal(
+                (cue) =>
+                    gsap.fromTo(entry.querySelectorAll(".js-mask-inner"), MASK_HIDDEN, {
+                        yPercent: 0,
+                        duration: 1,
+                        ease: "power4.out",
+                        stagger: 0.07,
+                        ...cue,
+                    }),
+                { trigger: entry, start: "top 82%" }
             );
 
-            gsap.fromTo(
-                entry.querySelectorAll(".js-body"),
-                { opacity: 0, x: i % 2 === 0 ? -28 : 28 },
-                {
-                    opacity: 1,
-                    x: 0,
-                    duration: 1,
-                    ease: "power4.out",
-                    stagger: 0.07,
-                    scrollTrigger: { trigger: entry, start: "top 78%" },
-                }
+            reveal(
+                (cue) =>
+                    gsap.fromTo(entry.querySelectorAll(".js-body"), { opacity: 0, x: i % 2 === 0 ? -28 : 28 }, {
+                        opacity: 1,
+                        x: 0,
+                        duration: 1,
+                        ease: "power4.out",
+                        stagger: 0.07,
+                        ...cue,
+                    }),
+                { trigger: entry, start: "top 78%" }
             );
         });
 
+        // The running index and the lead sit level with each other at the top
+        // of the section, so they open on the same cue — the index lettering
+        // down its own list, the lead rising beside it.
+        fadeUp(q(".js-index"), { trigger: el, start: "top 80%", stagger: 0.05, y: 18 });
         riseMasks(q(".js-lead .js-mask-inner"), { trigger: el, start: "top 80%" });
         fadeUp(q(".js-note"), { trigger: q(".js-note")[0], start: "top 90%" });
     });
@@ -91,7 +95,7 @@ export default function ServiceIndex() {
                     {/* Running index */}
                     <div className="hidden lg:block">
                         <div className="sticky top-[calc(var(--nav-h)+3rem)]">
-                            <div className="flex items-baseline gap-4">
+                            <div data-anim="fade" className="js-index flex items-baseline gap-4">
                                 <span className="font-display text-d3 font-extrabold leading-none text-ink">
                                     {services[active].index}
                                 </span>
@@ -102,7 +106,7 @@ export default function ServiceIndex() {
 
                             <ul className="mt-10 space-y-3 border-t border-rule pt-6">
                                 {services.map((service, i) => (
-                                    <li key={service.index}>
+                                    <li key={service.index} data-anim="fade" className="js-index">
                                         <button
                                             type="button"
                                             onClick={() => jump(service.index)}

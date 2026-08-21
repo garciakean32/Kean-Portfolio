@@ -86,10 +86,97 @@ export function useGsap<T extends HTMLElement = HTMLDivElement>(
 }
 
 /* ------------------------------------------------------------------
+   Page entrance — what opens a page that is not the home page
+   ------------------------------------------------------------------ */
+
+/** How long a page waits before it starts: the route panel's own exit. */
+const INTRO_DELAY = 0.75;
+
+/**
+ * The timeline a page's first section opens with.
+ *
+ * Paused on creation and started on the next frame rather than immediately.
+ * SmoothScroll turns GSAP's lag smoothing off so Lenis stays in step, which
+ * means the first tick after a client-side route change advances everything
+ * already running by the whole navigation stall — RSC fetch, mount,
+ * hydration. A timeline built during that stall is fast forwarded past its
+ * delay and most of its reveal before the transition panel has even lifted,
+ * which is why these mastheads only ever animated on a hard refresh.
+ */
+export function pageIntro(vars: gsap.TimelineVars = {}) {
+    const tl = gsap.timeline({
+        delay: INTRO_DELAY,
+        defaults: { ease: EASE.out },
+        ...vars,
+        paused: true,
+    });
+    requestAnimationFrame(() => tl.play());
+    return tl;
+}
+
+/* ------------------------------------------------------------------
    Recipes — the vocabulary sections compose from
    ------------------------------------------------------------------ */
 
 type At = { trigger?: Element | string; start?: string; delay?: number };
+
+/**
+ * How long a reveal already on screen when the page arrives holds before it
+ * opens: past the route panel's exit, and far enough into the masthead's own
+ * entrance that the page still reads top to bottom rather than back to front.
+ */
+const INTRO_HOLD = INTRO_DELAY + 0.45;
+
+/** The viewport line a `"top NN%"` start resolves to, in pixels. */
+const startLine = (start: string) => {
+    const percent = /(-?[\d.]+)%/.exec(start);
+    return ((percent ? parseFloat(percent[1]) : 82) / 100) * window.innerHeight;
+};
+
+/**
+ * Wires a reveal to whatever should cue it.
+ *
+ * Normally that is the scroll, and this hands GSAP an ordinary
+ * `scrollTrigger`. But a section sitting in the first screen when a page
+ * arrives has no scroll to wait for: ScrollTrigger fires it the instant it is
+ * created, which is while the route panel is still covering the page — so the
+ * reveal plays behind the panel and is over before anyone can see it. That is
+ * the whole of the "it just appears" bug on a short viewport, where the
+ * section under the masthead is already in frame. Those run on the page's own
+ * entrance clock instead, behind the masthead, which is also what keeps a page
+ * reading top to bottom.
+ *
+ * A plain `delay` cannot stand in for this. ScrollTrigger pauses the tween it
+ * is handed and re-anchors it when it plays, which drops the delay entirely —
+ * so the hold only means anything once the trigger is out of the picture.
+ *
+ * The recipes below all go through this. Exported for the one-off reveals
+ * that do not fit any of them — a section directly under a masthead has to
+ * wait its turn whatever shape its animation happens to be.
+ */
+export function reveal(
+    make: (vars: gsap.TweenVars) => gsap.core.Tween,
+    { trigger, start = "top 82%", delay = 0 }: At
+) {
+    if (!trigger) return make({ delay });
+
+    const el = typeof trigger === "string" ? document.querySelector(trigger) : trigger;
+    // Only `top` starts are measured here — the comparison below reads the
+    // trigger's top edge, so a `bottom`-anchored start is left to
+    // ScrollTrigger, which knows how to resolve it.
+    const top = el && start.startsWith("top ") ? el.getBoundingClientRect().top : Infinity;
+
+    // `top >= 0` deliberately: a negative top is a section already scrolled
+    // past, not one waiting in the first screen, and the scroll stays the
+    // honest cue for it.
+    if (!(top >= 0 && top <= startLine(start))) {
+        return make({ delay, scrollTrigger: { trigger, start } });
+    }
+
+    const tween = make({ delay: delay + INTRO_HOLD }).pause();
+    requestAnimationFrame(() => tween.play());
+    return tween;
+}
 
 /**
  * The starting position for a masked line.
@@ -122,17 +209,16 @@ export function riseMasks(
     targets: gsap.TweenTarget,
     { trigger, start = "top 82%", delay = 0, stagger = 0.08 }: At & { stagger?: number } = {}
 ) {
-    return gsap.fromTo(
-        targets,
-        MASK_HIDDEN,
-        {
-            yPercent: 0,
-            duration: DUR.reveal,
-            ease: EASE.out,
-            stagger,
-            delay,
-            scrollTrigger: trigger ? { trigger, start } : undefined,
-        }
+    return reveal(
+        (cue) =>
+            gsap.fromTo(targets, MASK_HIDDEN, {
+                yPercent: 0,
+                duration: DUR.reveal,
+                ease: EASE.out,
+                stagger,
+                ...cue,
+            }),
+        { trigger, start, delay }
     );
 }
 
@@ -141,18 +227,17 @@ export function fadeUp(
     targets: gsap.TweenTarget,
     { trigger, start = "top 85%", delay = 0, stagger = 0.08, y = 26 }: At & { stagger?: number; y?: number } = {}
 ) {
-    return gsap.fromTo(
-        targets,
-        { opacity: 0, y },
-        {
-            opacity: 1,
-            y: 0,
-            duration: DUR.reveal,
-            ease: EASE.out,
-            stagger,
-            delay,
-            scrollTrigger: trigger ? { trigger, start } : undefined,
-        }
+    return reveal(
+        (cue) =>
+            gsap.fromTo(targets, { opacity: 0, y }, {
+                opacity: 1,
+                y: 0,
+                duration: DUR.reveal,
+                ease: EASE.out,
+                stagger,
+                ...cue,
+            }),
+        { trigger, start, delay }
     );
 }
 
@@ -167,20 +252,24 @@ export function wipeIn(
         from = "left",
     }: At & { stagger?: number; from?: "left" | "right" } = {}
 ) {
-    return gsap.fromTo(
-        targets,
-        { clipPath: from === "left" ? "inset(0 100% 0 0)" : "inset(0 0 0 100%)" },
-        {
-            clipPath: "inset(0 0% 0 0%)",
-            duration: DUR.long,
-            ease: EASE.io,
-            stagger,
-            delay,
-            // A settled `inset(0)` still clips to the border box, which would
-            // crop anything the row grows or rotates outside it later.
-            onComplete: () => gsap.set(targets, { clearProps: "clipPath" }),
-            scrollTrigger: trigger ? { trigger, start } : undefined,
-        }
+    return reveal(
+        (cue) =>
+            gsap.fromTo(
+                targets,
+                { clipPath: from === "left" ? "inset(0 100% 0 0)" : "inset(0 0 0 100%)" },
+                {
+                    clipPath: "inset(0 0% 0 0%)",
+                    duration: DUR.long,
+                    ease: EASE.io,
+                    stagger,
+                    // A settled `inset(0)` still clips to the border box, which
+                    // would crop anything the row grows or rotates outside it
+                    // later.
+                    onComplete: () => gsap.set(targets, { clearProps: "clipPath" }),
+                    ...cue,
+                }
+            ),
+        { trigger, start, delay }
     );
 }
 
@@ -199,29 +288,33 @@ export function morphIn(
     targets: gsap.TweenTarget,
     { trigger, start = "top 82%", delay = 0, stagger = 0.12 }: At & { stagger?: number } = {}
 ) {
-    return gsap.fromTo(
-        targets,
-        {
-            clipPath: "polygon(9% 24%, 46% 4%, 93% 15%, 89% 79%, 51% 98%, 5% 84%)",
-            scale: 0.92,
-            filter: "blur(16px)",
-            opacity: 0,
-        },
-        {
-            clipPath: "polygon(0% 0%, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)",
-            scale: 1,
-            filter: "blur(0px)",
-            opacity: 1,
-            duration: DUR.long,
-            ease: EASE.io,
-            stagger,
-            delay,
-            // A settled clip-path still clips to its own polygon, which would
-            // crop anything the element grows or rotates outside it later —
-            // same reasoning `wipeIn` clears its clip-path when it finishes.
-            onComplete: () => gsap.set(targets, { clearProps: "clipPath,filter" }),
-            scrollTrigger: trigger ? { trigger, start } : undefined,
-        }
+    return reveal(
+        (cue) =>
+            gsap.fromTo(
+                targets,
+                {
+                    clipPath: "polygon(9% 24%, 46% 4%, 93% 15%, 89% 79%, 51% 98%, 5% 84%)",
+                    scale: 0.92,
+                    filter: "blur(16px)",
+                    opacity: 0,
+                },
+                {
+                    clipPath: "polygon(0% 0%, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)",
+                    scale: 1,
+                    filter: "blur(0px)",
+                    opacity: 1,
+                    duration: DUR.long,
+                    ease: EASE.io,
+                    stagger,
+                    // A settled clip-path still clips to its own polygon, which
+                    // would crop anything the element grows or rotates outside
+                    // it later — same reasoning `wipeIn` clears its clip-path
+                    // when it finishes.
+                    onComplete: () => gsap.set(targets, { clearProps: "clipPath,filter" }),
+                    ...cue,
+                }
+            ),
+        { trigger, start, delay }
     );
 }
 
@@ -231,17 +324,16 @@ export function drawRule(
     { trigger, start = "top 88%", axis = "x", delay = 0, stagger = 0.06 }: At & { axis?: "x" | "y"; stagger?: number } = {}
 ) {
     const prop = axis === "x" ? "scaleX" : "scaleY";
-    return gsap.fromTo(
-        targets,
-        { [prop]: 0 },
-        {
-            [prop]: 1,
-            duration: DUR.long,
-            ease: EASE.io,
-            stagger,
-            delay,
-            scrollTrigger: trigger ? { trigger, start } : undefined,
-        }
+    return reveal(
+        (cue) =>
+            gsap.fromTo(targets, { [prop]: 0 }, {
+                [prop]: 1,
+                duration: DUR.long,
+                ease: EASE.io,
+                stagger,
+                ...cue,
+            }),
+        { trigger, start, delay }
     );
 }
 

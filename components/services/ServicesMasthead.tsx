@@ -2,12 +2,12 @@
 
 import { MaskLine } from "@/components/motion/Text";
 import { services } from "@/lib/data";
-import { DUR, EASE, gsap, MASK_HIDDEN, useGsap } from "@/lib/motion";
+import { DUR, EASE, gsap, MASK_HIDDEN, pageIntro, useGsap } from "@/lib/motion";
 
 export default function ServicesMasthead() {
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
-        const tl = gsap.timeline({ delay: 0.75, defaults: { ease: EASE.out } });
+        const tl = pageIntro();
 
         tl.fromTo(q(".js-eyebrow .js-mask-inner"), MASK_HIDDEN, { yPercent: 0, duration: 0.8 })
             .fromTo(
