@@ -170,7 +170,7 @@ export default function SelectedWork() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${project.title} — open the live site`}
-                                    className="js-shot group relative block aspect-[16/10] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-7 lg:aspect-auto lg:h-[62svh]"
+                                    className="js-shot group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-7"
                                 >
                                     <div className="js-panel-img absolute inset-0">
                                         <Image
@@ -179,7 +179,7 @@ export default function SelectedWork() {
                                             fill
                                             quality={90}
                                             sizes="(min-width: 1024px) 58vw, 100vw"
-                                            className="object-cover object-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.03]"
+                                            className="object-contain object-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.03]"
                                         />
                                     </div>
                                     <span
