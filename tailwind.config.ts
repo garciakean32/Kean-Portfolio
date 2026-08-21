@@ -36,10 +36,10 @@ const config: Config = {
             },
             fontSize: {
                 // Utility / metadata
-                label: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.14em' }],
+                label: ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.1em' }],
                 meta: ['0.75rem', { lineHeight: '1.5', letterSpacing: '0.08em' }],
                 // Body
-                body: ['clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem)', { lineHeight: '1.75' }],
+                body: ['clamp(1rem, 0.95rem + 0.2vw, 1.0625rem)', { lineHeight: '1.75' }],
                 lead: ['clamp(1.0625rem, 1rem + 0.45vw, 1.375rem)', { lineHeight: '1.65' }],
                 // Display
                 d1: ['clamp(1.5rem, 1.25rem + 1.1vw, 2.25rem)', { lineHeight: '1.25' }],

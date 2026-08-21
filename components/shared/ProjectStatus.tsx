@@ -168,7 +168,7 @@ export default function ProjectStatus({
                     onPointerLeave={() => canHover && setOpen(false)}
                     onFocus={() => canHover && setOpen(true)}
                     onBlur={() => canHover && setOpen(false)}
-                    className="grid size-5 shrink-0 place-items-center rounded-full text-warn/80 transition-colors duration-200 hover:bg-warn/15 hover:text-warn"
+                    className="tap grid size-5 shrink-0 place-items-center rounded-full text-warn/80 transition-colors duration-200 hover:bg-warn/15 hover:text-warn"
                 >
                     <Info aria-hidden="true" className="size-3.5" strokeWidth={2} />
                 </button>

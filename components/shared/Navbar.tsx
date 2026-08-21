@@ -90,7 +90,11 @@ export default function Navbar() {
                     animate={{ paddingTop: condensed ? 14 : 30, paddingBottom: condensed ? 14 : 30 }}
                     transition={t}
                 >
-                    <Link href="/" aria-label={`${personal.name} — home`}>
+                    <Link
+                        href="/"
+                        aria-label={`${personal.name} — home`}
+                        className="tap inline-flex items-center"
+                    >
                         <Logo condensed={condensed} reduce={!!reduce} />
                     </Link>
 
@@ -135,7 +139,7 @@ export default function Navbar() {
                             aria-label="Open menu"
                             aria-expanded={open}
                             aria-controls="mobile-menu"
-                            className="flex h-9 w-9 flex-col items-center justify-center gap-[5px] lg:hidden"
+                            className="-mr-1 flex h-11 w-11 flex-col items-center justify-center gap-[5px] lg:hidden"
                         >
                             <span className="h-px w-5 rounded-full bg-ink" />
                             <span className="h-px w-5 rounded-full bg-ink" />
@@ -181,7 +185,7 @@ function MobileMenu({
                             onClick={onClose}
                             aria-label="Close menu"
                             autoFocus
-                            className="relative h-9 w-9"
+                            className="relative -mr-1 h-11 w-11"
                         >
                             <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-full bg-ink" />
                             <span className="absolute left-1/2 top-1/2 h-px w-5 -translate-x-1/2 -translate-y-1/2 -rotate-45 rounded-full bg-ink" />
@@ -231,7 +235,7 @@ function MobileMenu({
                     <div className="flex items-center justify-between gap-4 px-[var(--gutter)] pb-10 pt-6">
                         <a
                             href={`mailto:${personal.email}`}
-                            className="font-mono text-meta lowercase text-ink-2"
+                            className="tap font-mono text-meta lowercase text-ink-2"
                         >
                             {personal.email}
                         </a>

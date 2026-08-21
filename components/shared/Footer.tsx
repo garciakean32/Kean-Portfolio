@@ -26,7 +26,7 @@ export default function Footer() {
                         </p>
                         <a
                             href={`mailto:${personal.email}`}
-                            className="link-rule mt-3 inline-block font-mono text-meta lowercase text-ink"
+                            className="link-rule tap mt-3 inline-block font-mono text-meta lowercase text-ink"
                         >
                             {personal.email}
                         </a>
@@ -37,12 +37,12 @@ export default function Footer() {
 
                     <nav aria-label="Footer">
                         <h2 className="font-mono text-label uppercase text-ink-3">Index</h2>
-                        <ul className="mt-5 space-y-2.5">
+                        <ul className="mt-5 space-y-5">
                             {routes.map((route) => (
                                 <li key={route.href}>
                                     <Link
                                         href={route.href}
-                                        className="link-rule inline-flex items-baseline gap-2.5 text-body text-ink-2 transition-colors hover:text-ink"
+                                        className="link-rule tap inline-flex items-baseline gap-2.5 text-body text-ink-2 transition-colors hover:text-ink"
                                     >
                                         <span className="font-mono text-label text-ink-3">
                                             {route.index}
@@ -56,14 +56,14 @@ export default function Footer() {
 
                     <div>
                         <h2 className="font-mono text-label uppercase text-ink-3">Elsewhere</h2>
-                        <ul className="mt-5 space-y-2.5">
+                        <ul className="mt-5 space-y-5">
                             {socials.map((social) => (
                                 <li key={social.label}>
                                     <a
                                         href={social.href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="link-rule inline-block text-body text-ink-2 transition-colors hover:text-ink"
+                                        className="link-rule tap inline-block text-body text-ink-2 transition-colors hover:text-ink"
                                     >
                                         {social.label}
                                     </a>
@@ -73,7 +73,7 @@ export default function Footer() {
                     </div>
                 </div>
 
-                <div className="mt-14 flex flex-col gap-3 border-t border-rule pt-6 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-ink-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-14 flex flex-col gap-3 border-t border-rule pt-6 font-mono text-meta uppercase tracking-[0.12em] text-ink-3 sm:flex-row sm:items-center sm:justify-between">
                     <span>
                         © {year} {personal.name}
                     </span>

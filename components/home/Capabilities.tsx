@@ -23,7 +23,7 @@ const OUTLINE = "font-jp font-medium leading-none text-ink/20";
  * introduces the answer without competing with it.
  */
 const KICKER =
-    "font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-3";
+    "font-mono text-meta uppercase tracking-[0.16em] text-ink-3";
 
 /**
  * "What can I do for you?" — a poster, not a list.
@@ -374,7 +374,7 @@ export default function Capabilities() {
                 <div className="js-last-in mt-10">
                     <Link
                         href="/contact"
-                        className="group inline-flex items-center gap-3 font-mono text-label uppercase text-ink"
+                        className="group tap inline-flex items-center gap-3 font-mono text-label uppercase text-ink"
                     >
                         <span className="link-rule">Get in touch</span>
                         <span className="transition-transform duration-500 ease-out group-hover:translate-x-1.5">

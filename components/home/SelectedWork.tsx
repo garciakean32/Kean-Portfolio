@@ -213,7 +213,7 @@ export default function SelectedWork() {
                                         href={project.liveUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="js-panel-in group mt-10 inline-flex items-center gap-3 font-mono text-label uppercase text-ink-3 transition-colors hover:text-ink"
+                                        className="js-panel-in group tap mt-10 inline-flex items-center gap-3 font-mono text-label uppercase text-ink-3 transition-colors hover:text-ink"
                                     >
                                         Visit live site
                                         <span

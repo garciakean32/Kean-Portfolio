@@ -68,7 +68,7 @@ export default function ResumeButton({
                 onClick={() => setOpen(true)}
                 aria-haspopup="dialog"
                 className={cn(
-                    "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded border border-ink px-4 py-2 font-mono text-label uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-on-ink",
+                    "inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded border border-ink px-4 py-2 font-mono text-label uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-on-ink",
                     className
                 )}
             >
