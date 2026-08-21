@@ -531,7 +531,7 @@ export default function Hero() {
                     >
                         <Link
                             href="/projects"
-                            className="group inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded border border-accent bg-accent px-4 py-3 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent md:w-auto md:justify-start"
+                            className="group inline-flex min-h-11 w-full items-center justify-center gap-2.5 whitespace-nowrap rounded border border-accent bg-accent px-4 py-3 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent md:w-auto md:justify-start"
                         >
                             See the work
                             <span className="transition-transform duration-300 group-hover:translate-x-1">
@@ -540,7 +540,7 @@ export default function Hero() {
                         </Link>
                         <Link
                             href="/contact"
-                            className="link-rule inline-flex min-h-11 w-full items-center justify-center px-4 py-3 text-center font-mono text-label uppercase text-ink md:w-auto"
+                            className="link-rule inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap px-4 py-3 text-center font-mono text-label uppercase text-ink md:w-auto"
                         >
                             Start a project
                         </Link>
