@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { motionEnabled } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -143,6 +143,11 @@ const pickNudge = (minDistance = 2, maxDistance = 7) => {
     return { x: dx * distance * norm, y: dy * distance * norm };
 };
 
+/** A burst the page can fire itself, on top of the component's own cadence. */
+export type PrismDriftHandle = {
+    burst: (options?: { multiplier?: number; distance?: number; duration?: number }) => void;
+};
+
 type Props = {
     src: string;
     sizes?: string;
@@ -160,6 +165,8 @@ type Props = {
     /** Seconds of quiet between bursts; a fresh gap is rolled after each one. */
     minDelay?: number;
     maxDelay?: number;
+    /** Handle for firing a burst from outside — see `PrismDriftHandle`. */
+    ref?: Ref<PrismDriftHandle>;
 };
 
 export default function PrismDrift({
@@ -173,6 +180,7 @@ export default function PrismDrift({
     noise = 0.06,
     minDelay = 0.5,
     maxDelay = 6,
+    ref,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -180,6 +188,10 @@ export default function PrismDrift({
     // set by the GL effect once the context is live; the image's load handler
     // calls it too, so whichever of the two lands second uploads the texture
     const uploadRef = useRef<(() => void) | null>(null);
+    // same idea for the imperative burst: the closure that can reach the
+    // render loop's state only exists while the GL effect is mounted
+    const burstRef = useRef<PrismDriftHandle["burst"] | null>(null);
+    useImperativeHandle(ref, () => ({ burst: (options) => burstRef.current?.(options) }), []);
     // read every frame by the draw loop, kept out of React state so a
     // breakpoint crossing never triggers a re-render
     const isDesktopRef = useRef(false);
@@ -287,6 +299,20 @@ export default function PrismDrift({
         };
         uploadRef.current = upload;
         upload();
+
+        // The mega jolt, on demand — the hero's reveal drives its own run of
+        // them rather than waiting on the component's 15-25s schedule. It
+        // borrows the same path, so an ambient jolt cannot land on top of one
+        // of these: the next one is pushed out of the way here too.
+        burstRef.current = ({ multiplier = 4, distance = 34, duration = 90 } = {}) => {
+            const now = performance.now();
+            const nudge = pickNudge(distance * 0.6, distance);
+            state.megaUntil = now + duration;
+            state.megaNextAt = state.megaUntil + rand(15, 25) * 1000;
+            state.megaNudgeX = nudge.x;
+            state.megaNudgeY = nudge.y;
+            state.megaMultiplier = multiplier;
+        };
 
         // keep the drawing surface matched to the element's rendered size
         const resize = () => {
@@ -403,6 +429,7 @@ export default function PrismDrift({
         return () => {
             cancelAnimationFrame(rafId);
             uploadRef.current = null;
+            burstRef.current = null;
             container.style.opacity = "";
             container.style.transform = "";
             resizeObserver.disconnect();

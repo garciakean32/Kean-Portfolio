@@ -61,7 +61,10 @@ export default function Navbar() {
 
     return (
         <>
+            {/* `data-chrome`: held out of frame while the hero's cinematic
+                open runs — see the gate in globals.css. */}
             <header
+                data-chrome
                 className="fixed inset-x-0 top-0 z-50"
                 data-condensed={condensed ? "true" : "false"}
             >
