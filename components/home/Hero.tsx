@@ -403,7 +403,7 @@ export default function Hero() {
             <div className="shell relative z-20 mx-auto flex w-full max-w-shell items-start justify-center pt-[calc(var(--nav-h)+2rem)] lg:justify-between">
                 <p
                     data-glitch="role"
-                    className="js-role text-center font-mono uppercase tracking-[0.14em] text-[0.5625rem] text-ink-2 sm:text-label"
+                    className="js-role text-center font-mono text-label uppercase text-ink-2"
                 >
                     Web Developer
                     <span className="mx-2 text-ink-3">/</span>
@@ -531,7 +531,7 @@ export default function Hero() {
                     >
                         <Link
                             href="/projects"
-                            className="group inline-flex w-full items-center justify-center gap-2.5 rounded border border-accent bg-accent px-4 py-2.5 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent md:w-auto md:justify-start"
+                            className="group inline-flex min-h-11 w-full items-center justify-center gap-2.5 rounded border border-accent bg-accent px-4 py-3 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent md:w-auto md:justify-start"
                         >
                             See the work
                             <span className="transition-transform duration-300 group-hover:translate-x-1">
@@ -540,7 +540,7 @@ export default function Hero() {
                         </Link>
                         <Link
                             href="/contact"
-                            className="link-rule w-full px-4 py-2.5 text-center font-mono text-label uppercase text-ink md:w-auto"
+                            className="link-rule inline-flex min-h-11 w-full items-center justify-center px-4 py-3 text-center font-mono text-label uppercase text-ink md:w-auto"
                         >
                             Start a project
                         </Link>

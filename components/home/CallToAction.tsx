@@ -117,7 +117,7 @@ export default function CallToAction() {
                     </Link>
                     <a
                         href={`mailto:${personal.email}`}
-                        className="link-rule font-mono text-meta lowercase text-ink-2"
+                        className="link-rule tap font-mono text-meta lowercase text-ink-2"
                     >
                         {personal.email}
                     </a>

@@ -146,7 +146,7 @@ export default function ContactPanel() {
                                             href={channel.href}
                                             target={channel.href.startsWith("http") ? "_blank" : undefined}
                                             rel={channel.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                                            className="link-rule block truncate text-body text-ink transition-colors hover:text-accent"
+                                            className="link-rule tap block truncate text-body text-ink transition-colors hover:text-accent"
                                         >
                                             {channel.v}
                                         </a>
@@ -256,7 +256,7 @@ export default function ContactPanel() {
                                             rows={5}
                                             required
                                             placeholder="A short description is fine — what it is, who it is for, and roughly when you need it."
-                                            className="field mt-2.5 resize-none text-body"
+                                            className="field mt-2.5 resize-none text-lead"
                                         />
                                     </div>
 

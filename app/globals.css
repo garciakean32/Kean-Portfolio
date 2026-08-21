@@ -365,6 +365,22 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     transform-origin: left center;
   }
 
+  /* Comfortable touch target for a link that is set small on purpose.
+     The hit area is a pseudo-element, so it costs nothing in layout and
+     leaves `link-rule`'s own underline (an `::after`) where it was. */
+  .tap {
+    position: relative;
+  }
+  .tap::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+  }
+
   /* Form fields read as fields: a real box, not a hairline */
   .field {
     width: 100%;
