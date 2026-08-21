@@ -42,7 +42,7 @@ export default function ServicesMasthead() {
                 <div data-anim="rule-x" className="js-rule mt-12 h-px w-full origin-left bg-rule md:mt-16" aria-hidden="true" />
 
                 <p data-anim="fade" className="js-meta mt-8 max-w-2xl text-pretty text-lead text-ink-2">
-                    Described by what changes for you, not by which framework it is built
+                    Describe your desired website, not the framework it is built
                     on. Most projects are some combination of the entries below.
                 </p>
             </div>
