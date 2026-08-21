@@ -336,7 +336,7 @@ export const journey = {
 
 export const sideProjects = {
     intro:
-        "While I was an intern at MeldCX Philippines working on the company's tasks, I also started developing two personal projects in my free time to further enhance my skills. One is an e-commerce website (K4 Threads), and the other is a website where you build your own AI chatbot (AskBrain) — you will see both of them in my works section below.",
+        "While I was an intern at MeldCX Philippines working on the company's tasks, I also started developing two personal projects in my free time to further enhance my skills. One is an e-commerce website (K4 Threads), and the other is a website where you build your own AI chatbot (AskBrain) — you will see both of them in the projects page.",
     note:
         "Both of those websites have an AI chatbot integrated in the bottom right, running on the AskBrain platform.",
     highlights: [
@@ -346,13 +346,6 @@ export const sideProjects = {
             title: "MeldCX Philippines",
             description:
                 "My first taste of real work — company tasks, real deadlines, and a much better idea of how software is built outside of school.",
-        },
-        {
-            jp: "受託",
-            label: "Freelance",
-            title: "Freelance Development",
-            description:
-                "Worked on an existing website built by another developer — adding features, fixing bugs, and reworking parts of the design, while learning what it takes to build on top of someone else's code.",
         },
         {
             jp: "衣",
@@ -367,6 +360,13 @@ export const sideProjects = {
             title: "AskBrain",
             description:
                 "Made a platform where you feed the chatbot your own knowledge so that it can answer questions the way you would, built so I could learn how to work AI into a site.",
+        },
+        {
+            jp: "受託",
+            label: "Freelance",
+            title: "Freelance Development",
+            description:
+                "Worked on an existing website built by another developer — adding features, fixing bugs, and reworking parts of the design, while learning what it takes to build on top of someone else's code.",
         },
     ],
 };
