@@ -55,8 +55,14 @@ const JP_FONT_URL = `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@
 )}&display=swap`;
 
 /* Runs before first paint. Gates every pre-animation state in globals.css so
-   markup is never left hidden when JS is unavailable or motion is unwanted. */
-const MOTION_GATE = `(function(){try{var m=window.matchMedia('(prefers-reduced-motion: reduce)');var s=function(){document.documentElement.dataset.motion=m.matches?'off':'on'};s();m.addEventListener?m.addEventListener('change',s):m.addListener(s)}catch(e){document.documentElement.dataset.motion='off'}})();`;
+   markup is never left hidden when JS is unavailable or motion is unwanted.
+
+   It also decides, once per real page load, whether the hero gets its
+   cinematic open — see lib/intro.ts. Landing on the home page earns it;
+   arriving anywhere else, or routing home later, does not, and neither does
+   asking for reduced motion. The attribute has to be here rather than in a
+   component so the navbar is already out of frame on the first frame. */
+const MOTION_GATE = `(function(){var d=document.documentElement;try{var m=window.matchMedia('(prefers-reduced-motion: reduce)');var s=function(){d.dataset.motion=m.matches?'off':'on'};s();m.addEventListener?m.addEventListener('change',s):m.addListener(s)}catch(e){d.dataset.motion='off'}var p=location.pathname;d.dataset.intro=d.dataset.motion==='on'&&(p==='/'||p==='')?'pending':'off';})();`;
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://keangarcia.vercel.app"),
@@ -108,6 +114,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         <main id="main">{children}</main>
                         <Footer />
                         <div className="grain" aria-hidden="true" />
+                        <div
+                            className="intro-curtain js-intro-curtain"
+                            data-edge="top"
+                            aria-hidden="true"
+                        />
+                        <div
+                            className="intro-curtain js-intro-curtain"
+                            data-edge="bottom"
+                            aria-hidden="true"
+                        />
                     </PageTransition>
                 </Providers>
             </body>

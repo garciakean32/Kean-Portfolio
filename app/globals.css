@@ -125,6 +125,9 @@
     /* `clip` (not `hidden`) so sticky / ScrollTrigger pinning keeps working */
     overflow-x: clip;
     -webkit-text-size-adjust: 100%;
+    /* Reserve the scrollbar's width permanently so toggling body overflow
+       (Navbar's mobile-menu lock) never shifts the content column. */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -200,6 +203,114 @@ html[data-motion="on"] [data-anim="rule-x"] {
 html[data-motion="on"] [data-anim="rule-y"] {
   transform: scaleY(0);
   transform-origin: top center;
+}
+
+/* ------------------------------------------------------------------
+   Cinematic open
+   A fresh landing on the home page belongs to the hero until it has
+   finished introducing itself: the chrome sits out of frame, and nothing
+   scrolls or takes a click. `data-intro` is stamped on <html> before first
+   paint by the root layout and cleared by the hero — see lib/intro.ts for
+   why it is never set on a client-side route back home.
+
+   `overflow` goes on <html> rather than <body>: <html> is the scroll
+   container here (it carries `overflow-x: clip`), so the usual trick of
+   hiding the body's overflow would not propagate to the viewport.
+
+   Held through "reveal", not dropped at it. A visible scrollbar is a real
+   handle: dragging its thumb moves `scrollTop` directly, without a wheel,
+   touch, or key event for Lenis's `stop()` or `blockScrollKeys` (both in
+   lib/intro.ts) to ever see, so it was the one way through everything else
+   still locking the page down during that window. Nothing watches for the
+   thumb itself, so the only reliable fix is not giving it anything to grab
+   — the scrollbar stays gone, chrome and all, until "off". */
+
+html[data-motion="on"][data-intro="pending"],
+html[data-motion="on"][data-intro="running"],
+html[data-motion="on"][data-intro="reveal"] {
+  overflow: hidden;
+}
+
+html[data-motion="on"][data-intro="pending"] body,
+html[data-motion="on"][data-intro="running"] body,
+html[data-motion="on"][data-intro="reveal"] body {
+  pointer-events: none;
+}
+
+/* Nothing but the hero, on nothing but its own paper: two sheets in the
+   hero's own background colour close over the page like a pair of curtains,
+   and the hero alone is lifted over them. Always in the DOM and always
+   inert, so there is nothing to mount or hydrate when it is wanted.
+
+   No transition here — Hero.tsx pulls these open with GSAP, timed to the
+   portrait's own glitch reveal rather than running on its own clock, and
+   sets their final off-screen position itself before `data-intro` ever
+   flips to "off". By the time this rule stops applying they are already
+   fully clear, so the plain visibility switch is never seen happening. */
+.intro-curtain {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 51%;
+  z-index: 90;
+  pointer-events: none;
+  visibility: hidden;
+  background-color: rgb(var(--paper));
+}
+
+.intro-curtain[data-edge="top"] {
+  top: 0;
+}
+
+.intro-curtain[data-edge="bottom"] {
+  bottom: 0;
+}
+
+html[data-motion="on"][data-intro="pending"] .intro-curtain,
+html[data-motion="on"][data-intro="running"] .intro-curtain,
+html[data-motion="on"][data-intro="reveal"] .intro-curtain {
+  visibility: visible;
+}
+
+html[data-motion="on"][data-intro="pending"] [data-stage],
+html[data-motion="on"][data-intro="running"] [data-stage],
+html[data-motion="on"][data-intro="reveal"] [data-stage] {
+  z-index: 95;
+}
+
+/* The navbar is plain CSS, on purpose — no GSAP hooking into it, no
+   glitch, nothing keyed to the portrait's timing. It only ever needs to
+   answer one question ("is `data-intro` still 'pending' or 'running'?"),
+   and CSS already answers that reliably on its own.
+
+   It's gated on those two states only, not "reveal" — Hero.tsx moves the
+   attribute to "reveal" the instant the portrait's own glitch reveal
+   starts (see the "glitch" label there), which is what actually lets this
+   rule stop applying and the transition below take over. Everything else
+   the full "pending"/"running"/"reveal" trio still locks down (scroll, the
+   stage, the curtains) stays exactly as locked as it was — this is the one
+   thing that gets to arrive early.
+
+   `z-index` still has to clear the stage and the curtains while either is
+   still up, which "reveal" is defined to mean; it falls back to its
+   ordinary `z-50` on its own once the attribute finally reaches "off" and
+   neither rule below applies any more. */
+[data-chrome] {
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+}
+
+html[data-motion="on"][data-intro="pending"] [data-chrome],
+html[data-motion="on"][data-intro="running"] [data-chrome],
+html[data-motion="on"][data-intro="reveal"] [data-chrome] {
+  z-index: 96;
+}
+
+html[data-motion="on"][data-intro="pending"] [data-chrome],
+html[data-motion="on"][data-intro="running"] [data-chrome] {
+  opacity: 0;
+  transform: translateY(-100%);
+  pointer-events: none;
+  transition: none;
 }
 
 /* ------------------------------------------------------------------

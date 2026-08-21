@@ -22,6 +22,17 @@ export default function SmoothScroll() {
         });
         setLenis(lenis);
 
+        // Born stopped when the cinematic open is still holding the page:
+        // `overflow: hidden` only blocks the native scrollbar/wheel/keyboard
+        // path, not a programmatic `scrollTop` write — which is exactly what
+        // Lenis does internally on a wheel event once it decides to handle
+        // one. An active Lenis would happily scroll straight through the CSS
+        // lock. This runs in the same synchronous effect that creates the
+        // instance, so there's no frame where a wheel event could reach it
+        // first — unlike reaching in from outside (see `claimIntro`), which
+        // has to wait for this component to exist at all.
+        if (document.documentElement.dataset.intro !== "off") lenis.stop();
+
         lenis.on("scroll", ScrollTrigger.update);
 
         const update = (time: number) => lenis.raf(time * 1000);
