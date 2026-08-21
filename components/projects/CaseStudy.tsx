@@ -98,7 +98,7 @@ export default function CaseStudy({
                             alt={`${project.title} — the live site`}
                             fill
                             sizes="(min-width: 1024px) 50vw, 100vw"
-                            className="object-cover object-top"
+                            className="object-contain object-top"
                         />
                     </div>
 
