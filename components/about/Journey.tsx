@@ -204,14 +204,14 @@ export default function Journey() {
                     <span className={cn("js-exp-aside", JP)}>経験</span>
                 </div>
 
-                <div className="mt-16 grid gap-12 md:mt-24 lg:grid-cols-12 lg:gap-x-10">
-                    <p className="js-exp-line font-display text-d2 font-bold tracking-[-0.03em] text-ink lg:col-span-6">
+                <div className="mx-auto mt-16 flex max-w-3xl flex-col items-center md:mt-24">
+                    <p className="js-exp-line text-center font-display text-d2 font-bold tracking-[-0.03em] text-ink">
                         <MaskLine>Where my experience</MaskLine>
                         <MaskLine className="font-serif font-normal italic text-ink-2">
                             actually began.
                         </MaskLine>
                     </p>
-                    <p className="js-exp-aside max-w-measure text-body text-ink-2 lg:col-span-5 lg:col-start-8 lg:pt-3">
+                    <p className="js-exp-aside mt-8 w-full text-left text-body text-ink-2">
                         {sideProjects.intro}
                     </p>
                 </div>
