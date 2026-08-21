@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MaskLine } from "@/components/motion/Text";
 import { personal } from "@/lib/data";
-import { DUR, EASE, gsap, MASK_HIDDEN, useGsap } from "@/lib/motion";
+import { DUR, EASE, gsap, MASK_HIDDEN, motionEnabled, useGsap } from "@/lib/motion";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -31,7 +31,7 @@ export default function ContactPanel() {
 
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
-        const tl = gsap.timeline({ delay: 0.75, defaults: { ease: EASE.out } });
+        const tl = gsap.timeline({ delay: 0.75, defaults: { ease: EASE.out }, paused: true });
 
         tl.fromTo(q(".js-eyebrow .js-mask-inner"), MASK_HIDDEN, { yPercent: 0, duration: 0.8 })
             .fromTo(
@@ -47,7 +47,38 @@ export default function ContactPanel() {
                 "-=0.85"
             )
             .fromTo(q(".js-soft"), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.85, stagger: 0.06 }, "-=1.05");
+
+        // Start on the next frame rather than on creation. SmoothScroll turns
+        // GSAP's lag smoothing off so Lenis stays in step, which means the
+        // first tick after a client-side route change advances everything
+        // running by the whole navigation stall — RSC fetch, mount, hydration.
+        // This timeline is built during that stall, so it was being fast
+        // forwarded past its delay and most of its reveal before the
+        // transition panel even lifted. A hard refresh has no stall, which is
+        // why the page only ever animated when it was reloaded.
+        requestAnimationFrame(() => tl.play());
     });
+
+    // The entrance timeline owns the first reveal, but only that one: the
+    // fields are hidden by the `data-anim="fade"` gate in globals.css, and
+    // "Send another" mounts brand new field nodes that nothing has tweened.
+    // This has to hang off the form element itself rather than an effect
+    // keyed on `status` — AnimatePresence is in `mode="wait"`, so the form is
+    // still unmounted when a status effect would run, and `.js-field` would
+    // match nothing. A ref callback fires exactly when the form is attached.
+    const enteredRef = useRef(false);
+    useEffect(() => {
+        enteredRef.current = true;
+    }, []);
+
+    const revealFields = useCallback((formEl: HTMLFormElement | null) => {
+        if (!formEl || !enteredRef.current || !motionEnabled()) return;
+        gsap.fromTo(
+            formEl.querySelectorAll(".js-field"),
+            { opacity: 0, y: 26 },
+            { opacity: 1, y: 0, duration: 0.9, stagger: 0.09, ease: EASE.out }
+        );
+    }, []);
 
     const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -182,6 +213,7 @@ export default function ContactPanel() {
                             ) : (
                                 <motion.form
                                     key="form"
+                                    ref={revealFields}
                                     onSubmit={submit}
                                     noValidate
                                     initial={false}
