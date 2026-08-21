@@ -196,7 +196,7 @@ export default function Capabilities() {
 
                 <div className="js-head-meta mt-12 flex md:justify-end">
                     <p className="max-w-measure text-body text-ink-2 md:text-right">
-                        Described by what changes for you rather than by what it is
+                        Describe your desired website rather than what it is
                         built with. Most projects turn out to be some combination of
                         the answers below.
                     </p>
