@@ -92,15 +92,21 @@ export default function CaseStudy({
                         flipped && "lg:[&>*:first-child]:order-2"
                     )}
                 >
-                    <div className="js-shot relative aspect-[4/3] w-full overflow-hidden rounded-md bg-paper-3">
+                    <a
+                        href={project.liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${project.title} — open the live site`}
+                        className="js-shot group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-paper-3"
+                    >
                         <Image
                             src={project.image}
                             alt={`${project.title} — the live site`}
                             fill
                             sizes="(min-width: 1024px) 50vw, 100vw"
-                            className="object-contain object-top"
+                            className="object-contain object-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.03]"
                         />
-                    </div>
+                    </a>
 
                     <div>
                         <div className="js-index flex items-baseline gap-4">
