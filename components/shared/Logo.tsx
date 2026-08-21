@@ -37,10 +37,10 @@ export default function Logo({
                     animate={{ opacity: condensed ? 1 : 0 }}
                     transition={t}
                 >
-                    <span className="font-display text-[1.4rem] font-extrabold leading-none tracking-[-0.045em] text-ink">
-                        KEAN
+                    <span className="font-display text-[1.0625rem] font-extrabold leading-none tracking-[-0.045em] text-ink">
+                        Kean
                     </span>
-                    <span className="ml-1 font-jp text-[1.4rem] font-extrabold leading-none text-accent">
+                    <span className="font-jp text-[1.0625rem] font-extrabold leading-none text-accent">
                         一
                     </span>
                 </motion.span>
