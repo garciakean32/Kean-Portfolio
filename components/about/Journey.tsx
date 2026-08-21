@@ -297,7 +297,7 @@ function Chapter({ step, index, art }: { step: Step; index: number; art: Art }) 
         return (
             <article className="js-chapter shell mx-auto max-w-shell">
                 <div className="grid gap-10 lg:grid-cols-12 lg:gap-x-10">
-                    <figure className="lg:col-span-8 lg:row-start-1">
+                    <figure className="order-2 lg:order-1 lg:col-span-8 lg:row-start-1">
                         <div
                             className={cn(
                                 "js-figure relative w-full overflow-hidden rounded-md bg-paper-3",
@@ -317,7 +317,7 @@ function Chapter({ step, index, art }: { step: Step; index: number; art: Art }) 
                         </figcaption>
                     </figure>
 
-                    <div className="lg:col-span-4 lg:col-start-9 lg:row-start-1 lg:pt-20">
+                    <div className="order-1 lg:order-2 lg:col-span-4 lg:col-start-9 lg:row-start-1 lg:pt-20">
                         {marker}
                         <h3 className="js-title mt-8 font-display text-d2 font-medium tracking-[-0.025em] text-ink">
                             <MaskLine>{step.title}</MaskLine>

@@ -62,7 +62,7 @@ export default function Story() {
                 <div className="mt-16 grid gap-12 md:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-20">
                     <div className="max-w-measure">
                         <p className="js-para text-body text-ink-2">{personal.bio}</p>
-                        <p className="js-para mt-10 rounded-r border-l-2 border-accent bg-paper-2 py-4 pl-5 pr-4 font-serif text-lead text-ink">
+                        <p className="js-para mt-10 hidden rounded-r border-l-2 border-accent bg-paper-2 py-4 pl-5 pr-4 font-serif text-lead text-ink lg:block">
                             The part I actually enjoy is watching a site take shape — the
                             gap between an idea described out loud and the thing you can
                             open in a browser.
@@ -83,13 +83,22 @@ export default function Story() {
                             Information Technology — the finish line
                         </figcaption>
                     </figure>
+
+                    {/* Same quote as above — shown here instead, below the
+                        photo, on mobile only; `lg:hidden` drops it once the
+                        two-column layout has room to set it beside the bio. */}
+                    <p className="js-para rounded-r border-l-2 border-accent bg-paper-2 py-4 pl-5 pr-4 font-serif text-lead text-ink lg:hidden">
+                        The part I actually enjoy is watching a site take shape — the
+                        gap between an idea described out loud and the thing you can
+                        open in a browser.
+                    </p>
                 </div>
 
                 {/* Where it started — the school block leads from the left, a
                     wider figure than the graduation shot so the two portraits
                     never read as the same column twice. */}
                 <div className="js-school mt-20 grid gap-10 md:mt-28 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:items-center lg:gap-20">
-                    <figure>
+                    <figure className="order-2 lg:order-1">
                         <div className="js-shot relative aspect-[4/5] w-full overflow-hidden rounded-md bg-paper-3">
                             <Image
                                 src="/images/kean school.png"
@@ -104,7 +113,7 @@ export default function Story() {
                         </figcaption>
                     </figure>
 
-                    <div className="js-school-aside max-w-measure">
+                    <div className="js-school-aside order-1 max-w-measure lg:order-2">
                         <span className="font-mono text-label uppercase text-ink-3">
                             Where it started
                         </span>
@@ -132,7 +141,7 @@ export default function Story() {
                         <p className="mt-5 font-serif text-d1 text-ink">
                             {personal.bioExtended}
                         </p>
-                        <p className="mt-6 text-body text-ink-2">
+                        <p className="mt-6 hidden text-body text-ink-2 lg:block">
                             I tend to get invested in the things I enjoy — whether it's playing a game, following a good story, or building a website.
                         </p>
                     </div>
@@ -148,6 +157,13 @@ export default function Story() {
                             />
                         </div>
                     </figure>
+
+                    {/* Same sentence as above — shown here instead, below the
+                        photo, on mobile only. See the kean-grad quote above
+                        for why. */}
+                    <p className="js-aside text-body text-ink-2 lg:hidden">
+                        I tend to get invested in the things I enjoy — whether it's playing a game, following a good story, or building a website.
+                    </p>
                 </div>
 
                 {/* The close — same treatment as Stack's closing statement,
