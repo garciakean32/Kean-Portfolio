@@ -85,47 +85,18 @@ export function useGsap<T extends HTMLElement = HTMLDivElement>(
     return scope;
 }
 
-/* ------------------------------------------------------------------
-   Page entrance — what opens a page that is not the home page
-   ------------------------------------------------------------------ */
-
-/** How long a page waits before it starts: the route panel's own exit. */
-const INTRO_DELAY = 0.75;
-
 /**
- * The timeline a page's first section opens with.
- *
- * Paused on creation and started on the next frame rather than immediately.
- * SmoothScroll turns GSAP's lag smoothing off so Lenis stays in step, which
- * means the first tick after a client-side route change advances everything
- * already running by the whole navigation stall — RSC fetch, mount,
- * hydration. A timeline built during that stall is fast forwarded past its
- * delay and most of its reveal before the transition panel has even lifted,
- * which is why these mastheads only ever animated on a hard refresh.
+ * How long a reveal already on screen when the page loads holds before it
+ * opens: long enough that the hero is visibly first, so the page still reads
+ * top to bottom rather than back to front.
  */
-export function pageIntro(vars: gsap.TimelineVars = {}) {
-    const tl = gsap.timeline({
-        delay: INTRO_DELAY,
-        defaults: { ease: EASE.out },
-        ...vars,
-        paused: true,
-    });
-    requestAnimationFrame(() => tl.play());
-    return tl;
-}
+const INTRO_HOLD = 1.2;
 
 /* ------------------------------------------------------------------
    Recipes — the vocabulary sections compose from
    ------------------------------------------------------------------ */
 
 type At = { trigger?: Element | string; start?: string; delay?: number };
-
-/**
- * How long a reveal already on screen when the page arrives holds before it
- * opens: past the route panel's exit, and far enough into the masthead's own
- * entrance that the page still reads top to bottom rather than back to front.
- */
-const INTRO_HOLD = INTRO_DELAY + 0.45;
 
 /** The viewport line a `"top NN%"` start resolves to, in pixels. */
 const startLine = (start: string) => {
@@ -137,22 +108,18 @@ const startLine = (start: string) => {
  * Wires a reveal to whatever should cue it.
  *
  * Normally that is the scroll, and this hands GSAP an ordinary
- * `scrollTrigger`. But a section sitting in the first screen when a page
- * arrives has no scroll to wait for: ScrollTrigger fires it the instant it is
- * created, which is while the route panel is still covering the page — so the
- * reveal plays behind the panel and is over before anyone can see it. That is
- * the whole of the "it just appears" bug on a short viewport, where the
- * section under the masthead is already in frame. Those run on the page's own
- * entrance clock instead, behind the masthead, which is also what keeps a page
- * reading top to bottom.
+ * `scrollTrigger`. But a section already sitting in the first screen at load
+ * has no scroll to wait for: ScrollTrigger fires it the instant it is created,
+ * so on a short viewport the block under the hero has finished revealing
+ * before anyone has looked at it. Those hold for `INTRO_HOLD` instead and open
+ * behind the hero, which is what keeps the page reading top to bottom.
  *
  * A plain `delay` cannot stand in for this. ScrollTrigger pauses the tween it
  * is handed and re-anchors it when it plays, which drops the delay entirely —
  * so the hold only means anything once the trigger is out of the picture.
  *
- * The recipes below all go through this. Exported for the one-off reveals
- * that do not fit any of them — a section directly under a masthead has to
- * wait its turn whatever shape its animation happens to be.
+ * The recipes below all go through this. Exported for the one-off reveals that
+ * do not fit any of them.
  */
 export function reveal(
     make: (vars: gsap.TweenVars) => gsap.core.Tween,
@@ -193,16 +160,6 @@ export function reveal(
  * `[data-anim="mask"]` rule in globals.css.
  */
 export const MASK_HIDDEN = { yPercent: 135, y: 0 } as const;
-
-/**
- * The counterpart to `MASK_HIDDEN`, for the rare case of revealing a mask
- * with a bare `.set()` instead of a `fromTo`. Zeroing only `yPercent` is not
- * enough: GSAP decomposes the CSS-set `translateY(135%)` into its own
- * internal x/y/xPercent/yPercent state on first touch, and a `.set` that
- * only mentions `yPercent` leaves whatever pixel `y` it inferred from that
- * matrix untouched, parking the line a little short of fully visible.
- */
-export const MASK_VISIBLE = { yPercent: 0, y: 0 } as const;
 
 /** Masked lines/words rise into place. Mirrors the CSS pre-state exactly. */
 export function riseMasks(
@@ -273,51 +230,6 @@ export function wipeIn(
     );
 }
 
-/**
- * A liquid, irregular reveal — content resolves out of a soft, uneven clip and
- * a blur into its normal rectangular, sharp state, reading as something
- * settling into focus rather than sliding or fading in.
- *
- * Both clip-path polygons carry the same six points in the same order, so
- * GSAP's plain numeric interpolation between them stays coherent. The target
- * polygon's edge midpoints are collinear with its corners, so it settles into
- * an ordinary rectangle even though the point count still matches the
- * irregular starting shape.
- */
-export function morphIn(
-    targets: gsap.TweenTarget,
-    { trigger, start = "top 82%", delay = 0, stagger = 0.12 }: At & { stagger?: number } = {}
-) {
-    return reveal(
-        (cue) =>
-            gsap.fromTo(
-                targets,
-                {
-                    clipPath: "polygon(9% 24%, 46% 4%, 93% 15%, 89% 79%, 51% 98%, 5% 84%)",
-                    scale: 0.92,
-                    filter: "blur(16px)",
-                    opacity: 0,
-                },
-                {
-                    clipPath: "polygon(0% 0%, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)",
-                    scale: 1,
-                    filter: "blur(0px)",
-                    opacity: 1,
-                    duration: DUR.long,
-                    ease: EASE.io,
-                    stagger,
-                    // A settled clip-path still clips to its own polygon, which
-                    // would crop anything the element grows or rotates outside
-                    // it later — same reasoning `wipeIn` clears its clip-path
-                    // when it finishes.
-                    onComplete: () => gsap.set(targets, { clearProps: "clipPath,filter" }),
-                    ...cue,
-                }
-            ),
-        { trigger, start, delay }
-    );
-}
-
 /** Hairline rules draw out from their origin. */
 export function drawRule(
     targets: gsap.TweenTarget,
@@ -362,9 +274,19 @@ export function sideScroll(
 ) {
     const distance = () => Math.max(0, track.scrollWidth - stage.clientWidth);
 
-    // `gsap.set`, not a direct style write: this runs inside the caller's
-    // `gsap.context`, so the height comes back off on revert when the media
-    // query stops matching and the panels go back to a plain stack.
+    // The first of these runs inside the caller's `gsap.context` and is
+    // recorded for revert. None of the rest are: `onRefreshInit` fires them
+    // from ScrollTrigger's own callback long after that context finished
+    // setting up, so GSAP has no record of them and reverting the context
+    // leaves the last one's height on the element.
+    //
+    // Reverting the context does undo the first write, and its recorded
+    // starting value is "no inline height", so the height does come off. The
+    // callers clear it again anyway on the way in to their stacked layout —
+    // see the `(max-width: 1023.98px)` branches in Work.tsx and Services.tsx —
+    // so that a section which is no longer scrolling sideways cannot be left
+    // holding a scroll budget for a track that no longer exists, whatever
+    // order two contexts happen to revert and activate in.
     const size = () => gsap.set(section, { height: stage.offsetHeight + distance() });
     size();
 

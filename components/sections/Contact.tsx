@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MaskLine } from "@/components/motion/Text";
 import { personal } from "@/lib/data";
-import { DUR, EASE, gsap, MASK_HIDDEN, motionEnabled, pageIntro, useGsap } from "@/lib/motion";
+import { fadeUp, gsap, riseMasks, useGsap } from "@/lib/motion";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -21,69 +21,66 @@ const channels = [
 ];
 
 /**
- * The contact page. Fields are drawn as real boxes so there is no doubt about
- * where to type, and they rise into place one after another as the page opens.
+ * The close and the form in one place, since there is only one page and no
+ * reason to ask twice.
+ *
+ * This is `SlideOver`'s incoming region: it climbs over the light region
+ * rather than being uncovered by it, so it travels a viewport at ordinary
+ * scroll speed and its own position is an honest reference. Everything here is
+ * choreographed across that climb — the margins draw inward on the mark first,
+ * then the statement, then the form — so nothing resolves before there is
+ * anything to see it resolve against.
+ *
+ * The right-hand column fades in as one block rather than field by field:
+ * "Send another" swaps the form out for a confirmation and back, and a
+ * per-field reveal would leave the second set of fields sitting at the
+ * pre-animation opacity nothing had tweened.
  */
-export default function ContactPanel() {
+export default function Contact() {
     const [form, setForm] = useState({ name: "", email: "", message: "" });
     const [status, setStatus] = useState<Status>("idle");
     const reduce = useReducedMotion();
 
-    // The entrance timeline owns the first reveal, but only that one: the
-    // fields are hidden by the `data-anim="fade"` gate in globals.css, and
-    // "Send another" mounts brand new field nodes that nothing has tweened.
-    // This has to hang off the form element itself rather than an effect
-    // keyed on `status` — AnimatePresence is in `mode="wait"`, so the form is
-    // still unmounted when a status effect would run, and `.js-field` would
-    // match nothing. A ref callback fires exactly when the form is attached.
-    //
-    // Flipped when the entrance actually finishes, not on mount: a ref
-    // callback fires again whenever the form node is replaced, which dev's
-    // Strict Mode does before the entrance has even started. Gated on mount,
-    // that phantom re-attach fired this reveal straight away and the fields
-    // arrived a beat ahead of everything above them.
-    const enteredRef = useRef(false);
-
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
-        const tl = pageIntro({
-            onComplete: () => {
-                enteredRef.current = true;
-            },
-        });
 
-        // Document order throughout — eyebrow, title, the column on the left,
-        // then the form beside it — so the page opens top to bottom rather
-        // than letting the form beat the copy it belongs to.
-        tl.fromTo(q(".js-eyebrow .js-mask-inner"), MASK_HIDDEN, { yPercent: 0, duration: 0.8 })
-            .fromTo(
-                q(".js-title .js-mask-inner"),
-                MASK_HIDDEN,
-                { yPercent: 0, duration: DUR.long, stagger: 0.1 },
-                "-=0.55"
-            )
-            .fromTo(
-                q(".js-soft"),
-                { opacity: 0, y: 22 },
-                { opacity: 1, y: 0, duration: 0.85 },
-                "-=0.95"
-            )
-            .fromTo(
-                q(".js-field"),
-                { opacity: 0, y: 26 },
-                { opacity: 1, y: 0, duration: 0.9, stagger: 0.09 },
-                "-=0.6"
-            );
-    });
-
-    const revealFields = useCallback((formEl: HTMLFormElement | null) => {
-        if (!formEl || !enteredRef.current || !motionEnabled()) return;
         gsap.fromTo(
-            formEl.querySelectorAll(".js-field"),
-            { opacity: 0, y: 26 },
-            { opacity: 1, y: 0, duration: 0.9, stagger: 0.09, ease: EASE.out }
+            q(".js-converge-l"),
+            { xPercent: -60, opacity: 0 },
+            {
+                xPercent: 0,
+                opacity: 1,
+                ease: "none",
+                scrollTrigger: { trigger: el, start: "top 80%", end: "top 25%", scrub: 0.7 },
+            }
         );
-    }, []);
+        gsap.fromTo(
+            q(".js-converge-r"),
+            { xPercent: 60, opacity: 0 },
+            {
+                xPercent: 0,
+                opacity: 1,
+                ease: "none",
+                scrollTrigger: { trigger: el, start: "top 80%", end: "top 25%", scrub: 0.7 },
+            }
+        );
+
+        gsap.fromTo(
+            q(".js-mark"),
+            { scale: 1.35, opacity: 0, letterSpacing: "0.9em" },
+            {
+                scale: 1,
+                opacity: 1,
+                letterSpacing: "0.3em",
+                duration: 0.9,
+                ease: "power4.out",
+                scrollTrigger: { trigger: el, start: "top 60%" },
+            }
+        );
+
+        riseMasks(q(".js-title .js-mask-inner"), { trigger: el, start: "top 55%", stagger: 0.09 });
+        fadeUp(q(".js-soft"), { trigger: el, start: "top 40%", stagger: 0.12 });
+    });
 
     const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -112,36 +109,44 @@ export default function ContactPanel() {
 
     return (
         <section
+            id="contact"
             ref={scope}
-            className="bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[calc(var(--nav-h)+4rem)] md:pb-32 md:pt-[calc(var(--nav-h)+6rem)]"
+            className="relative overflow-hidden bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[14vh] md:pb-32 md:pt-[18vh]"
         >
             <div className="shell mx-auto max-w-shell">
-                <div className="js-eyebrow">
-                    <MaskLine className="font-mono text-label uppercase text-ink-3">
-                        05 / Contact — {personal.location} · {personal.timezone}
-                    </MaskLine>
+                <div className="flex items-center justify-between gap-6">
+                    <span
+                        aria-hidden="true"
+                        className="js-converge-l h-px flex-1 origin-left bg-rule-strong"
+                    />
+                    <span className="js-mark shrink-0 font-jp text-sm font-medium tracking-[0.3em] text-ink-3">
+                        連絡
+                    </span>
+                    <span
+                        aria-hidden="true"
+                        className="js-converge-r h-px flex-1 origin-right bg-rule-strong"
+                    />
                 </div>
 
-                <h1 className="js-title mt-8 font-display font-extrabold tracking-[-0.04em] text-ink">
-                    <MaskLine className="text-d4">Tell me what</MaskLine>
-                    <MaskLine className="pl-[10%] font-serif text-d4 font-normal text-ink-2">
-                        you need built
+                <h2 className="js-title mt-12 text-center font-display text-d3 font-bold tracking-[-0.035em] text-ink md:mt-16">
+                    <MaskLine>Have something</MaskLine>
+                    <MaskLine className="font-serif font-normal italic text-ink-2">
+                        you want built?
                     </MaskLine>
-                </h1>
+                </h2>
 
-                <div className="mt-16 grid gap-16 md:mt-24 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-24">
+                <div className="mt-14 grid gap-12 md:mt-20 lg:grid-cols-12 lg:gap-x-16">
                     {/* Direct channels */}
-                    <div data-anim="fade" className="js-soft">
-                        <p className="max-w-measure text-pretty text-lead text-ink-2">
-                            A rough idea is enough to start. Tell me what you are trying to
-                            do and I will tell you what it would take.
+                    <div data-anim="fade" className="js-soft lg:col-span-5">
+                        <p className="max-w-measure text-lead text-ink-2">
+                            A rough idea is enough to start.
                         </p>
 
                         <dl className="mt-12 border-t border-rule">
                             {channels.map((channel) => (
                                 <div
                                     key={channel.k}
-                                    className="flex items-baseline justify-between gap-6 border-b border-rule py-4"
+                                    className="flex items-baseline justify-between gap-6 border-b border-rule py-5"
                                 >
                                     <dt className="font-mono text-label uppercase text-ink-3">
                                         {channel.k}
@@ -149,8 +154,14 @@ export default function ContactPanel() {
                                     <dd className="min-w-0">
                                         <a
                                             href={channel.href}
-                                            target={channel.href.startsWith("http") ? "_blank" : undefined}
-                                            rel={channel.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                                            target={
+                                                channel.href.startsWith("http") ? "_blank" : undefined
+                                            }
+                                            rel={
+                                                channel.href.startsWith("http")
+                                                    ? "noopener noreferrer"
+                                                    : undefined
+                                            }
                                             className="link-rule tap block truncate text-body text-ink transition-colors hover:text-accent"
                                         >
                                             {channel.v}
@@ -167,22 +178,31 @@ export default function ContactPanel() {
                     </div>
 
                     {/* Form */}
-                    <div className="relative">
+                    <div data-anim="fade" className="js-soft relative lg:col-span-6 lg:col-start-7">
                         <AnimatePresence mode="wait">
                             {status === "sent" ? (
                                 <motion.div
                                     key="sent"
                                     initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: reduce ? 0.15 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+                                    transition={{
+                                        duration: reduce ? 0.15 : 0.6,
+                                        ease: [0.16, 1, 0.3, 1],
+                                    }}
                                     className="border-t border-rule pt-10"
                                     role="status"
                                 >
                                     <motion.span
                                         className="inline-block"
-                                        initial={reduce ? false : { scale: 2.2, rotate: -12, opacity: 0 }}
+                                        initial={
+                                            reduce ? false : { scale: 2.2, rotate: -12, opacity: 0 }
+                                        }
                                         animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                                        transition={{ duration: reduce ? 0 : 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+                                        transition={{
+                                            duration: reduce ? 0 : 0.7,
+                                            ease: [0.16, 1, 0.3, 1],
+                                            delay: 0.1,
+                                        }}
                                     >
                                         <svg
                                             aria-hidden="true"
@@ -200,17 +220,16 @@ export default function ContactPanel() {
                                             />
                                         </svg>
                                     </motion.span>
-                                    <h2 className="mt-8 font-display text-d2 font-medium text-ink">
+                                    <h3 className="mt-8 font-display text-d2 font-semibold text-ink">
                                         Message sent.
-                                    </h2>
-                                    <p className="mt-4 max-w-measure text-body text-ink-2">
-                                        It landed in my inbox. I read everything and reply from{" "}
-                                        {personal.email}, usually within a day or two.
+                                    </h3>
+                                    <p className="mt-5 max-w-measure text-body text-ink-2">
+                                        It landed in my inbox. I usually reply within a day or two.
                                     </p>
                                     <button
                                         type="button"
                                         onClick={() => setStatus("idle")}
-                                        className="link-rule mt-8 font-mono text-label uppercase text-ink"
+                                        className="link-rule tap mt-8 font-mono text-label uppercase text-ink"
                                     >
                                         Send another
                                     </button>
@@ -218,7 +237,6 @@ export default function ContactPanel() {
                             ) : (
                                 <motion.form
                                     key="form"
-                                    ref={revealFields}
                                     onSubmit={submit}
                                     noValidate
                                     initial={false}
@@ -226,7 +244,7 @@ export default function ContactPanel() {
                                     className="grid gap-7"
                                 >
                                     {fields.map((field) => (
-                                        <div key={field.name} data-anim="fade" className="js-field">
+                                        <div key={field.name}>
                                             <label
                                                 htmlFor={field.name}
                                                 className="block font-mono text-label uppercase text-ink-3"
@@ -246,7 +264,7 @@ export default function ContactPanel() {
                                         </div>
                                     ))}
 
-                                    <div data-anim="fade" className="js-field">
+                                    <div>
                                         <label
                                             htmlFor="message"
                                             className="block font-mono text-label uppercase text-ink-3"
@@ -260,16 +278,16 @@ export default function ContactPanel() {
                                             onChange={update}
                                             rows={5}
                                             required
-                                            placeholder="A short description is fine — what it is, who it is for, and roughly when you need it."
-                                            className="field mt-2.5 resize-none text-lead"
+                                            placeholder="What it is, who it is for, and roughly when you need it."
+                                            className="field mt-2.5 resize-none text-lead placeholder:text-body"
                                         />
                                     </div>
 
-                                    <div data-anim="fade" className="js-field flex flex-wrap items-center gap-6">
+                                    <div className="flex flex-wrap items-center gap-6">
                                         <button
                                             type="submit"
                                             disabled={status === "sending"}
-                                            className="group inline-flex items-center gap-3 rounded border border-ink bg-ink px-8 py-4 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-ink disabled:opacity-50"
+                                            className="group inline-flex min-h-11 items-center gap-3 rounded border border-ink bg-ink px-8 py-4 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-ink disabled:opacity-50"
                                         >
                                             {status === "sending" ? "Sending" : "Send message"}
                                             <span className="transition-transform duration-300 group-hover:translate-x-1">
