@@ -160,15 +160,6 @@ export const experience = [
     },
 ];
 
-/* The story again in pictures. One ratio and one size for all three, so the
-   row reads as a set rather than three photographs that happen to be near
-   each other — the thing that made the old chapter layout restless. */
-export const experienceFrames = [
-    { src: "/images/gray mountain.jpg", caption: "Long before any of it had a name" },
-    { src: "/images/kean school.png", caption: "USTP — The college era" },
-    { src: "/images/gray fuji.jpg", caption: "Same climb, better shoes" },
-];
-
 /* ------------------------------------------------------------------
    Hero — the poster's small stacked list, bottom left
    ------------------------------------------------------------------ */

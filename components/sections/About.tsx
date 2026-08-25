@@ -4,7 +4,7 @@ import Image from "next/image";
 import ImageBand from "@/components/shared/ImageBand";
 import SectionMark from "@/components/shared/SectionMark";
 import { MaskLine } from "@/components/motion/Text";
-import { experience, experienceFrames, facts, personal, skills } from "@/lib/data";
+import { experience, facts, personal, skills } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { drawRule, EASE, fadeUp, gsap, riseMasks, useGsap } from "@/lib/motion";
 
@@ -105,8 +105,6 @@ export default function About() {
             drawRule(m(".js-stop-rule"), { trigger: stop, start: "top 90%" });
             fadeUp(m(".js-stop-in"), { trigger: stop, start: "top 88%", stagger: 0.08, y: 18 });
         });
-        fadeUp(q(".js-frame-cap"), { trigger: q(".js-frames")[0], start: "top 86%", stagger: 0.1 });
-
         /* The shelf */
         const shelf = q(".js-shelf")[0];
         riseMasks(q(".js-shelf-line .js-mask-inner"), {
@@ -267,29 +265,6 @@ export default function About() {
                             ))}
                         </ol>
                     </div>
-                </div>
-            </div>
-
-            {/* The same story in pictures — one frame, three times */}
-            <div className="js-frames shell mx-auto mt-16 max-w-shell md:mt-24">
-                <div className="grid gap-8 sm:grid-cols-3 sm:gap-6 lg:gap-10">
-                    {experienceFrames.map((frame) => (
-                        <figure key={frame.src} className="mx-auto w-full max-w-[17rem]">
-                            <div className="js-figure relative aspect-[4/5] w-full overflow-hidden rounded-md bg-paper-3">
-                                <Image
-                                    src={frame.src}
-                                    alt=""
-                                    fill
-                                    quality={85}
-                                    sizes="(min-width: 640px) 17rem, 100vw"
-                                    className="scale-110 object-cover"
-                                />
-                            </div>
-                            <figcaption className="js-frame-cap mt-3 font-mono text-label uppercase text-ink-3">
-                                {frame.caption}
-                            </figcaption>
-                        </figure>
-                    ))}
                 </div>
             </div>
 
