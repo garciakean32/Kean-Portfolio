@@ -9,34 +9,35 @@
    ------------------------------------------------------------------ */
 
 :root {
-  /* Surfaces */
-  --paper: 246 246 245;
+  /* Surfaces — plain white through grey. Neutral on purpose: the only colour
+     on the site is the accent, and it is quiet. */
+  --paper: 245 245 246;
   --paper-2: 255 255 255;
-  --paper-3: 235 235 234;
+  --paper-3: 234 234 236;
 
   /* Foreground */
-  --ink: 24 24 27;
-  --ink-2: 63 63 70;
-  --ink-3: 90 90 99;
-  --on-ink: 250 250 250;
+  --ink: 22 22 24;
+  --ink-2: 62 62 68;
+  --ink-3: 92 92 99;
+  --on-ink: 250 250 251;
 
   /* Structure */
-  --rule: 224 224 223;
-  --rule-strong: 196 196 195;
+  --rule: 223 223 226;
+  --rule-strong: 194 194 199;
 
-  /* Accent */
-  --accent: 30 64 175;
+  /* Accent — a dimmed blue, well off saturation. Held a step darker here so
+     it still carries against white. */
+  --accent: 62 88 124;
 
   /* Status — work that is live but not finished */
-  --warn: 180 83 9;
+  --warn: 124 98 40;
 
   /* Texture */
   --grain: 0.035;
 
-  /* Layout */
+  /* Layout — `--rail` is the margin the scroll dock lives in, on the right */
   --rail: 0px;
   --gutter: 1.25rem;
-  --nav-h: 4.5rem;
 
   /* Motion */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -49,24 +50,26 @@
 }
 
 .dark {
-  /* Near-black rather than charcoal — the three steps stay close together
-     so the tonal drift between sections still reads, without any of them
+  /* Near-black rather than charcoal — the three steps stay close together so
+     the tonal drift between sections still reads, without any of them
      drifting up into grey. */
-  --paper: 6 6 7;
-  --paper-2: 13 13 15;
-  --paper-3: 20 20 23;
+  --paper: 8 8 9;
+  --paper-2: 15 15 17;
+  --paper-3: 23 23 26;
 
-  --ink: 244 244 245;
-  --ink-2: 168 168 176;
-  --ink-3: 132 132 141;
-  --on-ink: 14 14 16;
+  --ink: 245 245 246;
+  --ink-2: 165 166 170;
+  --ink-3: 128 129 134;
+  --on-ink: 12 12 14;
 
-  --rule: 39 39 44;
-  --rule-strong: 58 58 64;
+  --rule: 40 40 44;
+  --rule-strong: 62 62 68;
 
-  --accent: 109 147 240;
+  /* The same dimmed blue, opened up a step so it reads at the same weight on
+     black as the darker mix does on white */
+  --accent: 108 132 164;
 
-  --warn: 251 191 36;
+  --warn: 196 170 116;
 
   --grain: 0.05;
 
@@ -82,21 +85,21 @@
    ------------------------------------------------------------------ */
 
 .light-panel {
-  --paper: 246 246 245;
+  --paper: 245 245 246;
   --paper-2: 255 255 255;
-  --paper-3: 235 235 234;
+  --paper-3: 234 234 236;
 
-  --ink: 24 24 27;
-  --ink-2: 63 63 70;
-  --ink-3: 90 90 99;
-  --on-ink: 250 250 250;
+  --ink: 22 22 24;
+  --ink-2: 62 62 68;
+  --ink-3: 92 92 99;
+  --on-ink: 250 250 251;
 
-  --rule: 224 224 223;
-  --rule-strong: 196 196 195;
+  --rule: 223 223 226;
+  --rule-strong: 194 194 199;
 
-  --accent: 30 64 175;
+  --accent: 62 88 124;
 
-  --warn: 180 83 9;
+  --warn: 124 98 40;
 
   color-scheme: light;
   background-color: rgb(var(--paper));
@@ -112,7 +115,6 @@
   :root {
     --rail: 3rem;
     --gutter: 3rem;
-    --nav-h: 5.5rem;
   }
 }
 
@@ -207,11 +209,11 @@ html[data-motion="on"] [data-anim="rule-y"] {
 
 /* ------------------------------------------------------------------
    Cinematic open
-   A fresh landing on the home page belongs to the hero until it has
+   A fresh landing at the top of the page belongs to the hero until it has
    finished introducing itself: the chrome sits out of frame, and nothing
    scrolls or takes a click. `data-intro` is stamped on <html> before first
-   paint by the root layout and cleared by the hero — see lib/intro.ts for
-   why it is never set on a client-side route back home.
+   paint by the root layout and cleared by the hero. Arriving on an anchor
+   deeper down the page skips it — there is nothing to introduce.
 
    `overflow` goes on <html> rather than <body>: <html> is the scroll
    container here (it carries `overflow-x: clip`), so the usual trick of
@@ -278,10 +280,10 @@ html[data-motion="on"][data-intro="reveal"] [data-stage] {
   z-index: 95;
 }
 
-/* The navbar is plain CSS, on purpose — no GSAP hooking into it, no
-   glitch, nothing keyed to the portrait's timing. It only ever needs to
-   answer one question ("is `data-intro` still 'pending' or 'running'?"),
-   and CSS already answers that reliably on its own.
+/* The chrome — the scroll dock — is plain CSS, on purpose: no GSAP hooking
+   into it, no glitch, nothing keyed to the portrait's timing. It only ever
+   needs to answer one question ("is `data-intro` still 'pending' or
+   'running'?"), and CSS already answers that reliably on its own.
 
    It's gated on those two states only, not "reveal" — Hero.tsx moves the
    attribute to "reveal" the instant the portrait's own glitch reveal
@@ -291,12 +293,17 @@ html[data-motion="on"][data-intro="reveal"] [data-stage] {
    stage, the curtains) stays exactly as locked as it was — this is the one
    thing that gets to arrive early.
 
+   It fades rather than sliding: the dock has a piece against the top edge,
+   a piece down the right margin and a piece along the bottom, and no single
+   direction takes all three off screen. Opacity is the one move that means
+   the same thing wherever a piece happens to sit.
+
    `z-index` still has to clear the stage and the curtains while either is
    still up, which "reveal" is defined to mean; it falls back to its
-   ordinary `z-50` on its own once the attribute finally reaches "off" and
+   ordinary `z-40` on its own once the attribute finally reaches "off" and
    neither rule below applies any more. */
 [data-chrome] {
-  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  transition: opacity 0.6s var(--ease-out);
 }
 
 html[data-motion="on"][data-intro="pending"] [data-chrome],
@@ -308,7 +315,6 @@ html[data-motion="on"][data-intro="reveal"] [data-chrome] {
 html[data-motion="on"][data-intro="pending"] [data-chrome],
 html[data-motion="on"][data-intro="running"] [data-chrome] {
   opacity: 0;
-  transform: translateY(-100%);
   pointer-events: none;
   transition: none;
 }
@@ -318,10 +324,11 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
    ------------------------------------------------------------------ */
 
 @layer components {
-  /* Editorial measure: the page's content column, offset by the rail */
+  /* Editorial measure: the page's content column, holding a margin clear on
+     the right for the scroll dock. */
   .shell {
-    padding-left: calc(var(--rail) + var(--gutter));
-    padding-right: var(--gutter);
+    padding-left: var(--gutter);
+    padding-right: calc(var(--rail) + var(--gutter));
   }
 
   /* Line-mask wrapper for text reveals.
@@ -416,6 +423,38 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   .text-pretty {
     text-wrap: pretty;
   }
+}
+
+/* Hero ground.
+
+   The hero is the one surface on the site that is not a flat tone: a soft
+   light sits behind the figure and falls away to near-black at the edges, the
+   way a studio backdrop does. Everything in it is neutral — the only colour
+   anywhere on the page is the accent. */
+.hero-ground {
+  background-color: rgb(8 8 9);
+  background-image: radial-gradient(
+      112% 80% at 50% 34%,
+      rgba(150, 154, 162, 0.20) 0%,
+      rgba(80, 84, 92, 0.10) 38%,
+      rgba(24, 24, 27, 0) 72%
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(26 26 29) 0%,
+      rgb(14 14 16) 58%,
+      rgb(8 8 9) 100%
+    );
+}
+
+/* The disc a portrait is set against, in the accent. Sits behind its figure
+   and is deliberately larger than it, so the photograph reads as something
+   placed on the mark rather than framed by it. */
+.seal {
+  position: absolute;
+  border-radius: 9999px;
+  background-color: rgb(var(--accent));
+  pointer-events: none;
 }
 
 /* Paper grain — one fixed layer, no per-element cost */

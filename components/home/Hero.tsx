@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import PrismDrift, { type PrismDriftHandle } from "@/components/motion/PrismDrift";
+import SectionLink from "@/components/shared/SectionLink";
+import { heroList } from "@/lib/data";
 import { claimIntro, endIntro, revealChrome } from "@/lib/intro";
 import { EASE, gsap, motionEnabled, useGsap } from "@/lib/motion";
 
@@ -20,9 +21,21 @@ const HITS = 2;
 const HIT_GAP = 0.19;
 const HIT_HOLD = 0.09;
 
-/** Seconds between one line's idle tears. Rolled fresh after every one. */
-const IDLE_MIN = 6;
-const IDLE_MAX = 15;
+/** Seconds between one line's idle tears, and how long a tear is held.
+
+    The hold is the portrait's own — PrismDrift holds each burst for 40-90ms,
+    which is under three frames, and that is what makes a tear read as a
+    shutter rather than as movement.
+
+    The gap is deliberately not the portrait's. Matching its 0.5-6s schedule
+    put six lines of type on the same cadence as one photograph, and six
+    things tearing that often is not a glitch, it is a flicker. Backing the
+    range off to 4-14s leaves each line tearing rarely enough to be noticed
+    when it does. */
+const IDLE_MIN = 4;
+const IDLE_MAX = 14;
+const TEAR_MIN = 0.04;
+const TEAR_MAX = 0.09;
 
 /**
  * The directions a glitch nudge can throw something, mirroring PrismDrift's
@@ -48,8 +61,30 @@ const GLITCHED_NAME = ["KY", "RA"] as const;
 const DESKTOP = "(min-width: 1024px)";
 
 /** How long the name takes to stand back down to its resting size — and, with
-    it, everything that arrives in the room that makes. */
+    it, everything that arrives in the room that makes. Desktop only — see
+    `MORPH_HOLD`/`MORPH_OUT`/`MORPH_IN` for the stacked layout's equivalent. */
 const RESIZE = 1.25;
+
+/** The clip-path the name's two halves resolve out of and, on a stacked
+    layout, dissolve back into between the open position and the resting one
+    — an uneven silhouette rather than a rectangle, so the appearance and
+    disappearance both read as "coming into focus" rather than a fade. */
+const NAME_HIDDEN_CLIP = "polygon(9% 24%, 46% 4%, 93% 15%, 89% 79%, 51% 98%, 5% 84%)";
+const NAME_VISIBLE_CLIP = "polygon(0% 0%, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)";
+
+/** Stacked layout only (mobile/tablet): how long the big, oversized stand-in
+    holds fully formed before it dissolves, and how long that dissolve takes.
+    Deliberately not a resize-and-slide like the desktop reveal — KE and AN
+    never translate between the stacked spread and the inline rest. */
+const MORPH_HOLD = 0.35;
+const MORPH_OUT = 0.55;
+
+/** How long everything real takes to rise into place, stacked layouts only.
+    Starts on the same frame as the dissolve above, so the two overlap and the
+    screen is never empty, but runs well past it: the dissolve is a half-second
+    and this is nearly three times that, which is the difference between the
+    frame snapping into place and settling into it. */
+const REVEAL = 1.45;
 
 /** How long the curtains take to pull clear — long enough to still be moving
     on the portrait's last hit, short enough that they're not lagging behind
@@ -95,20 +130,30 @@ export default function Hero() {
             : null;
 
         // Everything already on screen when the portrait cuts in — it takes
-        // the same hits the portrait does.
-        const struck = [...q(".js-role"), ...q(".js-tate"), ...q(".js-body"), wordmark];
+        // the same hits the portrait does. `js-steady` opts an element out:
+        // it still arrives with the frame, it just never tears with it.
+        const struck = [
+            ...q(".js-role"),
+            ...q(".js-tate"),
+            ...q(".js-body:not(.js-steady)"),
+            wordmark,
+        ];
 
         /* ---- where the name opens from: as large as the frame allows ---- */
 
-        // Its resting offset is a Tailwind translate and GSAP is about to own
-        // `transform` outright, so read the offset off the computed matrix and
-        // carry it as GSAP's own `y` rather than lose it.
-        const baseY = new DOMMatrix(getComputedStyle(wordmark).transform).f;
         const stacked = !window.matchMedia(DESKTOP).matches;
 
         const box = wordmark.getBoundingClientRect();
         const frame = el.getBoundingClientRect();
-        const partRects = parts.map((part) => part.getBoundingClientRect());
+
+        // Which pair of halves the open actually moves: the stand-in below
+        // `lg`, the real wordmark above it. Measuring the wrong pair is not a
+        // rounding error — the two are set from different clamps, so between
+        // `sm` and `lg` the real name is a good half again larger than the
+        // stand-in, and offsets taken from one and applied to the other
+        // threw KE and AN apart by that whole ratio.
+        const openParts = stacked ? q(".js-open-part") : parts;
+        const partRects = openParts.map((part) => part.getBoundingClientRect());
         // Each half's own rendered height, which is also exactly how far
         // apart `partY` (below) pushes the two of them when they stack.
         const line = Math.max(...partRects.map((r) => r.height));
@@ -118,13 +163,13 @@ export default function Hero() {
         // load it is also the only thing on screen, everything around it
         // covered by a sheet of the same paper (see globals.css).
         //
-        // The two layouts need different logic, not just different numbers.
-        // Stacked (mobile/tablet), a half-word is short enough to be bounded
-        // by whichever of the two dimensions runs out first. Inline
-        // (desktop), the resting size is already a `vw`-driven clamp sized to
-        // very nearly fill the section's width — there is almost no width
-        // headroom left to open into, so it is bounded by height instead and
-        // allowed to crop against the section's own `overflow-hidden`.
+        // Both layouts are bounded on *both* axes. Height alone is not enough:
+        // the resting size is already a `vw`-driven clamp sized to very nearly
+        // span the frame, so any scale over about 1.2 runs the word off the
+        // sides and the section's `overflow-hidden` cuts the K and the N off
+        // mid-reveal. `min()` takes whichever axis runs out first, and the
+        // ceilings below are what stop a very tall, narrow viewport finding a
+        // scale neither factor bounds.
         //
         // Both are deliberately short of actually filling the frame: the name
         // wants to open large enough to be the only thing in the room, not so
@@ -134,10 +179,14 @@ export default function Hero() {
         const open = stacked
             ? gsap.utils.clamp(
                   1,
-                  3,
-                  Math.min((frame.width * 0.78) / (nameW || 1), (frame.height * 0.72) / nameH)
+                  2.4,
+                  Math.min((frame.width * 0.82) / (nameW || 1), (frame.height * 0.6) / nameH)
               )
-            : gsap.utils.clamp(1.25, 2.2, (frame.height * 0.62) / nameH);
+            : gsap.utils.clamp(
+                  1.05,
+                  1.5,
+                  Math.min((frame.width * 0.88) / (nameW || 1), (frame.height * 0.58) / nameH)
+              );
         // The name's resting place is neither centred nor full-width, so it
         // has to travel as well as grow.
         const dx = frame.left + frame.width / 2 - (box.left + box.width / 2);
@@ -214,61 +263,118 @@ export default function Hero() {
             tl.set([curtainTop, curtainBottom], { yPercent: 0 }, 0);
         }
 
-        // 1 — the name, alone, as big as the frame will take it. It resolves
-        // out of an uneven clip and a blur rather than rising behind a mask,
-        // the same "settling into focus" the rest of the site's `morphIn`
-        // does. No stagger: both halves are one word arriving at once.
-        tl.set(wordmark, {
-            x: dx,
-            y: baseY + dy,
-            scale: open,
-            transformOrigin: "50% 50%",
-            willChange: "transform",
-        })
-            .set(parts, { x: partX, y: partY })
-            .fromTo(
-                parts,
-                {
-                    clipPath: "polygon(9% 24%, 46% 4%, 93% 15%, 89% 79%, 51% 98%, 5% 84%)",
-                    filter: "blur(16px)",
-                    opacity: 0,
-                },
-                {
-                    clipPath: "polygon(0% 0%, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%)",
-                    filter: "blur(0px)",
-                    opacity: 1,
-                    duration: 1.05,
-                    ease: EASE.io,
-                    // A settled clip-path still clips to its own polygon, which
-                    // would crop the glitch nudges that come later.
-                    onComplete: () => gsap.set(parts, { clearProps: "clipPath,filter" }),
-                }
-            )
+        // 1 and 2 — the open, and the hand-off out of it.
+        //
+        // Desktop is one continuous move: the real wordmark resolves out of an
+        // uneven clip and a blur at full size, then stands down to its resting
+        // size and place while the rest of the frame arrives in the room that
+        // makes.
+        //
+        // Stacked (mobile/tablet) is a hand-off between two elements. The
+        // stand-in opens big and split, and when it dissolves the real name
+        // does not morph in behind it — it rises on the same fade-and-lift the
+        // role, the vertical run and the two bottom columns use, on the same
+        // frames as all three. Nothing translates from the split position to
+        // the resting one, and there is no frame where the screen is empty.
+        if (stacked) {
+            const standIn = q(".js-open")[0];
+            const openWord = q(".js-open-word")[0];
 
-            // 2 — it stands down to its resting size and place, and the rest
-            // of the frame arrives in the room that makes. Every one of these
-            // starts and lands on the same frame as the resize itself, so the
-            // whole batch settles as a single move rather than a cascade.
-            .to(wordmark, { x: 0, y: baseY, scale: 1, duration: RESIZE, ease: EASE.io }, ">-0.1")
-            .to(parts, { x: 0, y: 0, duration: RESIZE, ease: EASE.io }, "<")
-            .fromTo(
-                q(".js-role"),
-                { opacity: 0, y: 14 },
-                { opacity: 1, y: 0, duration: RESIZE, ease: EASE.io },
-                "<"
-            )
-            .fromTo(
-                q(".js-tate"),
-                { opacity: 0, y: -14 },
-                { opacity: 1, y: 0, duration: RESIZE, ease: EASE.io },
-                "<"
-            )
-            .fromTo(
-                q(".js-body"),
-                { opacity: 0, y: 18 },
-                { opacity: 1, y: 0, duration: RESIZE, ease: EASE.io },
-                "<"
-            );
+            tl.set(standIn, { opacity: 1 })
+                .set(openWord, { scale: open, transformOrigin: "50% 50%", willChange: "transform" })
+                .set(openParts, { x: partX, y: partY })
+                .fromTo(
+                    openParts,
+                    { clipPath: NAME_HIDDEN_CLIP, filter: "blur(16px)", opacity: 0 },
+                    {
+                        clipPath: NAME_VISIBLE_CLIP,
+                        filter: "blur(0px)",
+                        opacity: 1,
+                        duration: 1.05,
+                        ease: EASE.io,
+                    }
+                )
+                // The dissolve out, and everything real arriving on top of it.
+                .to(
+                    openParts,
+                    {
+                        clipPath: NAME_HIDDEN_CLIP,
+                        filter: "blur(14px)",
+                        opacity: 0,
+                        duration: MORPH_OUT,
+                        ease: EASE.io,
+                        onComplete: () => gsap.set(standIn, { opacity: 0, willChange: "auto" }),
+                    },
+                    `+=${MORPH_HOLD}`
+                )
+                .fromTo(
+                    parts,
+                    { opacity: 0, y: 26 },
+                    { opacity: 1, y: 0, duration: REVEAL, ease: EASE.out },
+                    "<"
+                )
+                .fromTo(
+                    q(".js-role"),
+                    { opacity: 0, y: 14 },
+                    { opacity: 1, y: 0, duration: REVEAL, ease: EASE.out },
+                    "<"
+                )
+                .fromTo(
+                    q(".js-tate"),
+                    { opacity: 0, y: -14 },
+                    { opacity: 1, y: 0, duration: REVEAL, ease: EASE.out },
+                    "<"
+                )
+                .fromTo(
+                    q(".js-body"),
+                    { opacity: 0, y: 18 },
+                    { opacity: 1, y: 0, duration: REVEAL, ease: EASE.out },
+                    "<"
+                );
+        } else {
+            tl.set(wordmark, {
+                x: dx,
+                y: dy,
+                scale: open,
+                transformOrigin: "50% 50%",
+                willChange: "transform",
+            })
+                .set(parts, { x: partX, y: partY })
+                .fromTo(
+                    parts,
+                    { clipPath: NAME_HIDDEN_CLIP, filter: "blur(16px)", opacity: 0 },
+                    {
+                        clipPath: NAME_VISIBLE_CLIP,
+                        filter: "blur(0px)",
+                        opacity: 1,
+                        duration: 1.05,
+                        ease: EASE.io,
+                        // A settled clip-path still clips to its own polygon,
+                        // which would crop the glitch nudges that come later.
+                        onComplete: () => gsap.set(parts, { clearProps: "clipPath,filter" }),
+                    }
+                )
+                .to(wordmark, { x: 0, y: 0, scale: 1, duration: RESIZE, ease: EASE.io }, ">-0.1")
+                .to(parts, { x: 0, y: 0, duration: RESIZE, ease: EASE.io }, "<")
+                .fromTo(
+                    q(".js-role"),
+                    { opacity: 0, y: 14 },
+                    { opacity: 1, y: 0, duration: RESIZE, ease: EASE.io },
+                    "<"
+                )
+                .fromTo(
+                    q(".js-tate"),
+                    { opacity: 0, y: -14 },
+                    { opacity: 1, y: 0, duration: RESIZE, ease: EASE.io },
+                    "<"
+                )
+                .fromTo(
+                    q(".js-body"),
+                    { opacity: 0, y: 18 },
+                    { opacity: 1, y: 0, duration: RESIZE, ease: EASE.io },
+                    "<"
+                );
+        }
 
         // 3 — the portrait does not fade in; it cuts in, twice. The curtains
         // pull clear over the same span rather than on their own timer, so
@@ -303,6 +409,13 @@ export default function Hero() {
            own first gap and a fresh one after each tear, so no two of them
            ever settle into step with each other.
 
+           There is no motion in a tear and there never should be: it is one
+           `.set()` on, one `.set()` off, and nothing in between for anything
+           to interpolate. The element is displaced and split for two or three
+           frames and then it is not — a shutter, not a slide. That is also why
+           the nudge distance can be as large as it is without reading as a
+           bounce.
+
            The hit itself is the portrait's, not a separate idea: thrown in
            one of the same six directions, at a distance and a chromatic
            split that are re-rolled every time. Opacity is deliberately left
@@ -315,10 +428,7 @@ export default function Hero() {
         const idle = (targets: Element[]) => {
             if (!targets.length) return;
 
-            const hit = () => {
-                const throwTo = nudge(3, 11);
-                gsap.set(targets, { ...throwTo, textShadow: fringe(rand(2, 6)) });
-            };
+            const hit = () => gsap.set(targets, { ...nudge(3, 11), textShadow: fringe(rand(2, 6)) });
             const settle = () => gsap.set(targets, { x: 0, y: 0, textShadow: "none" });
 
             const tear = gsap.timeline({
@@ -327,22 +437,30 @@ export default function Hero() {
                 repeatDelay: rand(IDLE_MIN, IDLE_MAX),
             });
 
-            // Out and back twice, a couple of frames each — a tear rather
-            // than a nudge, and over before it can be read as movement.
-            tear.call(hit, undefined, 0)
-                .call(settle, undefined, 0.07)
-                .call(hit, undefined, 0.12)
-                .call(settle, undefined, 0.19);
+            // On, then off two or three frames later. The hold is rolled
+            // inside the callback rather than baked in as a second child, so
+            // it is a fresh number every cycle the way the gap and the throw
+            // already are. `delayedCall` is still GSAP's, so the context
+            // reverts it with everything else on unmount.
+            tear.call(() => {
+                hit();
+                gsap.delayedCall(rand(TEAR_MIN, TEAR_MAX), settle);
+            });
 
             tear.eventCallback("onRepeat", () => tear.repeatDelay(rand(IDLE_MIN, IDLE_MAX)));
         };
 
-        // The wordmark sits this out — it only ever reads as "KYRA" during
-        // the reveal above, never again afterwards, so it gets no idle tear
-        // of its own (no nudge, no text change).
-        for (const group of ["role", "tate", "jp", "cta"]) {
+        // The wordmark tears along with everything else now. It still never
+        // re-reads as "KYRA" — that swap belongs to the reveal alone — so what
+        // it gets here is the nudge and the split, nothing more.
+        //
+        // The two buttons are the one thing held out. Everything else on this
+        // screen is a statement; those are the way off it, and a control that
+        // jumps under the cursor is a control you have to chase.
+        for (const group of ["role", "tate", "jp", "offer"]) {
             idle(q(`[data-glitch="${group}"]`));
         }
+        idle([wordmark]);
 
         // A quiet drift once the page starts scrolling — the wordmark and the
         // portrait move at different speeds so the frame has some depth.
@@ -391,29 +509,45 @@ export default function Hero() {
 
     return (
         <section
+            id="top"
             ref={scope}
             // `data-stage`: lifted over the sheet that hides the rest of the
             // page while the open runs — see globals.css.
             data-stage
-            className="relative flex min-h-[36rem] flex-col overflow-hidden bg-paper sm:min-h-[40rem] lg:min-h-[46rem]"
+            // A full screen, always: the hero is a poster, and a poster that
+            // stops halfway down the viewport is a banner. `hero-ground` is
+            // the sumi-and-washi backdrop — see globals.css.
+            className="hero-ground relative flex h-[100svh] min-h-[34rem] flex-col overflow-hidden"
         >
-            {/* Top row — who and where, and the vertical setting balancing it.
+            {/* Top — the mark on the left, one small line centred, and the
+                vertical run down the right margin at every size.
+
+                和風 carries `self-end` rather than a hand-tuned offset: the
+                row's height is set by the vertical run opposite it, so
+                bottom-aligning drops it level with that run's last glyph (作)
+                and stays level however the run is set.
+
                 z-20: stays in front of the portrait, which only needs to sit
                 over the name below. */}
-            <div className="shell relative z-20 mx-auto flex w-full max-w-shell items-start justify-center pt-[calc(var(--nav-h)+2rem)] lg:justify-between">
+            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-start gap-3 pt-10 md:gap-6 md:pt-12">
+                <p
+                    data-glitch="jp"
+                    className="js-body col-start-1 self-end font-jp text-base leading-none text-ink-3"
+                >
+                    和風
+                </p>
+
                 <p
                     data-glitch="role"
-                    className="js-role text-center font-mono text-label uppercase text-ink-2"
+                    className="js-role col-start-2 text-center font-mono text-[0.625rem] uppercase tracking-[0.14em] text-ink-2 sm:text-label sm:tracking-[0.28em]"
                 >
-                    Web Developer
-                    <span className="mx-2 text-ink-3">/</span>
-                    Based in the Philippines
+                    Full-Stack Web Developer
                 </p>
 
                 <span
                     aria-hidden="true"
                     data-glitch="tate"
-                    className="js-tate tate hidden font-jp text-sm tracking-[0.4em] text-ink-3 lg:block"
+                    className="js-tate tate col-start-3 justify-self-end font-jp text-[0.8125rem] tracking-[0.4em] text-ink-3"
                 >
                     ウェブ制作
                 </span>
@@ -422,15 +556,14 @@ export default function Hero() {
             {/* The portrait cut-out, scaled to fit entirely inside the
                 section — it shrinks or grows to stay fully in frame, never
                 cropped by the section's overflow-hidden. `object-contain`
-                centres it, which happens to land the figure roughly over the
-                name below.
+                centres it, which happens to land the figure over the name.
 
                 z-10: above the name (z-0) it overlaps, below every other row
                 (z-20) so only KEAN sits behind it. */}
             <div
                 data-anim="fade"
                 aria-hidden="true"
-                className="js-portrait pointer-events-none absolute inset-0 z-10 drop-shadow-[0_25px_45px_rgba(0,0,0,0.35)]"
+                className="js-portrait pointer-events-none absolute inset-0 z-10 drop-shadow-[0_25px_45px_rgba(0,0,0,0.45)]"
             >
                 <PrismDrift
                     ref={prism}
@@ -441,24 +574,85 @@ export default function Hero() {
                 />
             </div>
 
-            {/* Centre — the name, the whole point of the frame. z-0: the only
-                row the portrait sits in front of. */}
-            <div className="relative z-0 flex flex-1 items-center justify-center px-[var(--gutter)] py-8 lg:pl-[calc(var(--rail)+var(--gutter))]">
+            {/* The opened name, stacked layouts only — a stand-in, never
+                read, and invisible except for the three seconds of the intro
+                it exists for.
+
+                It is a separate element rather than the real wordmark because
+                of what the open has to hand over to: below `lg` the big
+                stacked name dissolves at the same moment the resting name
+                reveals, and one element cannot both leave and arrive on the
+                same frames. So the copy does the leaving, the original does
+                the arriving, and the screen is never empty between them.
+                Centred on the section rather than on the name's own row, which
+                is where the open belongs.
+
+                `opacity-0` rather than `data-anim="fade"`: the pre-animation
+                gate is lifted whenever motion is off, and this must stay
+                hidden then — nothing will ever animate it away. */}
+            <div
+                aria-hidden="true"
+                className="js-open pointer-events-none absolute inset-0 z-0 flex items-center justify-center px-[var(--gutter)] opacity-0 lg:hidden"
+            >
+                {/* Set from the same clamps as the real name, down to the
+                    `sm` step. Not cosmetic: the opening scale is derived from
+                    how big these halves already are, so a stand-in a third
+                    smaller than the name it stands in for opens to a
+                    different size than the frame was measured for. */}
+                <span className="js-open-word select-none font-display text-[clamp(4.25rem,32.5vw,8.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(28vw,50vh)]">
+                    <span className="flex items-center justify-center">
+                        <span className="js-open-part inline-block">KE</span>
+                        <span className="js-open-part inline-block">AN</span>
+                    </span>
+                </span>
+            </div>
+
+            {/* Centre — the name, the whole point of the frame, and the
+                largest thing anywhere on the site. z-0: the only row the
+                portrait sits in front of. */}
+            <div className="relative z-0 flex flex-1 items-center justify-center px-[var(--gutter)]">
+                {/* The resting offset lives here, on a wrapper, rather than on
+                    the name itself — and that is a correctness point, not a
+                    tidiness one. GSAP owns the name's `transform` outright the
+                    moment it first tears, so an offset set in CSS *on the name*
+                    has to be read into JS once at mount and written back by
+                    hand every time. It was, and it went stale the instant the
+                    viewport crossed `sm`: the offset that applies below it is
+                    not the offset above it, and every tear after a resize put
+                    the name back 32px from where it belonged. On a wrapper
+                    nothing reads it and nothing restores it; the breakpoint
+                    just answers for itself. */}
+                <div className="-translate-y-8 sm:translate-y-0">
                 <h1
                     aria-label="Kean"
-                    // The desktop size is bounded by height as well as width
-                    // now, not just clamped between a floor and a ceiling on
-                    // width alone — a laptop's shorter, wider viewport was
-                    // sizing the word off `vw` regardless of how little
-                    // vertical room the section actually had, which is what
-                    // let it overflow there even though the same clamp read
-                    // fine on a taller screen at the same width. `min()`
-                    // picks whichever axis is tighter; the preferred value
-                    // and the ceiling both also came down a step, since the
-                    // rest size only needs to read as a title, not fill the
-                    // section on its own — see the `open` scale in the
-                    // timeline above for the part that still does that.
-                    className="js-wordmark translate-y-4 select-none font-display font-extrabold leading-[0.82] tracking-[-0.05em] text-white text-[clamp(6.5rem,34vw,9.5rem)] sm:text-[clamp(4.5rem,min(24vw,34vh),20rem)] lg:-translate-y-10"
+                    // Sized to very nearly span the frame, the way a poster
+                    // wordmark does. The number is not free: "KEAN" sets about
+                    // 2.78x its own font size wide and cannot wrap, so the
+                    // ceiling below `sm` is whatever still clears the two
+                    // gutters — 32.5vw is as large as that gets without
+                    // clipping down to 320px wide. From `sm` the ceiling is
+                    // whatever still fits between the two edges the scroll
+                    // section menu reserves for itself instead — 28vw clears
+                    // those from 640px up, measured at 1024 where they are
+                    // tightest. It is capped against the viewport's height
+                    // too, so a short laptop screen shrinks the word rather
+                    // than letting it eat the room the rest of the frame
+                    // needs. `min()` takes whichever axis is tighter.
+                    //
+                    // Pushed up below `sm`, and the number is a compromise
+                    // between two things that pull against each other. The
+                    // portrait is a cutout: dead centre is where the torso is
+                    // widest and buries the word almost entirely, and the
+                    // higher the name goes the more of it clears the figure.
+                    // But the stand-in that hands over to it is centred on the
+                    // whole section, so the higher the name goes the further
+                    // the reveal reads as landing away from where the big one
+                    // just was. Sampling the source PNG's alpha channel at
+                    // each candidate offset is what settled it rather than
+                    // eyeballing: at 32px about a third of the word clears the
+                    // figure, and the hand-off is a fifth of a screen rather
+                    // than half of one.
+                    className="js-wordmark select-none font-display text-[clamp(4.25rem,32.5vw,8.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(28vw,50vh)]"
                 >
                     {/* Two halves rather than one word: below `lg` the open
                         stacks them into a block that can fill a narrow screen,
@@ -479,71 +673,99 @@ export default function Hero() {
                         </span>
                     </span>
                 </h1>
+                </div>
             </div>
 
-            {/* Bottom row — the pitch and the doors out. z-20: see the top
-                row above. */}
-            <div className="shell relative z-20 mx-auto flex w-full max-w-shell justify-end pb-10 md:pb-14 lg:justify-between">
-                {/* Bottom-left, desktop only — the mobile/tablet layout keeps
-                    this text beside the pitch on the right (below). */}
-                <div data-glitch="jp" className="js-body hidden text-left lg:block">
-                    <p className="font-jp text-xl leading-relaxed text-ink-3">和風</p>
-                    <p className="mt-1.5 font-mono text-label uppercase tracking-[0.14em] text-ink">
-                        Japan style portfolio
-                    </p>
-                </div>
+            {/* Bottom — two shapes, not two layouts.
 
-                {/* Full-bleed on tablet so 和風 and ウェブ制作 reach the two
-                    gutters; back to a narrow right-aligned column on desktop,
-                    where the pitch text moves to the block above. */}
-                <div className="js-body w-full lg:w-auto lg:max-w-sm lg:text-right">
-                    {/* On mobile/tablet, "ウェブ制作" sits beside the pitch
-                        text rather than in the top row — bottom-aligned so
-                        the two share a baseline, with the vertical run
-                        naturally taller than the two short lines beside it,
-                        so its top rises above theirs without extra math.
-                        `lg:hidden` drops this once the new bottom-left block
-                        (above) takes over on desktop. */}
-                    <div className="flex items-end justify-between lg:hidden">
-                        <div data-glitch="jp">
-                            <p className="font-jp text-xl leading-relaxed text-ink-3">
-                                和風
-                            </p>
-                            <p className="mt-1.5 font-mono text-label uppercase tracking-[0.14em] text-ink">
-                                Japan style portfolio
-                            </p>
-                        </div>
-                        <span
-                            aria-hidden="true"
-                            data-glitch="tate"
-                            className="tate lg:hidden font-jp text-sm tracking-[0.4em] text-ink-3"
+                Below `md` it is a pair of equal, matched panels: what I do on
+                the left, the standing offer and the way in on the right —
+                `grid-cols-2` gives both the same width, and `items-stretch`
+                gives them the same height, with each side's own content
+                bottom-anchored inside that shared box (see the two `h-full
+                flex-col justify-end` wrappers below). The right panel is
+                centred rather than right-aligned, so "Available for work"
+                lines up with the middle of the buttons under it rather than
+                their right edge.
+
+                The list carries its own small `mb-4` on top of that. Matching
+                outer boxes is not the same as matching text: "Start a
+                project" is centred inside a 44px tap target, so its own text
+                sits well above that button's bottom edge, while the list's
+                last line — no padding of its own — sits right on top of the
+                shared bottom edge. The margin is what closes that gap and
+                brings "And many other things" level with the button's own
+                label rather than just level with its box.
+
+                From `md` the two wrappers around each side turn into
+                `display: contents` — their children unwrap into the grid
+                directly and the whole thing reshapes into three columns: list,
+                buttons dead centre, offer on the right. `items-end` is what
+                puts "Available for work" level with the last line of the list
+                rather than floating above it.
+
+                Every cell names its row. Sparse auto-placement only ever moves
+                the cursor forwards, so the buttons — third in the DOM but in
+                column two — would otherwise be pushed onto a second row rather
+                than back into the gap the offer had just skipped over.
+
+                z-20: see the top row above. */}
+            <div className="shell relative z-20 mx-auto w-full max-w-shell pb-24 lg:pb-12">
+                <div className="grid grid-cols-2 items-stretch gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end md:gap-8">
+                    <div className="flex h-full flex-col justify-end md:contents">
+                        <ul
+                            data-glitch="jp"
+                            className="js-body mb-4 space-y-1 font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.1em] text-ink md:mb-0"
                         >
-                            ウェブ制作
-                        </span>
+                            {heroList.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
                     </div>
 
-                    {/* Blur only — no fill, no border. It keeps the buttons
-                        clear of the portrait on small screens without
-                        drawing an edge. */}
-                    <div
-                        data-glitch="cta"
-                        className="mt-5 flex flex-col items-stretch gap-4 rounded-xl p-5 backdrop-blur-sm sm:gap-5 sm:p-6 md:flex-row md:items-center md:justify-center lg:justify-end"
-                    >
-                        <Link
-                            href="/projects"
-                            className="group inline-flex min-h-11 w-full items-center justify-center gap-2.5 whitespace-nowrap rounded border border-accent bg-accent px-4 py-3 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent md:w-auto md:justify-start"
+                    <div className="flex h-full flex-col items-center justify-end gap-3 md:contents">
+                        {/* A step smaller and tighter-tracked than its `md`
+                            self, and only below `md`: "Available for work" is
+                            the widest thing in this half of a 50/50 split, and
+                            at the narrowest phones the full-size, wide-tracking
+                            treatment does not fit that column on one line —
+                            wrapping it reads worse than a text one size down.
+                            `md:text-[0.6875rem] md:tracking-[0.2em]` restores
+                            the original size exactly, unchanged, once the
+                            three-column layout gives it room. */}
+                        <p
+                            data-glitch="offer"
+                            className="js-body order-1 whitespace-nowrap font-mono text-[0.625rem] uppercase tracking-[0.08em] text-ink md:order-none md:col-start-3 md:row-start-1 md:justify-self-end md:text-[0.6875rem] md:tracking-[0.2em] md:text-right"
                         >
-                            See the work
-                            <span className="transition-transform duration-300 group-hover:translate-x-1">
-                                →
-                            </span>
-                        </Link>
-                        <Link
-                            href="/contact"
-                            className="link-rule inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap px-4 py-3 text-center font-mono text-label uppercase text-ink md:w-auto"
-                        >
-                            Start a project
-                        </Link>
+                            Available for work
+                        </p>
+
+                        {/* `js-steady`: arrives with the frame, never tears
+                            with it. A control that jumps under the cursor is a
+                            control you have to chase. */}
+                        <div className="js-body js-steady order-2 md:order-none md:col-start-2 md:row-start-1 md:justify-self-center">
+                            {/* Blur only — no fill, no border. It lifts the
+                                words off the portrait behind them without
+                                drawing an edge, and it is the same panel at
+                                every size. */}
+                            <div className="flex flex-col items-stretch gap-2.5 rounded-lg px-2.5 py-2 backdrop-blur-md sm:flex-row sm:items-center sm:gap-4">
+                                <SectionLink
+                                    id="work"
+                                    className="group inline-flex min-h-11 items-center justify-center gap-2.5 whitespace-nowrap rounded border border-accent bg-accent px-4 py-2.5 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent"
+                                >
+                                    See the work
+                                    <span className="transition-transform duration-300 group-hover:translate-x-1">
+                                        →
+                                    </span>
+                                </SectionLink>
+                                <SectionLink
+                                    id="contact"
+                                    className="link-rule inline-flex min-h-11 items-center justify-center whitespace-nowrap px-2 py-2 text-center font-mono text-label uppercase text-ink"
+                                >
+                                    Start a project
+                                </SectionLink>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
