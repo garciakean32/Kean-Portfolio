@@ -180,7 +180,7 @@ export default function Work() {
                     {projects.map((project) => (
                         <article
                             key={project.id}
-                            className="js-panel hscroll-panel shell flex items-center py-16 lg:py-24"
+                            className="js-panel hscroll-panel shell flex items-center py-20 lg:py-28"
                         >
                             <div className="mx-auto grid w-full max-w-shell items-center gap-y-10 lg:grid-cols-12 lg:gap-x-14">
                                 <a
@@ -188,7 +188,7 @@ export default function Work() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${project.title} — open the live site`}
-                                    className="js-shot group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-6"
+                                    className="js-shot group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-7"
                                 >
                                     <div className="js-panel-img absolute inset-0">
                                         <Image
@@ -196,8 +196,8 @@ export default function Work() {
                                             alt={`${project.title} — screenshot of the live site`}
                                             fill
                                             quality={90}
-                                            sizes="(min-width: 1024px) 48vw, 100vw"
-                                            className="object-contain object-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.03]"
+                                            sizes="(min-width: 1024px) 54vw, 100vw"
+                                            className="object-cover object-top transition-transform duration-[900ms] ease-out group-hover:scale-[1.03]"
                                         />
                                     </div>
                                     <span
@@ -206,7 +206,7 @@ export default function Work() {
                                     />
                                 </a>
 
-                                <div className="lg:col-span-5 lg:col-start-8">
+                                <div className="lg:col-span-4 lg:col-start-9">
                                     <div className="js-panel-in flex items-baseline gap-4">
                                         <span className="font-mono text-label uppercase text-ink-3">
                                             {project.type}
@@ -216,7 +216,7 @@ export default function Work() {
                                         </span>
                                     </div>
 
-                                    <h3 className="js-panel-in mt-5 font-display text-d2 font-bold tracking-[-0.035em] text-ink">
+                                    <h3 className="js-panel-in mt-5 font-display text-d3 font-bold tracking-[-0.035em] text-ink">
                                         {project.title}
                                     </h3>
 
