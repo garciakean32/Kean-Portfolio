@@ -127,9 +127,8 @@
     /* `clip` (not `hidden`) so sticky / ScrollTrigger pinning keeps working */
     overflow-x: clip;
     -webkit-text-size-adjust: 100%;
-    /* Reserve the scrollbar's width permanently so toggling body overflow
-       (Navbar's mobile-menu lock) never shifts the content column. */
-    scrollbar-gutter: stable;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   body {
@@ -153,15 +152,7 @@
   }
 
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgb(var(--rule-strong));
-    border-radius: 4px;
+    display: none;
   }
 
   /* Lenis drives scroll position itself; native smooth-scroll (e.g. from an
