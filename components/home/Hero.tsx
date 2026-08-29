@@ -424,24 +424,22 @@ export default function Hero() {
             {/* Top — the mark on the left, one small line centred, and the
                 vertical run down the right margin at every size.
 
-                和風 carries `self-end` rather than a hand-tuned offset: the
-                row's height is set by the vertical run opposite it, so
-                bottom-aligning drops it level with that run's last glyph (作)
-                and stays level however the run is set.
+                和風 and the vertical run are both centred on the row, rather
+                than pinned to an edge of it.
 
                 z-20: stays in front of the portrait, which only needs to sit
                 over the name below. */}
-            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-start gap-3 pt-10 md:gap-6 md:pt-12">
+            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-center gap-3 pt-10 md:gap-6 md:pt-12">
                 <p
                     data-glitch="jp"
-                    className="js-body col-start-1 self-end font-jp text-base leading-none text-ink-3"
+                    className="js-body col-start-1 translate-y-2 font-jp text-[0.6875rem] leading-none text-ink-3"
                 >
                     和風
                 </p>
 
                 <p
                     data-glitch="role"
-                    className="js-role col-start-2 text-center font-mono text-[0.625rem] uppercase tracking-[0.14em] text-ink-2 sm:text-label sm:tracking-[0.28em]"
+                    className="js-role col-start-2 self-start text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-ink-2 sm:tracking-[0.28em]"
                 >
                     Full-Stack Web Developer
                 </p>
@@ -449,7 +447,7 @@ export default function Hero() {
                 <span
                     aria-hidden="true"
                     data-glitch="tate"
-                    className="js-tate tate col-start-3 justify-self-end font-jp text-[0.8125rem] tracking-[0.4em] text-ink-3"
+                    className="js-tate tate col-start-3 justify-self-end translate-y-2 font-jp text-[0.6875rem] tracking-[0.4em] text-ink-3"
                 >
                     ウェブ制作
                 </span>
@@ -501,7 +499,7 @@ export default function Hero() {
                     how big these halves already are, so a stand-in a third
                     smaller than the name it stands in for opens to a
                     different size than the frame was measured for. */}
-                <span className="js-open-word select-none font-display text-[clamp(4.25rem,32.5vw,8.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(28vw,50vh)]">
+                <span className="js-open-word select-none font-display text-[clamp(3.75rem,29vw,7.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]">
                     <span className="flex items-center justify-center">
                         <span className="js-open-part inline-block">KE</span>
                         <span className="js-open-part inline-block">AN</span>
@@ -554,7 +552,7 @@ export default function Hero() {
                     // eyeballing: at 32px about a third of the word clears the
                     // figure, and the hand-off is a fifth of a screen rather
                     // than half of one.
-                    className="js-wordmark select-none font-display text-[clamp(4.25rem,32.5vw,8.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(28vw,50vh)]"
+                    className="js-wordmark select-none font-display text-[clamp(3.75rem,29vw,7.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]"
                 >
                     {/* Two halves rather than one word: below `lg` the open
                         stacks them into a block that can fill a narrow screen,
