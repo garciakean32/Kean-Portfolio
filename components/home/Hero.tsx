@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 import PrismDrift, { type PrismDriftHandle } from "@/components/motion/PrismDrift";
 import SectionLink from "@/components/shared/SectionLink";
@@ -33,6 +34,13 @@ const DESKTOP = "(min-width: 1024px)";
     it, everything that arrives in the room that makes. Desktop only — see
     `MORPH_HOLD`/`MORPH_OUT`/`MORPH_IN` for the stacked layout's equivalent. */
 const RESIZE = 1.25;
+
+/** Where the two ink strokes settle — the bamboo lower than the branch, since
+    it is the far larger shape and carries the same weight over much more of the
+    frame. Both are repeated as `opacity-*` on the markup, so the pair still
+    reads with motion off, where nothing fades them in. */
+const INK_TREE = 0.45;
+const INK_BAMBOO = 0.3;
 
 /** The clip-path the name's two halves resolve out of and, on a stacked
     layout, dissolve back into between the open position and the resting one
@@ -337,6 +345,12 @@ export default function Hero() {
                 );
         }
 
+        // The ink comes up with the rest of the frame, opacity only: the lean
+        // is a CSS `rotate`, and a tween that touched `transform` here would
+        // hand the element a matrix that no longer carries it.
+        tl.fromTo(q(".js-tree"), { opacity: 0 }, { opacity: INK_TREE, duration: 1.2, ease: EASE.out }, "<")
+            .fromTo(q(".js-bamboo"), { opacity: 0 }, { opacity: INK_BAMBOO, duration: 1.2, ease: EASE.out }, "<");
+
         // 3 — the portrait does not fade in; it cuts in, twice. The curtains
         // pull clear over the same span rather than on their own timer, so
         // the room they open up is exactly the room the reveal needs — and
@@ -421,6 +435,44 @@ export default function Hero() {
             // the sumi-and-washi backdrop — see globals.css.
             className="hero-ground relative flex h-[100svh] min-h-[34rem] flex-col overflow-hidden"
         >
+            {/* Two sumi strokes standing off either shoulder of the name: the
+                plum branch leaning out of the left margin, the bamboo running
+                the full height of the right. Both are cut-outs on transparent
+                ground, so there is no paper to drop out — the branch is already
+                light where it matters (the blossom, lifted a little further by
+                `brightness`), and the bamboo is near-black ink, so `invert`
+                turns it white to sit on the same dark ground.
+
+                The branch is turned well past upright and set past the left
+                edge: the trunk swings left as it rotates, and runs off the side
+                of the frame rather than stopping inside it. The bamboo is a hair
+                taller than the screen on purpose — just enough that its culms
+                run off both the top and the bottom of it.
+
+                No `z-index`, deliberately: painted first among the section’s
+                positioned children, they sit under the name (z-0) without
+                opening a stacking context of their own. */}
+            <Image
+                src="/images/tree.png"
+                alt=""
+                aria-hidden="true"
+                data-anim="fade"
+                width={1024}
+                height={1536}
+                sizes="(min-width: 1024px) 30vw, 50vw"
+                className="js-tree pointer-events-none absolute left-[-38%] top-[-2%] h-[86svh] w-auto rotate-[68deg] opacity-45 brightness-125 md:left-[-18%] md:top-[-6%] md:h-[106svh] lg:left-[-9%] lg:top-[-7%] lg:h-[120svh]"
+            />
+            <Image
+                src="/images/bamboo.png"
+                alt=""
+                aria-hidden="true"
+                data-anim="fade"
+                width={941}
+                height={1672}
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className="js-bamboo pointer-events-none absolute right-[-72%] top-[-10%] h-[114svh] w-auto rotate-[-15deg] opacity-30 invert md:right-[-32%] md:top-[-10%] md:h-[112svh] lg:right-[-5%]"
+            />
+
             {/* Top — the mark on the left, one small line centred, and the
                 vertical run down the right margin at every size.
 
@@ -467,7 +519,7 @@ export default function Hero() {
             >
                 <PrismDrift
                     ref={prism}
-                    src="/images/kean hero.webp"
+                    src="/images/kean hero.png"
                     priority
                     sizes="100vw"
                     className="object-contain"
@@ -499,7 +551,7 @@ export default function Hero() {
                     how big these halves already are, so a stand-in a third
                     smaller than the name it stands in for opens to a
                     different size than the frame was measured for. */}
-                <span className="js-open-word select-none font-display text-[clamp(3.75rem,29vw,7.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]">
+                <span className="js-open-word select-none font-display text-[clamp(4.25rem,32vw,8rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]">
                     <span className="flex items-center justify-center">
                         <span className="js-open-part inline-block">KE</span>
                         <span className="js-open-part inline-block">AN</span>
@@ -522,7 +574,7 @@ export default function Hero() {
                     the name back 32px from where it belonged. On a wrapper
                     nothing reads it and nothing restores it; the breakpoint
                     just answers for itself. */}
-                <div className="-translate-y-8 sm:translate-y-0 lg:-translate-y-6">
+                <div className="-translate-y-8 sm:-translate-y-4 lg:-translate-y-6">
                 <h1
                     aria-label="Kean"
                     // Sized to very nearly span the frame, the way a poster
@@ -552,7 +604,7 @@ export default function Hero() {
                     // eyeballing: at 32px about a third of the word clears the
                     // figure, and the hand-off is a fifth of a screen rather
                     // than half of one.
-                    className="js-wordmark select-none font-display text-[clamp(3.75rem,29vw,7.5rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]"
+                    className="js-wordmark select-none font-display text-[clamp(4.25rem,32vw,8rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]"
                 >
                     {/* Two halves rather than one word: below `lg` the open
                         stacks them into a block that can fill a narrow screen,
@@ -612,7 +664,7 @@ export default function Hero() {
                 z-20: see the top row above. */}
             <div className="shell relative z-20 mx-auto w-full max-w-shell pb-24 lg:pb-12">
                 <div className="grid grid-cols-2 items-stretch gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end md:gap-8">
-                    <div className="flex h-full flex-col justify-end md:contents">
+                    <div className="hidden h-full flex-col justify-end md:flex md:contents">
                         <ul
                             data-glitch="jp"
                             className="js-body mb-4 space-y-1 font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.1em] text-ink md:mb-0"
@@ -623,7 +675,7 @@ export default function Hero() {
                         </ul>
                     </div>
 
-                    <div className="flex h-full flex-col items-center justify-end gap-3 md:contents">
+                    <div className="col-span-2 flex h-full flex-col items-center justify-end gap-3 md:contents">
                         {/* A step smaller and tighter-tracked than its `md`
                             self, and only below `md`: "Available for work" is
                             the widest thing in this half of a 50/50 split, and
@@ -643,7 +695,7 @@ export default function Hero() {
                         {/* `js-steady`: arrives with the frame, never tears
                             with it. A control that jumps under the cursor is a
                             control you have to chase. */}
-                        <div className="js-body js-steady order-2 md:order-none md:col-start-2 md:row-start-1 md:justify-self-center">
+                        <div className="js-body js-steady order-2 w-full md:order-none md:col-start-2 md:row-start-1 md:w-auto md:justify-self-center">
                             {/* Blur only — no fill, no border. It lifts the
                                 words off the portrait behind them without
                                 drawing an edge, and it is the same panel at
