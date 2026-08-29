@@ -238,26 +238,50 @@ export default function Services() {
             <div className="js-rail relative mt-10 md:mt-14">
                 <div className="js-stage hscroll-stage">
                     <ol className="js-track hscroll-track flex flex-col">
+                        {/* The rail's own opening title card — a seal and a
+                            single kanji, the same quiet motif the rest of the
+                            site sets its Japanese marks in, ahead of the
+                            first real step rather than as one. */}
+                        <li className="js-panel hscroll-panel shell flex items-center py-16 [--hs-w:min(58vw,36rem)] lg:py-24">
+                            <div className="js-panel-in flex w-full flex-col items-center text-center">
+                                <div className="js-panel-img relative flex h-[4rem] w-[4rem] items-center justify-center sm:h-[4.75rem] sm:w-[4.75rem]">
+                                    <span
+                                        aria-hidden="true"
+                                        className="seal aspect-square w-full opacity-[0.12]"
+                                    />
+                                    <span
+                                        aria-hidden="true"
+                                        className="absolute select-none font-jp text-[clamp(1.25rem,3vw,1.75rem)] font-medium leading-none text-ink-2"
+                                    >
+                                        始
+                                    </span>
+                                </div>
+                                <span className="mt-8 font-mono text-label uppercase tracking-[0.3em] text-ink-3 lg:mt-10 lg:font-semibold lg:[text-orientation:upright] lg:[writing-mode:vertical-rl]">
+                                    Where it starts
+                                </span>
+                            </div>
+                        </li>
+
                         {process.map((step, i) => (
                             <li
                                 key={step.index}
-                                className="js-panel hscroll-panel shell flex items-center py-16 lg:py-24"
+                                className="js-panel hscroll-panel shell flex items-center py-16 [--hs-w:min(88vw,68rem)] lg:py-24"
                             >
                                 <div className="mx-auto grid w-full max-w-shell items-center gap-y-10 lg:grid-cols-12 lg:gap-x-14">
-                                    <figure className="relative aspect-[3/2] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-5 lg:aspect-auto lg:h-[46svh]">
+                                    <figure className="relative aspect-[3/2] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-6 lg:aspect-square">
                                         <div className="js-panel-img absolute inset-0">
                                             <Image
                                                 src={step.image}
                                                 alt=""
                                                 fill
                                                 quality={90}
-                                                sizes="(min-width: 1024px) 40vw, 100vw"
+                                                sizes="(min-width: 1024px) 48vw, 100vw"
                                                 className="object-cover"
                                             />
                                         </div>
                                     </figure>
 
-                                    <div className="lg:col-span-6 lg:col-start-7">
+                                    <div className="lg:col-span-5 lg:col-start-8">
                                         <div className="js-panel-in flex items-baseline gap-5">
                                             <span className="font-mono text-label text-accent">
                                                 {step.index}
@@ -273,15 +297,12 @@ export default function Services() {
 
                                         <span
                                             aria-hidden="true"
-                                            className={cn(
-                                                "js-panel-in mt-8 block select-none text-[clamp(1.75rem,3.5vw,2.5rem)]",
-                                                OUTLINE
-                                            )}
+                                            className={cn("js-panel-in mt-8 block select-none text-label", OUTLINE)}
                                         >
                                             {step.jp}
                                         </span>
 
-                                        <h4 className="js-panel-in mt-7 max-w-measure font-display text-d2 font-bold tracking-[-0.03em] text-ink">
+                                        <h4 className="js-panel-in mt-7 max-w-measure font-display text-d3 font-bold tracking-[-0.03em] text-ink">
                                             {step.title}
                                         </h4>
 
