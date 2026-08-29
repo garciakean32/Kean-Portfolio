@@ -1,8 +1,28 @@
 "use client";
 
 import { useId, useLayoutEffect, useEffect, useRef, useState } from "react";
-import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/* Drawn here rather than imported, like every other mark on the site — see
+   SectionIcon. One icon is not worth an icon set. */
+function InfoIcon() {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="size-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
+        </svg>
+    );
+}
 
 type Status = { label: string; reason: string };
 type Placement = { vertical: "above" | "below"; top: number; left: number };
@@ -170,7 +190,7 @@ export default function ProjectStatus({
                     onBlur={() => canHover && setOpen(false)}
                     className="tap grid size-5 shrink-0 place-items-center rounded-full text-warn/80 transition-colors duration-200 hover:bg-warn/15 hover:text-warn"
                 >
-                    <Info aria-hidden="true" className="size-3.5" strokeWidth={2} />
+                    <InfoIcon />
                 </button>
             </span>
 

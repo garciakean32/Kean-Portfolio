@@ -1,7 +1,8 @@
 "use client";
 
-import { motion, useScroll, useSpring } from "framer-motion";
+import { useRef } from "react";
 import { sections } from "@/lib/data";
+import { gsap, motionEnabled, useIsomorphicLayoutEffect } from "@/lib/motion";
 import { scrollToSection, useActiveSection } from "@/lib/sections";
 import { cn } from "@/lib/utils";
 import SectionIcon from "./SectionIcon";
@@ -31,13 +32,37 @@ import SectionIcon from "./SectionIcon";
  * introducing itself; see the gate in globals.css.
  */
 export default function ScrollDock() {
-    const { scrollYProgress } = useScroll();
-    const progress = useSpring(scrollYProgress, {
-        stiffness: 240,
-        damping: 40,
-        restDelta: 0.001,
-    });
+    const progress = useRef<HTMLDivElement>(null);
     const active = useActiveSection();
+
+    /* The hairline, scrubbed against the whole document. Not gated on the
+       motion flag like the rest of the site's animation: a progress bar that
+       does not track the scroll is not a quieter progress bar, it is a broken
+       one. What the flag does decide is the catch-up — a little lag reads as
+       one continuous travel with motion on, and is the exact sensation to
+       spare with it off. */
+    useIsomorphicLayoutEffect(() => {
+        const bar = progress.current;
+        if (!bar) return;
+
+        const ctx = gsap.context(() => {
+            gsap.fromTo(
+                bar,
+                { scaleX: 0 },
+                {
+                    scaleX: 1,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: document.body,
+                        start: "top top",
+                        end: "bottom bottom",
+                        scrub: motionEnabled() ? 0.4 : true,
+                    },
+                }
+            );
+        });
+        return () => ctx.revert();
+    }, []);
 
     return (
         <>
@@ -46,10 +71,7 @@ export default function ScrollDock() {
                 aria-hidden="true"
                 className="pointer-events-none fixed inset-x-0 top-0 z-40 h-[3px]"
             >
-                <motion.div
-                    className="h-full origin-left bg-accent"
-                    style={{ scaleX: progress }}
-                />
+                <div ref={progress} className="h-full origin-left scale-x-0 bg-accent" />
             </div>
 
             {/* 2a — down the right margin. `--rail` is the width the page's

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MaskLine } from "@/components/motion/Text";
 import { personal } from "@/lib/data";
 import { fadeUp, gsap, riseMasks, useGsap } from "@/lib/motion";
@@ -39,7 +38,6 @@ const channels = [
 export default function Contact() {
     const [form, setForm] = useState({ name: "", email: "", message: "" });
     const [status, setStatus] = useState<Status>("idle");
-    const reduce = useReducedMotion();
 
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
@@ -179,130 +177,103 @@ export default function Contact() {
 
                     {/* Form */}
                     <div data-anim="fade" className="js-soft relative lg:col-span-6 lg:col-start-7">
-                        <AnimatePresence mode="wait">
-                            {status === "sent" ? (
-                                <motion.div
-                                    key="sent"
-                                    initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{
-                                        duration: reduce ? 0.15 : 0.6,
-                                        ease: [0.16, 1, 0.3, 1],
-                                    }}
-                                    className="border-t border-rule pt-10"
-                                    role="status"
-                                >
-                                    <motion.span
-                                        className="inline-block"
-                                        initial={
-                                            reduce ? false : { scale: 2.2, rotate: -12, opacity: 0 }
-                                        }
-                                        animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                                        transition={{
-                                            duration: reduce ? 0 : 0.7,
-                                            ease: [0.16, 1, 0.3, 1],
-                                            delay: 0.1,
-                                        }}
+                        {status === "sent" ? (
+                            <div
+                                className="confirm-rise border-t border-rule pt-10"
+                                role="status"
+                            >
+                                <span className="confirm-stamp inline-block">
+                                    <svg
+                                        aria-hidden="true"
+                                        viewBox="0 0 40 40"
+                                        className="h-11 w-11 text-accent"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.25"
                                     >
-                                        <svg
-                                            aria-hidden="true"
-                                            viewBox="0 0 40 40"
-                                            className="h-11 w-11 text-accent"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="1.25"
-                                        >
-                                            <circle cx="20" cy="20" r="19" />
-                                            <path
-                                                d="M12.5 20.5l5 5L28 14"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            />
-                                        </svg>
-                                    </motion.span>
-                                    <h3 className="mt-8 font-display text-d2 font-semibold text-ink">
-                                        Message sent.
-                                    </h3>
-                                    <p className="mt-5 max-w-measure text-body text-ink-2">
-                                        It landed in my inbox. I usually reply within a day or two.
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => setStatus("idle")}
-                                        className="link-rule tap mt-8 font-mono text-label uppercase text-ink"
-                                    >
-                                        Send another
-                                    </button>
-                                </motion.div>
-                            ) : (
-                                <motion.form
-                                    key="form"
-                                    onSubmit={submit}
-                                    noValidate
-                                    initial={false}
-                                    exit={{ opacity: 0 }}
-                                    className="grid gap-7"
+                                        <circle cx="20" cy="20" r="19" />
+                                        <path
+                                            d="M12.5 20.5l5 5L28 14"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </span>
+                                <h3 className="mt-8 font-display text-d2 font-semibold text-ink">
+                                    Message sent.
+                                </h3>
+                                <p className="mt-5 max-w-measure text-body text-ink-2">
+                                    It landed in my inbox. I usually reply within a day or two.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatus("idle")}
+                                    className="link-rule tap mt-8 font-mono text-label uppercase text-ink"
                                 >
-                                    {fields.map((field) => (
-                                        <div key={field.name}>
-                                            <label
-                                                htmlFor={field.name}
-                                                className="block font-mono text-label uppercase text-ink-3"
-                                            >
-                                                {field.label}
-                                            </label>
-                                            <input
-                                                id={field.name}
-                                                name={field.name}
-                                                type={field.type}
-                                                value={form[field.name]}
-                                                onChange={update}
-                                                autoComplete={field.name === "email" ? "email" : "name"}
-                                                required
-                                                className="field mt-2.5 text-lead"
-                                            />
-                                        </div>
-                                    ))}
-
-                                    <div>
+                                    Send another
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={submit} noValidate className="grid gap-7">
+                                {fields.map((field) => (
+                                    <div key={field.name}>
                                         <label
-                                            htmlFor="message"
+                                            htmlFor={field.name}
                                             className="block font-mono text-label uppercase text-ink-3"
                                         >
-                                            What are you trying to build?
+                                            {field.label}
                                         </label>
-                                        <textarea
-                                            id="message"
-                                            name="message"
-                                            value={form.message}
+                                        <input
+                                            id={field.name}
+                                            name={field.name}
+                                            type={field.type}
+                                            value={form[field.name]}
                                             onChange={update}
-                                            rows={5}
+                                            autoComplete={field.name === "email" ? "email" : "name"}
                                             required
-                                            placeholder="What it is, who it is for, and roughly when you need it."
-                                            className="field mt-2.5 resize-none text-lead placeholder:text-body"
+                                            className="field mt-2.5 text-lead"
                                         />
                                     </div>
+                                ))}
 
-                                    <div className="flex flex-wrap items-center gap-6">
-                                        <button
-                                            type="submit"
-                                            disabled={status === "sending"}
-                                            className="group inline-flex min-h-11 items-center gap-3 rounded border border-ink bg-ink px-8 py-4 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-ink disabled:opacity-50"
-                                        >
-                                            {status === "sending" ? "Sending" : "Send message"}
-                                            <span className="transition-transform duration-300 group-hover:translate-x-1">
-                                                →
-                                            </span>
-                                        </button>
+                                <div>
+                                    <label
+                                        htmlFor="message"
+                                        className="block font-mono text-label uppercase text-ink-3"
+                                    >
+                                        What are you trying to build?
+                                    </label>
+                                    <textarea
+                                        id="message"
+                                        name="message"
+                                        value={form.message}
+                                        onChange={update}
+                                        rows={5}
+                                        required
+                                        placeholder="What it is, who it is for, and roughly when you need it."
+                                        className="field mt-2.5 resize-none text-lead placeholder:text-body"
+                                    />
+                                </div>
 
-                                        <p aria-live="polite" className="font-mono text-meta text-ink-3">
-                                            {status === "error" &&
-                                                "Fill in all three fields, then try again."}
-                                        </p>
-                                    </div>
-                                </motion.form>
-                            )}
-                        </AnimatePresence>
+                                <div className="flex flex-wrap items-center gap-6">
+                                    <button
+                                        type="submit"
+                                        disabled={status === "sending"}
+                                        className="group inline-flex min-h-11 items-center gap-3 rounded border border-ink bg-ink px-8 py-4 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-ink disabled:opacity-50"
+                                    >
+                                        {status === "sending" ? "Sending" : "Send message"}
+                                        <span className="transition-transform duration-300 group-hover:translate-x-1">
+                                            →
+                                        </span>
+                                    </button>
+
+                                    <p aria-live="polite" className="font-mono text-meta text-ink-3">
+                                        {status === "error" &&
+                                            "Fill in all three fields, then try again."}
+                                    </p>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             </div>
