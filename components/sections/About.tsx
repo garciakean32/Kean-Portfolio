@@ -205,7 +205,7 @@ export default function About() {
             </div>
 
             <ImageBand
-                src="/images/gray tatami mat.png"
+                src="/images/gray tatami mat.webp"
                 alt=""
                 tone="from-paper-3 to-paper"
                 height="h-[36svh] min-h-[12rem] md:h-[52svh]"
@@ -270,7 +270,7 @@ export default function About() {
 
             {/* Full bleed, edge to edge — the same treatment the wave gets */}
             <ImageBand
-                src="/images/tori gate.png"
+                src="/images/tori gate.webp"
                 alt=""
                 tone="from-paper to-paper-3"
                 height="h-[36svh] min-h-[12rem] md:h-[56svh]"

@@ -200,9 +200,14 @@ export default function PrismDrift({
     const [ready, setReady] = useState(false);
 
     // live-updating ref so the render loop always reads the latest values
-    // without tearing down and rebuilding the WebGL context
+    // without tearing down and rebuilding the WebGL context. Written after
+    // paint rather than during render — the loop reads it on the next frame
+    // either way, and a ref written mid-render is a bug waiting for
+    // concurrent rendering to find it.
     const liveRef = useRef({ intensity, desktopIntensity, angle, noise, minDelay, maxDelay });
-    liveRef.current = { intensity, desktopIntensity, angle, noise, minDelay, maxDelay };
+    useEffect(() => {
+        liveRef.current = { intensity, desktopIntensity, angle, noise, minDelay, maxDelay };
+    });
 
     useEffect(() => {
         if (!motionEnabled()) return;
@@ -284,6 +289,13 @@ export default function PrismDrift({
             megaMultiplier: 1,
         };
 
+        /* Whether the picture on screen still matches what the uniforms say.
+           Between bursts every frame is identical — no split, no grain, no
+           nudge — so the resting frame is drawn once and then the GPU is left
+           alone until something actually changes it. Anything that invalidates
+           what is on the canvas sets this. */
+        let needsDraw = true;
+
         // the rendered <img> is same-origin and already decoded, so it doubles
         // as the texture source — no second download of the portrait
         const upload = () => {
@@ -295,6 +307,7 @@ export default function PrismDrift({
             state.hasImage = true;
             state.imageWidth = img.naturalWidth;
             state.imageHeight = img.naturalHeight;
+            needsDraw = true;
             setReady(true);
         };
         uploadRef.current = upload;
@@ -323,6 +336,8 @@ export default function PrismDrift({
                 canvas.width = w;
                 canvas.height = h;
                 gl.viewport(0, 0, w, h);
+                // Resizing the drawing buffer clears it.
+                needsDraw = true;
             }
         };
         resize();
@@ -395,6 +410,13 @@ export default function PrismDrift({
 
             const mixClamped = Math.min(state.mix, 1);
             const megaActive = now < state.megaUntil;
+
+            // Nothing is happening and the resting frame is already on the
+            // canvas: the schedules above still tick, but there is no reason
+            // to hand the GPU the same picture sixty times a second.
+            const settled = mixClamped === 0 && !megaActive;
+            if (settled && !needsDraw) return;
+            needsDraw = !settled;
 
             // dips to 90% opacity for the burst, snaps back to 100% the
             // instant it ends — same envelope as the split/grain uniforms
