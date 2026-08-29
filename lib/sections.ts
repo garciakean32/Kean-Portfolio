@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { sections } from "@/lib/data";
 import { getLenis } from "@/lib/lenis";
+import { ScrollTrigger } from "@/lib/motion";
 
 /** The line down the viewport a section has to cross to count as "current". */
 const ACTIVE_LINE = 0.35;
@@ -96,34 +97,73 @@ export function scrollToSection(id: string) {
  * cheaper and more predictable than five observers, and it gets the last
  * section right when the page bottoms out before that section's top has
  * crossed the line.
+ *
+ * The positions themselves are measured once and kept. `documentTop` walks
+ * the offsetParent chain and that is a layout read: doing five of them plus a
+ * `scrollHeight` on every scroll event is a forced reflow per frame — Lenis
+ * fires one event per frame — for an answer that only changes when the
+ * document is re-laid out. So the measuring happens on resize and on every
+ * ScrollTrigger refresh, which is exactly when it can have changed (the
+ * sideways tracks size their own scroll budget from JS during one), and the
+ * scroll itself only compares numbers.
+ *
+ * The comparing is rAF-throttled on top of that, so a burst of scroll events
+ * inside one frame settles into a single read.
  */
 export function useActiveSection() {
     const [active, setActive] = useState(sections[0].id);
 
     useEffect(() => {
+        let tops: { id: string; top: number }[] = [];
+        let pageHeight = 0;
+
+        const measure = () => {
+            tops = sections.map((section) => {
+                const el = document.getElementById(section.id);
+                // A section that is not on the page yet can never be current.
+                return { id: section.id, top: el ? documentTop(el) : Infinity };
+            });
+            pageHeight = document.documentElement.scrollHeight;
+        };
+
+        let frame = 0;
         const read = () => {
+            frame = 0;
+
             const line = window.innerHeight * ACTIVE_LINE;
             let current = sections[0].id;
 
-            for (const section of sections) {
-                const el = document.getElementById(section.id);
-                if (el && documentTop(el) - window.scrollY <= line) current = section.id;
+            for (const section of tops) {
+                if (section.top - window.scrollY <= line) current = section.id;
             }
 
-            const atBottom =
-                window.innerHeight + window.scrollY >=
-                document.documentElement.scrollHeight - 4;
+            const atBottom = window.innerHeight + window.scrollY >= pageHeight - 4;
             if (atBottom) current = sections[sections.length - 1].id;
 
             setActive(current);
         };
 
+        const schedule = () => {
+            if (!frame) frame = requestAnimationFrame(read);
+        };
+
+        const remeasure = () => {
+            measure();
+            schedule();
+        };
+
+        measure();
         read();
-        window.addEventListener("scroll", read, { passive: true });
-        window.addEventListener("resize", read);
+        window.addEventListener("scroll", schedule, { passive: true });
+        window.addEventListener("resize", remeasure);
+        // Fonts and images settle after first paint and move every section
+        // below them; ScrollTrigger refreshes on both, so ride that.
+        ScrollTrigger.addEventListener("refresh", remeasure);
         return () => {
-            window.removeEventListener("scroll", read);
-            window.removeEventListener("resize", read);
+            if (frame) cancelAnimationFrame(frame);
+            window.removeEventListener("scroll", schedule);
+            window.removeEventListener("resize", remeasure);
+            ScrollTrigger.removeEventListener("refresh", remeasure);
         };
     }, []);
 
