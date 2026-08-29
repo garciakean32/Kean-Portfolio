@@ -9,6 +9,10 @@ export const personal = {
     coordinates: "8.4542° N / 124.6319° E",
     timezone: "UTC+8",
     resumeUrl: "/Kean Valgere E. Garcia_Resume.pdf",
+    /* Where the site lives. Every absolute URL the page hands a crawler —
+       canonical, sitemap, robots, the structured data in the root layout —
+       resolves from this one, so a move is one line. */
+    siteUrl: "https://keangarcia.vercel.app",
     social: {
         github: "https://github.com/garciakean32",
         instagram: "https://www.instagram.com/kean.garcia32",

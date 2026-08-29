@@ -16,7 +16,9 @@ const archivo = Archivo({
 
 const newsreader = Newsreader({
     subsets: ["latin"],
-    weight: ["300", "400"],
+    // 400 only, upright and italic: nothing on the site sets the serif at any
+    // other weight, and every weight listed here is a font file that ships.
+    weight: ["400"],
     style: ["normal", "italic"],
     variable: "--font-newsreader",
     display: "swap",
@@ -56,18 +58,52 @@ const JP_FONT_URL = `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@
    component so the scroll dock is already faded out on the first frame. */
 const MOTION_GATE = `(function(){var d=document.documentElement;try{var m=window.matchMedia('(prefers-reduced-motion: reduce)');var s=function(){d.dataset.motion=m.matches?'off':'on'};s();m.addEventListener?m.addEventListener('change',s):m.addListener(s)}catch(e){d.dataset.motion='off'}d.dataset.intro=d.dataset.motion==='on'&&!location.hash?'pending':'off';})();`;
 
+const DESCRIPTION =
+    "Full-stack web developer building modern, responsive websites and web applications for businesses and clients. Based in Philippines.";
+
 export const metadata: Metadata = {
-    metadataBase: new URL("https://keangarcia.vercel.app"),
+    metadataBase: new URL(personal.siteUrl),
     title: `${personal.name} — ${personal.role}`,
-    description:
-        "Full-stack web developer building modern, responsive websites and web applications for businesses and clients. Based in Philippines.",
+    description: DESCRIPTION,
+    // One page, one address: said out loud so a crawler that arrives on an
+    // anchor or with a tracking parameter still indexes the one URL.
+    alternates: { canonical: "/" },
+    authors: [{ name: personal.name, url: personal.siteUrl }],
+    creator: personal.name,
+    robots: {
+        index: true,
+        follow: true,
+        googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    },
     openGraph: {
         title: `${personal.name} — ${personal.role}`,
         description:
             "Websites and web applications, built end to end. Based in Philippines.",
+        url: "/",
+        siteName: personal.name,
         type: "website",
         locale: "en_PH",
     },
+    twitter: {
+        card: "summary",
+        title: `${personal.name} — ${personal.role}`,
+        description:
+            "Websites and web applications, built end to end. Based in Philippines.",
+    },
+};
+
+/* Who the site is about, in the form a search engine reads rather than
+   infers. Kept to what the page already says out loud. */
+const PERSON_SCHEMA = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: personal.name,
+    jobTitle: personal.role,
+    description: DESCRIPTION,
+    url: personal.siteUrl,
+    email: `mailto:${personal.email}`,
+    address: { "@type": "PostalAddress", addressLocality: personal.location },
+    sameAs: Object.values(personal.social),
 };
 
 export const viewport: Viewport = {
@@ -87,6 +123,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
                 <link rel="stylesheet" href={JP_FONT_URL} />
                 <script dangerouslySetInnerHTML={{ __html: MOTION_GATE }} />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(PERSON_SCHEMA) }}
+                />
             </head>
             <body>
                 <SmoothScroll />
