@@ -201,7 +201,7 @@ export default function Services() {
 
             {/* A full-bleed pause after the answers, before the process */}
             <ImageBand
-                src="/images/gray tatami mat 3.png"
+                src="/images/gray tatami mat 3.webp"
                 alt=""
                 tone="from-paper to-paper-3"
                 height="h-[34svh] min-h-[12rem] md:h-[50svh]"
@@ -340,7 +340,7 @@ export default function Services() {
                     <figure className="lg:col-span-3 lg:col-start-10 lg:row-start-1">
                         <div className="js-figure relative aspect-[3/4] w-full max-w-[14rem] overflow-hidden rounded-md bg-paper-2">
                             <Image
-                                src="/images/kean sakura.png"
+                                src="/images/kean sakura.webp"
                                 alt=""
                                 fill
                                 quality={85}

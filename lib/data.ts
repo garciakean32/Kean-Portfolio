@@ -188,7 +188,7 @@ export const projects = [
         jp: "衣",
         summary: "An online clothing store, built end to end — browsing through to checkout.",
         liveUrl: "https://k4threads.vercel.app",
-        image: "/images/K4 Threads project.png",
+        image: "/images/K4 Threads project.webp",
         type: "Personal project",
         status: {
             label: "Not ready yet",
@@ -205,7 +205,7 @@ export const projects = [
         jp: "脳",
         summary: "Build a chatbot, feed it your own knowledge, share it by link, QR or embed.",
         liveUrl: "https://askbrain-user.vercel.app",
-        image: "/images/askbrain project.png",
+        image: "/images/askbrain project.webp",
         type: "Personal project",
         status: {
             label: "Not ready yet",

@@ -21,37 +21,6 @@ const HITS = 2;
 const HIT_GAP = 0.19;
 const HIT_HOLD = 0.09;
 
-/** Seconds between one line's idle tears, and how long a tear is held.
-
-    The hold is the portrait's own — PrismDrift holds each burst for 40-90ms,
-    which is under three frames, and that is what makes a tear read as a
-    shutter rather than as movement.
-
-    The gap is deliberately not the portrait's. Matching its 0.5-6s schedule
-    put six lines of type on the same cadence as one photograph, and six
-    things tearing that often is not a glitch, it is a flicker. Backing the
-    range off to 4-14s leaves each line tearing rarely enough to be noticed
-    when it does. */
-const IDLE_MIN = 4;
-const IDLE_MAX = 14;
-const TEAR_MIN = 0.04;
-const TEAR_MAX = 0.09;
-
-/**
- * The directions a glitch nudge can throw something, mirroring PrismDrift's
- * own set: left, right, and the four diagonals. Straight up/down is left out
- * there because it reads as a bounce, and the same is true here.
- */
-const NUDGE_DIRECTIONS: readonly [number, number][] = [
-    [-1, 0],
-    [1, 0],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-    [1, 1],
-];
-const DIAG = Math.SQRT1_2;
-
 /** What the name reads as mid-glitch — same two halves, different letters. */
 const NAME = ["KE", "AN"] as const;
 const GLITCHED_NAME = ["KY", "RA"] as const;
@@ -106,14 +75,6 @@ export default function Hero() {
         const wordmark = q(".js-wordmark")[0] as HTMLElement;
         const parts = q(".js-name-part");
         const portrait = q(".js-portrait");
-
-        /** A nudge in one of the six glitch directions, `min`-`max` px out. */
-        const nudge = (min: number, max: number) => {
-            const [dx, dy] = NUDGE_DIRECTIONS[Math.floor(Math.random() * NUDGE_DIRECTIONS.length)];
-            const distance = rand(min, max);
-            const norm = dx !== 0 && dy !== 0 ? DIAG : 1;
-            return { x: dx * distance * norm, y: dy * distance * norm };
-        };
 
         // The curtains and the navbar live outside this section — in the root
         // layout, so a sheet of paper and a hidden header are already in
@@ -403,65 +364,6 @@ export default function Hero() {
             `glitch+=${HITS * HIT_GAP}`
         );
 
-        /* ---- afterwards: each line keeps its own clock ---- */
-
-        /* A tear on a loop, well apart from the last one. Every line rolls its
-           own first gap and a fresh one after each tear, so no two of them
-           ever settle into step with each other.
-
-           There is no motion in a tear and there never should be: it is one
-           `.set()` on, one `.set()` off, and nothing in between for anything
-           to interpolate. The element is displaced and split for two or three
-           frames and then it is not — a shutter, not a slide. That is also why
-           the nudge distance can be as large as it is without reading as a
-           bounce.
-
-           The hit itself is the portrait's, not a separate idea: thrown in
-           one of the same six directions, at a distance and a chromatic
-           split that are re-rolled every time. Opacity is deliberately left
-           alone — text that dims reads as a render bug rather than a glitch,
-           where the portrait can carry it because it's an image.
-
-           Built out of `.call()`s rather than `.set()`s so every cycle rolls
-           its own numbers; a timeline of sets would bake one set of values in
-           at build time and replay them identically forever. */
-        const idle = (targets: Element[]) => {
-            if (!targets.length) return;
-
-            const hit = () => gsap.set(targets, { ...nudge(3, 11), textShadow: fringe(rand(2, 6)) });
-            const settle = () => gsap.set(targets, { x: 0, y: 0, textShadow: "none" });
-
-            const tear = gsap.timeline({
-                repeat: -1,
-                delay: rand(IDLE_MIN, IDLE_MAX),
-                repeatDelay: rand(IDLE_MIN, IDLE_MAX),
-            });
-
-            // On, then off two or three frames later. The hold is rolled
-            // inside the callback rather than baked in as a second child, so
-            // it is a fresh number every cycle the way the gap and the throw
-            // already are. `delayedCall` is still GSAP's, so the context
-            // reverts it with everything else on unmount.
-            tear.call(() => {
-                hit();
-                gsap.delayedCall(rand(TEAR_MIN, TEAR_MAX), settle);
-            });
-
-            tear.eventCallback("onRepeat", () => tear.repeatDelay(rand(IDLE_MIN, IDLE_MAX)));
-        };
-
-        // The wordmark tears along with everything else now. It still never
-        // re-reads as "KYRA" — that swap belongs to the reveal alone — so what
-        // it gets here is the nudge and the split, nothing more.
-        //
-        // The two buttons are the one thing held out. Everything else on this
-        // screen is a statement; those are the way off it, and a control that
-        // jumps under the cursor is a control you have to chase.
-        for (const group of ["role", "tate", "jp", "offer"]) {
-            idle(q(`[data-glitch="${group}"]`));
-        }
-        idle([wordmark]);
-
         // A quiet drift once the page starts scrolling — the wordmark and the
         // portrait move at different speeds so the frame has some depth.
         gsap
@@ -567,7 +469,7 @@ export default function Hero() {
             >
                 <PrismDrift
                     ref={prism}
-                    src="/images/kean hero.png"
+                    src="/images/kean hero.webp"
                     priority
                     sizes="100vw"
                     className="object-contain"
@@ -622,7 +524,7 @@ export default function Hero() {
                     the name back 32px from where it belonged. On a wrapper
                     nothing reads it and nothing restores it; the breakpoint
                     just answers for itself. */}
-                <div className="-translate-y-8 sm:translate-y-0">
+                <div className="-translate-y-8 sm:translate-y-0 lg:-translate-y-6">
                 <h1
                     aria-label="Kean"
                     // Sized to very nearly span the frame, the way a poster
