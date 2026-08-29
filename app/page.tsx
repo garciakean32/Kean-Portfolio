@@ -49,7 +49,7 @@ export default function HomePage() {
             <div className="light-panel">
                 <Work />
                 <ImageBand
-                    src="/images/gray wave.png"
+                    src="/images/gray wave.webp"
                     alt=""
                     tone="from-paper to-paper-3"
                     height="h-[34svh] min-h-[12rem] md:h-[52svh]"
