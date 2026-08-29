@@ -182,7 +182,7 @@ export default function Services() {
                             <span
                                 aria-hidden="true"
                                 className={cn(
-                                    "js-card-in mt-8 block select-none text-[clamp(1.75rem,3.5vw,2.5rem)]",
+                                    "js-card-in mt-8 block select-none text-label",
                                     OUTLINE
                                 )}
                             >
