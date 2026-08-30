@@ -108,7 +108,13 @@ const PERSON_SCHEMA = {
 
 export const viewport: Viewport = {
     // The site has one mode.
-    themeColor: "#0e0e10",
+    themeColor: "#020203",
+    // Said in a meta tag rather than only in CSS, because the browser reads it
+    // before the stylesheet arrives: it is what the base canvas is painted
+    // with in the gap between one document being released and the next one
+    // being styled. Without it that gap is white, which is what the hero's
+    // WebGL band flashed on every reload.
+    colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

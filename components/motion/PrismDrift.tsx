@@ -6,7 +6,7 @@ import { motionEnabled } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * PrismDrift — a WebGL chromatic-aberration glitch, ported from the Framer
+ * PrismDrift — a WebGL split-and-tear glitch, ported from the Framer
  * component of the same name and rewired for this site: the source is a
  * transparent cut-out rather than a filled photo, so sampling is premultiplied
  * and letterboxed (`object-contain`) instead of cover-fit, and the effect fires
@@ -35,9 +35,15 @@ const FRAGMENT_SHADER = `
   uniform sampler2D uTexture;  // the cut-out, premultiplied
   uniform vec2 uImageSize;     // natural size, for contain-fit math
   uniform float uTime;         // seconds
-  uniform float uIntensityPx;  // current RGB-split distance in pixels
+  uniform float uIntensityPx;  // current split distance in pixels
   uniform float uAngle;        // split direction, radians
   uniform float uNoise;        // 0-1, organic jitter + grain amount
+
+  // The two edges the split tears into, and the weights that read a copy's
+  // brightness. Cool greys either side of neutral — nothing here is a hue.
+  const vec3 LUMA = vec3(0.299, 0.587, 0.114);
+  const vec3 ASH = vec3(0.78, 0.82, 0.90);
+  const vec3 SMOKE = vec3(0.20, 0.21, 0.25);
 
   // cheap hash-based pseudo random, used for jitter + film grain
   float hash(vec2 p) {
@@ -69,25 +75,45 @@ const FRAGMENT_SHADER = `
     vec2 dir = vec2(cos(uAngle), sin(uAngle));
     vec2 pxToUv = dir / uResolution;
 
-    // per-channel jitter so the split feels alive rather than a static offset
-    float jitterR = (hash(uv * 400.0 + uTime) - 0.5) * uNoise;
+    // per-copy jitter so the split feels alive rather than a static offset
+    float jitterA = (hash(uv * 400.0 + uTime) - 0.5) * uNoise;
     float jitterB = (hash(uv * 400.0 - uTime) - 0.5) * uNoise;
 
-    vec4 colorR = sampleImage(uv + pxToUv * uIntensityPx * (1.0 + jitterR));
+    vec4 colorAhead = sampleImage(uv + pxToUv * uIntensityPx * (1.0 + jitterA));
     vec4 colorCenter = sampleImage(uv);
-    vec4 colorB = sampleImage(uv - pxToUv * uIntensityPx * (1.0 + jitterB));
+    vec4 colorBehind = sampleImage(uv - pxToUv * uIntensityPx * (1.0 + jitterB));
+
+    // The split, as ink rather than as a broken signal.
+    //
+    // The Framer original keeps R from one copy, G from the centre and B from
+    // the other, which is a chromatic aberration by construction: the moment
+    // the copies part, the edges go magenta and cyan. Here the two outer
+    // copies are read as brightness only and laid back over the centre
+    // *tinted* — pale ash leading, near-black smoke trailing — so the figure
+    // tears into a wet double of itself and no hue is ever invented.
+    //
+    // Both are differences against the centre, which is what keeps the resting
+    // frame honest: at zero split all three samples are identical, both terms
+    // vanish, and what is left is a plain resample of the portrait.
+    float lumCenter = dot(colorCenter.rgb, LUMA);
+    float lumAhead = dot(colorAhead.rgb, LUMA);
+    float lumBehind = dot(colorBehind.rgb, LUMA);
 
     // premultiplied channels, so the widest of the three alphas still bounds
     // every one of them and the fringe fades out on its own
-    vec3 result = vec3(colorR.r, colorCenter.g, colorB.b);
-    float alpha = max(colorCenter.a, max(colorR.a, colorB.a));
+    float alpha = max(colorCenter.a, max(colorAhead.a, colorBehind.a));
+    vec3 result = colorCenter.rgb
+      + ASH * (lumAhead - lumCenter) * 0.95
+      + SMOKE * (lumBehind - lumCenter) * 1.15;
 
     // fine grain tied to the same noise control, kept inside the silhouette so
     // the empty frame around it stays clean
     float grain = (hash(vUv * uResolution.xy + uTime * 60.0) - 0.5) * uNoise * 0.08;
     result += grain * alpha;
 
-    gl_FragColor = vec4(result, alpha);
+    // Premultiplied colour may never run past its own alpha, and the tinted
+    // ghosts above are free to push it there on a hard hit.
+    gl_FragColor = vec4(clamp(result, 0.0, alpha), alpha);
   }
 `;
 
@@ -154,7 +180,7 @@ type Props = {
     priority?: boolean;
     /** Applied to the underlying image — the canvas always matches its box. */
     className?: string;
-    /** Max RGB channel offset, in CSS pixels, at the peak of a burst. */
+    /** Max offset of the two ghost copies, in CSS pixels, at a burst peak. */
     intensity?: number;
     /** Same, but used from the `lg` breakpoint up. Defaults to `intensity * 1.8`. */
     desktopIntensity?: number;
