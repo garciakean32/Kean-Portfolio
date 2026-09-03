@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef } from "react";
 import PrismDrift, { type PrismDriftHandle } from "@/components/motion/PrismDrift";
 import ShaderFlow from "@/components/motion/ShaderFlow";
@@ -180,12 +179,11 @@ export default function Hero() {
         // with motion off none of this runs, and the portrait is simply there.
         tl.set(portrait, { opacity: 0 }, 0);
 
-        /** Draws one element the way the two sumi strokes are drawn: a
-            soft-edged mask travelling up its own box, so the thing arrives foot
-            to head rather than fading in whole. `.ink-wipe` in globals.css is
-            that mask and `--ink-wipe` is the head of it — the same pair the
-            branch and the bamboo have always used. Everything in the poster
-            arrives this way except the portrait, which cuts in on the glitch.
+        /** Draws one element with a soft-edged mask travelling up its own box,
+            so the thing arrives foot to head rather than fading in whole.
+            `.ink-wipe` in globals.css is that mask and `--ink-wipe` is the head
+            of it. Everything in the poster arrives this way except the
+            portrait, which cuts in on the glitch.
 
             The class is put on here rather than carried in the markup, and
             taken off again on the frame the stroke finishes: a mask is a
@@ -226,9 +224,9 @@ export default function Hero() {
         };
 
         // 1 — the dolly, under everything else and running the whole length of
-        // the intro: the frame comes forward while the strokes are still being
-        // laid down on it, so the two read as one move rather than a move and
-        // then a reveal.
+        // the intro: the frame comes forward while the rest of the poster is
+        // still being laid down on it, so the two read as one move rather than
+        // a move and then a reveal.
         tl.set(dolly, { transformOrigin: "50% 50%", willChange: "transform" }, 0).fromTo(
             dolly,
             { scale: DOLLY_FROM },
@@ -237,15 +235,13 @@ export default function Hero() {
         );
 
         // 2 — the order, and the order is depth. The band of light is the
-        // furthest thing back and comes up first, over the whole intro; the two
-        // strokes stand either side of the figure; the name is behind it; the
-        // small type in the corners is last, because it sits on the glass
-        // rather than in the room. Read this list top to bottom and you are
-        // walking towards the frame. The portrait is not in it: the room is
-        // built empty and the figure is torn into it at the end.
+        // furthest thing back and comes up first, over the whole intro, as the
+        // section's own backdrop; the name is behind it; the small type in the
+        // corners is last, because it sits on the glass rather than in the
+        // room. Read this list top to bottom and you are walking towards the
+        // frame. The portrait is not in it: the room is built empty and the
+        // figure is torn into it at the end.
         draw(q(".js-flow"), 0, DOLLY);
-        draw(q(".js-tree"), STEP, WIPE * 1.7);
-        draw(q(".js-bamboo"), STEP * 2, WIPE * 1.7);
         draw([wordmark], STEP * 4, WIPE * 1.3);
         draw([...q(".js-role"), ...q(".js-tate")], STEP * 8, WIPE);
         draw(q(".js-body"), STEP * 9, WIPE);
@@ -349,167 +345,22 @@ export default function Hero() {
                 context, which is why every `z-index` below is relative to this
                 and not to the page. */}
             <div className="js-dolly absolute inset-0 flex flex-col">
-            {/* A slow band of light drifting across the middle of the frame —
-                see components/motion/ShaderFlow.tsx for what it is and what
-                was changed to make it belong here.
+            {/* The shader is the section's background now: it fills the whole
+                frame rather than a band drifting across the middle of it, so
+                the hero's backdrop is the shaderflow itself instead of a shape
+                laid over `hero-ground`. See components/motion/ShaderFlow.tsx
+                for what it is.
 
-                A band rather than the whole section, and that is what sets its
-                scale: the shader normalises by the shorter side, so a wide,
-                short element puts the wave's full swing inside its own height
-                and leaves it reading as a horizon behind the figure rather
-                than a ribbon laid over the poster. Centred a little below the
-                middle, where the ground is already lifting.
-
-                Painted first, before the two strokes, with no `z-index` for
-                the same reason they have none. */}
+                Painted first, before everything else in the poster, with no
+                `z-index` — it sits under the name (z-0) without opening a
+                stacking context of its own. */}
             <div
                 data-anim="fade"
                 aria-hidden="true"
-                className="js-flow pointer-events-none absolute inset-x-0 top-[36%] h-[46svh] md:top-[38%] md:h-[52svh]"
+                className="js-flow pointer-events-none absolute inset-0"
             >
                 <ShaderFlow />
             </div>
-
-            {/* Two sumi strokes standing off either shoulder of the name: the
-                plum branch leaning out of the left margin, the bamboo running
-                the full height of the right. Both are cut-outs on transparent
-                ground, so there is no paper to drop out. Both are cut to the
-                same three tones — black, dark gray, dim white — by the two
-                filters below, which are SVG rather than CSS because CSS has no
-                primitive that remaps a range onto named values. They share a
-                table and differ only in the pass that feeds it: the branch is
-                already light where it matters, so its stretch is a positive
-                slope, while the bamboo is near-black ink at a median of 29 —
-                on this ground not a dark stroke but no stroke — so its slope
-                is negative and inverts.
-
-                The branch is turned well past upright and set past the left
-                edge: the trunk swings left as it rotates, and runs off the side
-                of the frame rather than stopping inside it. The bamboo is a hair
-                taller than the screen on purpose — just enough that its culms
-                run off both the top and the bottom of it.
-
-                No `z-index`, deliberately: painted first among the section’s
-                positioned children, they sit under the name (z-0) without
-                opening a stacking context of their own. */}
-            {/* Three tones and nothing in between: black, a dark gray, and a dim
-                white. CSS filters cannot do this — `contrast` only steepens a
-                ramp, it never quantizes — so the step that actually cuts the
-                bands is `feComponentTransfer type="discrete"`, which splits its
-                input into as many equal bands as it has table values and
-                flattens each one onto the value it names.
-
-                The three values are `0 0.28 0.78`: true black, 71, and 199 —
-                dim rather than paper-white, so the pair sits into the ground
-                rather than glaring off it. Sharing them is what makes the two
-                images read as one hand.
-
-                The bamboo takes only the top two. Black is the ground here, so
-                a stroke that reaches it does not darken, it disappears, and the
-                bamboo’s dark end is broad enough that it was hollowing out the
-                culms rather than shading them — the branch’s equivalent range
-                is a thin trunk, which is why it can afford the full ramp. `0.28
-                0.78` is the same ramp with its floor raised to the middle
-                anchor: no black anywhere in the stroke, gray at its darkest.
-
-                Both read the table as `type="table"`, which treats the three
-                values as anchors on a ramp rather than as band edges — it
-                interpolates where `discrete` steps. Hard bands were tried and
-                are wrong for these images. Both are fine drawings of brush
-                strokes, dry-brush texture and all, and quantizing that speckles
-                them: every grain that straddles a cut becomes its own island,
-                so a trunk arrives as salt-and-pepper rather than as a trunk.
-                Blurring first only trades the speckle for melted blossoms,
-                since the twigs are thinner than any blur that would fix the
-                grain. Interpolating keeps the same black, gray and dim white at
-                the ends and in the middle, and lets the texture shade
-                continuously between them.
-
-                So the `linear` pass is the whole of the difference, and it is
-                where the two are actually matched. The branch sets the terms: a
-                slope of 0.71 lifted by 0.28, chosen to keep the trunk — the
-                darkest thing in the image — up off the floor, since left alone
-                it lands in black, and on this ground that means gone, blossoms
-                floating unattached. That lands the branch at quartiles of 0.23
-                and 0.60.
-
-                The bamboo’s slope is negative, which is where the inversion
-                happens, and it was fitted rather than picked: at this steepness
-                the bamboo’s own quartiles land on the branch’s, which on the
-                full ramp matched the two images exactly.
-
-                Raising its floor then broke that match — with the dark end
-                gone the stroke could only sit lighter, and it did, meaning 0.58
-                against the branch’s 0.42. The intercept is what buys it back.
-                Dropping it from 0.917 to 0.72 slides the whole stroke down its
-                ramp, toward the dark gray at the floor instead of the dim white
-                at the top: mean 0.49, and the share of the stroke sitting on
-                the floor outright goes from 6% to 14%. Slope sets how much of
-                the ramp the stroke uses, intercept sets where on it the stroke
-                sits, and only the second one is a matter of taste. The bamboo is the inverse problem: it
-                clusters high once flipped, quartiles at 0.73 and 0.96, so fed
-                in raw nearly all of it would land in the top band and come back
-                one flat tone. Its slope is negative, which is where the
-                inversion happens, and steep, which is what pulls the cuts apart
-                onto 0.62 and 0.85 — 14% black, 29% dark gray, 57% dim white.
-
-                `saturate 0` leads both, so the faint warm cast in the bamboo
-                file cannot survive into a band and tint it.
-                `color-interpolation-filters` is sRGB by necessity: the default
-                is linearRGB, which would put every number above somewhere other
-                than where it was measured. Alpha is left untouched throughout,
-                so the cut-outs keep their own antialiased edges and the hard
-                tones arrive on a soft outline. */}
-            <svg aria-hidden="true" className="pointer-events-none absolute h-0 w-0">
-                <defs>
-                    <filter id="tree-ink" colorInterpolationFilters="sRGB">
-                        <feColorMatrix type="saturate" values="0" />
-                        <feComponentTransfer>
-                            <feFuncR type="linear" slope="0.7092" intercept="0.2766" />
-                            <feFuncG type="linear" slope="0.7092" intercept="0.2766" />
-                            <feFuncB type="linear" slope="0.7092" intercept="0.2766" />
-                        </feComponentTransfer>
-                        <feComponentTransfer>
-                            <feFuncR type="table" tableValues="0 0.28 0.78" />
-                            <feFuncG type="table" tableValues="0 0.28 0.78" />
-                            <feFuncB type="table" tableValues="0 0.28 0.78" />
-                        </feComponentTransfer>
-                    </filter>
-                    <filter id="bamboo-ink" colorInterpolationFilters="sRGB">
-                        <feColorMatrix type="saturate" values="0" />
-                        <feComponentTransfer>
-                            <feFuncR type="linear" slope="-1.904" intercept="0.72" />
-                            <feFuncG type="linear" slope="-1.904" intercept="0.72" />
-                            <feFuncB type="linear" slope="-1.904" intercept="0.72" />
-                        </feComponentTransfer>
-                        <feComponentTransfer>
-                            <feFuncR type="table" tableValues="0.28 0.78" />
-                            <feFuncG type="table" tableValues="0.28 0.78" />
-                            <feFuncB type="table" tableValues="0.28 0.78" />
-                        </feComponentTransfer>
-                    </filter>
-                </defs>
-            </svg>
-            <Image
-                src="/images/tree.png"
-                alt=""
-                aria-hidden="true"
-                data-anim="fade"
-                width={1024}
-                height={1536}
-                sizes="(min-width: 1024px) 45vw, 50vw"
-                className="js-tree [filter:url(#tree-ink)] pointer-events-none absolute left-[-32%] top-[1%] h-[72svh] w-auto rotate-[68deg] md:left-[-13%] md:top-[-3%] md:h-[90svh] lg:left-[-4%] lg:top-[-4%] lg:h-[118svh]"
-            />
-            <Image
-                src="/images/bamboo.png"
-                alt=""
-                aria-hidden="true"
-                data-anim="fade"
-                width={941}
-                height={1672}
-                sizes="(min-width: 1024px) 40vw, 100vw"
-                className="js-bamboo [filter:url(#bamboo-ink)] pointer-events-none absolute right-[-72%] top-[-10%] h-[114svh] w-auto rotate-[-15deg] md:right-[-32%] md:top-[-10%] md:h-[112svh] lg:right-[-5%]"
-            />
 
             {/* Top — the mark on the left, one small line centred, and the
                 vertical run down the right margin at every size.
@@ -640,8 +491,8 @@ export default function Hero() {
                 bottom-anchored inside that shared box (see the two `h-full
                 flex-col justify-end` wrappers below). The right panel is
                 centred rather than right-aligned, so "Available for work"
-                lines up with the middle of the buttons under it rather than
-                their right edge.
+                lines up with the middle of the button under it rather than
+                its right edge.
 
                 The list carries its own small `mb-4` on top of that. Matching
                 outer boxes is not the same as matching text: "Start a
@@ -655,12 +506,12 @@ export default function Hero() {
                 From `md` the two wrappers around each side turn into
                 `display: contents` — their children unwrap into the grid
                 directly and the whole thing reshapes into three columns: list,
-                buttons dead centre, offer on the right. `items-end` is what
+                the button dead centre, offer on the right. `items-end` is what
                 puts "Available for work" level with the last line of the list
                 rather than floating above it.
 
                 Every cell names its row. Sparse auto-placement only ever moves
-                the cursor forwards, so the buttons — third in the DOM but in
+                the cursor forwards, so the button — third in the DOM but in
                 column two — would otherwise be pushed onto a second row rather
                 than back into the gap the offer had just skipped over.
 
@@ -698,28 +549,60 @@ export default function Hero() {
                         {/* `js-steady`: arrives with the frame, never tears
                             with it. A control that jumps under the cursor is a
                             control you have to chase. */}
-                        <div className="js-body js-steady order-2 w-full md:order-none md:col-start-2 md:row-start-1 md:w-auto md:justify-self-center">
-                            {/* Blur only — no fill, no border. It lifts the
-                                words off the portrait behind them without
-                                drawing an edge, and it is the same panel at
-                                every size. */}
-                            <div className="flex flex-col items-stretch gap-2.5 rounded-lg px-2.5 py-2 backdrop-blur-md sm:flex-row sm:items-center sm:gap-4">
-                                <SectionLink
-                                    id="work"
-                                    className="group inline-flex min-h-11 items-center justify-center gap-2.5 whitespace-nowrap rounded border border-accent bg-accent px-4 py-2.5 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-accent"
+                        <div className="js-body js-steady order-2 flex justify-center md:order-none md:col-start-2 md:row-start-1 md:justify-self-center">
+                            {/* One control, and it is sized to its own label at
+                                every width. The blurred panel that used to lift
+                                a bare text link off the portrait went with the
+                                link — a solid pill carries itself.
+
+                                Nothing here may stretch. The pill's width is
+                                its content, so the disc at the trailing edge
+                                stays hard against the arrow instead of drifting
+                                off across a column it was never meant to fill;
+                                that drift is the whole reason this looked
+                                broken on a phone.
+
+                                The disc IS the resting state of the fill: the
+                                circle below sits exactly under the arrow, and
+                                hover only scales it until it has swallowed the
+                                pill. The arrow rides on top and never travels
+                                with it, so the growth reads as that one disc
+                                opening out rather than a wash arriving from
+                                nowhere — and because it is clipped by the
+                                pill's own `overflow-hidden`, no part of it is
+                                ever drawn outside the shape. */}
+                            <SectionLink
+                                id="contact"
+                                className="group relative inline-flex min-h-11 items-center gap-4 overflow-hidden whitespace-nowrap rounded-full border border-accent bg-accent py-1.5 pl-6 pr-1.5 font-mono text-label uppercase tracking-[0.16em] text-on-ink shadow-[0_10px_30px_-12px_rgba(0,0,0,0.85)] transition-shadow duration-500 ease-out hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.9)]"
+                            >
+                                {/* 22x clears the pill's far corner from a 32px
+                                    disc at its trailing edge with room to spare,
+                                    at every width the label can produce. */}
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full bg-on-ink transition-transform duration-500 ease-out group-hover:scale-[22]"
+                                />
+
+                                <span className="relative z-10 transition-colors duration-500 ease-out group-hover:text-accent">
+                                    Start a project
+                                </span>
+
+                                {/* Two arrows, not one: the resting glyph leaves
+                                    to the upper right while its twin arrives
+                                    from the lower left, both clipped to the disc
+                                    so neither is ever seen outside it. */}
+                                <span
+                                    aria-hidden="true"
+                                    className="relative z-10 h-8 w-8 shrink-0 overflow-hidden rounded-full text-accent"
                                 >
-                                    See the work
-                                    <span className="transition-transform duration-300 group-hover:translate-x-1">
+                                    <span className="absolute inset-0 grid place-items-center transition-transform duration-500 ease-out group-hover:-translate-y-6 group-hover:translate-x-6">
                                         →
                                     </span>
-                                </SectionLink>
-                                <SectionLink
-                                    id="contact"
-                                    className="link-rule inline-flex min-h-11 items-center justify-center whitespace-nowrap px-2 py-2 text-center font-mono text-label uppercase text-ink"
-                                >
-                                    Start a project
-                                </SectionLink>
-                            </div>
+                                    <span className="absolute inset-0 grid -translate-x-6 translate-y-6 place-items-center transition-transform duration-500 ease-out group-hover:translate-x-0 group-hover:translate-y-0">
+                                        →
+                                    </span>
+                                </span>
+                            </SectionLink>
                         </div>
                     </div>
                 </div>

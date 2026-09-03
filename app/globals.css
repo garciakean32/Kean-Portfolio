@@ -468,8 +468,8 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
    Nothing in the hero is faded in — every part of it is drawn, from the foot of
    its own box up to its head. This is deliberately a mask rather than a clip on
    the section: a mask resolves in the element's own box, before its transform,
-   so "bottom to top" means the bottom of the stroke rather than the bottom of
-   the screen, and the branch grows out along its own trunk while the frame
+   so "bottom to top" means the bottom of the element rather than the bottom of
+   the screen, and each stroke grows out along its own box while the frame
    around it is still moving.
 
    `--ink-wipe` is the head of the stroke, 0-100 up the image, with the 18%
