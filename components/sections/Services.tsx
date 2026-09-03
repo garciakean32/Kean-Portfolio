@@ -153,7 +153,7 @@ export default function Services() {
         <section id="services" ref={scope} className="relative pt-20 md:pt-28">
             <div className="shell mx-auto max-w-shell">
                 <div className="js-mark flex flex-wrap items-center justify-between gap-6">
-                    <SectionMark as="h2" label="What I build" />
+                    <SectionMark as="h2" label="Services" />
                     <span className="font-jp text-sm font-medium tracking-[0.3em] text-ink-3">
                         仕事
                     </span>
@@ -167,8 +167,8 @@ export default function Services() {
                 </p>
 
                 <p className="js-mark mt-8 max-w-measure text-lead text-ink-2 md:mt-12">
-                    Describe what you want, not the framework. Most projects turn out to be
-                    two or three of these at once.
+                    Describe what you want. Most projects turn out to be two or three of
+                    these at once.
                 </p>
 
                 <div className="mt-14 grid gap-x-10 gap-y-12 md:mt-20 md:grid-cols-2 lg:grid-cols-3">

@@ -12,7 +12,7 @@ import { marqueeServices } from "@/lib/data";
  * rather than JS: the arch it replaced had to measure a mixed-size text run at
  * runtime and wait on webfonts before it could even start.
  *
- * Decorative: every term here is set again as real text in the "What I build"
+ * Decorative: every term here is set again as real text in the services
  * section, so there is nothing for a screen reader to gain by reading the run
  * a second time.
  */
