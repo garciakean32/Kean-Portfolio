@@ -372,6 +372,7 @@ export default function Hero() {
                 over the name below. */}
             <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-center gap-3 pt-10 md:gap-6 md:pt-12">
                 <p
+                    data-anim="fade"
                     data-glitch="jp"
                     className="js-body col-start-1 translate-y-2 font-jp text-[0.6875rem] leading-none text-white"
                 >
@@ -379,6 +380,7 @@ export default function Hero() {
                 </p>
 
                 <p
+                    data-anim="fade"
                     data-glitch="role"
                     className="js-role col-start-2 self-start text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white sm:tracking-[0.28em]"
                 >
@@ -387,6 +389,7 @@ export default function Hero() {
 
                 <span
                     aria-hidden="true"
+                    data-anim="fade"
                     data-glitch="tate"
                     className="js-tate tate col-start-3 justify-self-end translate-y-2 font-jp text-[0.6875rem] tracking-[0.4em] text-white"
                 >
@@ -520,6 +523,7 @@ export default function Hero() {
                 <div className="grid grid-cols-2 items-stretch gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end md:gap-8">
                     <div className="hidden h-full flex-col justify-end md:flex md:contents">
                         <ul
+                            data-anim="fade"
                             data-glitch="jp"
                             className="js-body mb-4 space-y-1 font-mono text-[0.6875rem] uppercase leading-tight tracking-[0.1em] text-ink md:mb-0"
                         >
@@ -540,6 +544,7 @@ export default function Hero() {
                             the original size exactly, unchanged, once the
                             three-column layout gives it room. */}
                         <p
+                            data-anim="fade"
                             data-glitch="offer"
                             className="js-body order-1 whitespace-nowrap font-mono text-[0.625rem] uppercase tracking-[0.08em] text-ink md:order-none md:col-start-3 md:row-start-1 md:justify-self-end md:text-[0.6875rem] md:tracking-[0.2em] md:text-right"
                         >
@@ -549,7 +554,9 @@ export default function Hero() {
                         {/* `js-steady`: arrives with the frame, never tears
                             with it. A control that jumps under the cursor is a
                             control you have to chase. */}
-                        <div className="js-body js-steady order-2 flex justify-center md:order-none md:col-start-2 md:row-start-1 md:justify-self-center">
+                        <div
+                            data-anim="fade"
+                            className="js-body js-steady order-2 flex justify-center md:order-none md:col-start-2 md:row-start-1 md:justify-self-center">
                             {/* One control, and it is sized to its own label at
                                 every width. The blurred panel that used to lift
                                 a bare text link off the portrait went with the
