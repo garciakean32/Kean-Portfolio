@@ -12,11 +12,13 @@ const fields = [
     { name: "email", label: "Email", type: "email" },
 ] as const;
 
-const channels = [
-    { k: "Email", v: personal.email, href: `mailto:${personal.email}` },
-    { k: "GitHub", v: "garciakean32", href: personal.social.github },
-    { k: "Instagram", v: "kean.garcia32", href: personal.social.instagram },
-    { k: "Facebook", v: "Kean Valgere Garcia", href: personal.social.facebook },
+/** The two standing facts under the address — where I am and what that means
+    for when you'll hear back. They replace the rows the social links used to
+    fill, and they are the only other things a reader actually needs before
+    writing. */
+const facts = [
+    { k: "Based in", v: personal.location },
+    { k: "Local time", v: personal.timezone },
 ];
 
 /**
@@ -140,31 +142,41 @@ export default function Contact() {
                             A rough idea is enough to start.
                         </p>
 
-                        <dl className="mt-12 border-t border-rule">
-                            {channels.map((channel) => (
-                                <div
-                                    key={channel.k}
-                                    className="flex items-baseline justify-between gap-6 border-b border-rule py-5"
-                                >
+                        {/* The address, set as the one thing in this column
+                            rather than as the first row of a list.
+
+                            It used to be a four-row `dl` — email, then three
+                            social links — where the label/value rhythm was the
+                            whole point and no single row had to carry the
+                            column on its own. With the socials gone that shape
+                            reads as a list missing its other rows, so the email
+                            is promoted to display size and given the space the
+                            list used to occupy: one address, large enough to be
+                            the answer to the heading above it. */}
+                        <div className="mt-12 border-t border-rule pt-8">
+                            <h3 className="font-mono text-label uppercase text-ink-3">Email</h3>
+                            <a
+                                href={`mailto:${personal.email}`}
+                                // `break-words`: the address is a single
+                                // unbroken token and this column is narrow on a
+                                // phone — without it the word sets past the
+                                // gutter rather than wrapping.
+                                className="link-rule tap mt-4 inline-block break-words font-display text-d1 font-semibold tracking-[-0.02em] text-ink transition-colors hover:text-accent"
+                            >
+                                {personal.email}
+                            </a>
+                        </div>
+
+                        {/* Where and when, two-up — enough to put the address
+                            in context and to keep the column reading as a
+                            composition rather than as a single stranded line. */}
+                        <dl className="mt-10 grid grid-cols-2 gap-x-8 border-t border-rule pt-8">
+                            {facts.map((fact) => (
+                                <div key={fact.k}>
                                     <dt className="font-mono text-label uppercase text-ink-3">
-                                        {channel.k}
+                                        {fact.k}
                                     </dt>
-                                    <dd className="min-w-0">
-                                        <a
-                                            href={channel.href}
-                                            target={
-                                                channel.href.startsWith("http") ? "_blank" : undefined
-                                            }
-                                            rel={
-                                                channel.href.startsWith("http")
-                                                    ? "noopener noreferrer"
-                                                    : undefined
-                                            }
-                                            className="link-rule tap block truncate text-body text-ink transition-colors hover:text-accent"
-                                        >
-                                            {channel.v}
-                                        </a>
-                                    </dd>
+                                    <dd className="mt-3 text-body text-ink">{fact.v}</dd>
                                 </div>
                             ))}
                         </dl>

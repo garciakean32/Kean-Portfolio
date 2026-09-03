@@ -103,7 +103,6 @@ const PERSON_SCHEMA = {
     url: personal.siteUrl,
     email: `mailto:${personal.email}`,
     address: { "@type": "PostalAddress", addressLocality: personal.location },
-    sameAs: Object.values(personal.social),
 };
 
 export const viewport: Viewport = {

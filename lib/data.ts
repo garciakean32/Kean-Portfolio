@@ -13,11 +13,6 @@ export const personal = {
        canonical, sitemap, robots, the structured data in the root layout —
        resolves from this one, so a move is one line. */
     siteUrl: "https://keangarcia.vercel.app",
-    social: {
-        github: "https://github.com/garciakean32",
-        instagram: "https://www.instagram.com/kean.garcia32",
-        facebook: "https://www.facebook.com/kean.valgere.garcia.2024/photos",
-    },
 };
 
 /* ------------------------------------------------------------------
