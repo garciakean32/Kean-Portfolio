@@ -172,15 +172,8 @@ export default function About() {
                     <a href={`mailto:${personal.email}`} className="link-rule tap lowercase">
                         {personal.email}
                     </a>
-                    <a
-                        href={personal.social.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="link-rule tap normal-case"
-                    >
-                        @garciakean32
-                    </a>
                     <span>{personal.location}</span>
+                    <span>{personal.timezone}</span>
                 </div>
             </div>
 
