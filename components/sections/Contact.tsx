@@ -111,7 +111,19 @@ export default function Contact() {
         <section
             id="contact"
             ref={scope}
-            className="relative overflow-hidden bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[14vh] md:pb-32 md:pt-[18vh]"
+            // The top padding is what a jump to this section lands on, and it
+            // is the only section where that matters: `scrollToSection` puts
+            // the section's top edge at the top of the screen, so every vh of
+            // padding here is a vh of empty paper the arrival opens on and a vh
+            // the form loses off the bottom. At 18vh the send button was cut in
+            // half on a laptop — the reader jumped to the contact section and
+            // landed on a form they could not finish without scrolling again.
+            //
+            // 8vh is the most this can hold and still bring the whole form,
+            // send button included, into frame on arrival. It reads better on
+            // the way in as well: the mark now clears the seam with the section
+            // rather than a screen behind it.
+            className="relative overflow-hidden bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[8vh] md:pb-32"
         >
             <div className="shell mx-auto max-w-shell">
                 <div className="flex items-center justify-between gap-6">
