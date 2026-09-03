@@ -155,7 +155,7 @@ export default function About() {
                     </div>
 
                     <Portrait
-                        src="/images/kean hero.jpg"
+                        src="/images/kean suit.png"
                         alt={personal.name}
                         priority
                         // The disc leans away from the page edge: this
