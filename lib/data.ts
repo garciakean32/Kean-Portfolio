@@ -129,7 +129,7 @@ export const experience = [
         jp: "学び",
         label: "Studied",
         title: "IT at USTP",
-        line: "Four years at the University of Science and Technology of Southern Philippines, where I wrote my first real lines of code.",
+        line: "Studied at the University of Science and Technology of Southern Philippines, where I wrote my first real lines of code.",
     },
     {
         jp: "卒業",
