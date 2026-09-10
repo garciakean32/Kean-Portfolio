@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { motionEnabled } from "@/lib/motion";
+import { motionEnabled, onDprChange } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
@@ -353,8 +353,11 @@ export default function PrismDrift({
             state.megaMultiplier = multiplier;
         };
 
-        // keep the drawing surface matched to the element's rendered size
+        // keep the drawing surface matched to the element's rendered size —
+        // and to the density of the screen it is currently on, which changes
+        // on its own when the window is dragged between two of them.
         const resize = () => {
+            state.dpr = Math.min(window.devicePixelRatio || 1, 2);
             const rect = container.getBoundingClientRect();
             const w = Math.max(1, Math.round(rect.width * state.dpr));
             const h = Math.max(1, Math.round(rect.height * state.dpr));
@@ -370,6 +373,10 @@ export default function PrismDrift({
 
         const resizeObserver = new ResizeObserver(resize);
         resizeObserver.observe(container);
+
+        // A density change moves no CSS pixel, so the observer above never
+        // hears it.
+        const stopDprWatch = onDprChange(resize);
 
         // no point glitching a portrait nobody is looking at
         const intersectionObserver = new IntersectionObserver((entries) => {
@@ -480,6 +487,7 @@ export default function PrismDrift({
             burstRef.current = null;
             container.style.opacity = "";
             container.style.transform = "";
+            stopDprWatch();
             resizeObserver.disconnect();
             intersectionObserver.disconnect();
             desktopQuery.removeEventListener("change", handleDesktopChange);
