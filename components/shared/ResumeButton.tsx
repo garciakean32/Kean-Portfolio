@@ -102,7 +102,13 @@ export default function ResumeButton({
                     className="fixed inset-0 z-[130] flex items-center justify-center p-5"
                 >
                     <div
-                        className="dialog-scrim absolute inset-0 bg-ink/50 backdrop-blur-sm"
+                        // Black rather than `bg-ink/50`: `--ink` is the
+                        // colour of *text* on whatever surface the button
+                        // happens to stand on, which on this page's dark
+                        // ground is white — so the scrim was washing the page
+                        // out instead of dropping it back. A scrim is not
+                        // themed by the panel it opens from; it darkens.
+                        className="dialog-scrim absolute inset-0 bg-black/60 backdrop-blur-sm"
                         onClick={close}
                     />
 
