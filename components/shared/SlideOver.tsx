@@ -61,38 +61,37 @@ export default function SlideOver({
         const front = el.querySelector<HTMLElement>(".js-over");
         if (!behind || !front) return;
 
-        const mm = gsap.matchMedia();
+        // Runs at every width. It is one scrubbed transform on one element
+        // and it is the mirror of `RevealUnder`, which now also runs
+        // everywhere — a page whose two seams behave differently depending on
+        // the screen reads as two different pages. `useGsap` already skips all
+        // of this when motion is off.
+        const to: gsap.TweenVars = {
+            // Resolved per refresh, not once: `invalidateOnRefresh` below
+            // re-reads it so the drift still matches the viewport after a
+            // resize or a mobile browser's collapsing address bar.
+            y: () => window.innerHeight * SEAM_DRIFT,
+            ease: "none",
+        };
 
-        // Below `md` the page just changes colour at the seam. Two regions
-        // moving at different rates costs more than it is worth on a phone.
-        mm.add("(min-width: 768px)", () => {
-            const to: gsap.TweenVars = {
-                // Resolved per refresh, not once: `invalidateOnRefresh` below
-                // re-reads it so the drift still matches the viewport after a
-                // resize or a mobile browser's collapsing address bar.
-                y: () => window.innerHeight * SEAM_DRIFT,
-                ease: "none",
-            };
+        if (effect === "dim") to.opacity = 0.4;
+        if (effect === "scale") {
+            to.opacity = 0.55;
+            to.scale = 0.94;
+        }
 
-            if (effect === "dim") to.opacity = 0.4;
-            if (effect === "scale") {
-                to.opacity = 0.55;
-                to.scale = 0.94;
-            }
-
-            gsap.to(behind, {
-                ...to,
-                scrollTrigger: {
-                    trigger: front,
-                    start: "top bottom",
-                    end: "top top",
-                    // Straight through, no smoothing: the drift has to be
-                    // spent exactly when the window closes, and Lenis has
-                    // already eased the scroll position feeding it.
-                    scrub: true,
-                    invalidateOnRefresh: true,
-                },
-            });
+        gsap.to(behind, {
+            ...to,
+            scrollTrigger: {
+                trigger: front,
+                start: "top bottom",
+                end: "top top",
+                // Straight through, no smoothing: the drift has to be
+                // spent exactly when the window closes, and Lenis has
+                // already eased the scroll position feeding it.
+                scrub: true,
+                invalidateOnRefresh: true,
+            },
         });
     });
 

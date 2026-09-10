@@ -36,17 +36,18 @@ import { gsap, SEAM_DRIFT, useGsap } from "@/lib/motion";
  * drift now exposes is the wrapper's own background — paper against paper —
  * rather than the gap between two sections.
  *
- * `md:min-h-[100svh]` finishes the job. The wrapper is untransformed, so its
+ * `min-h-[100svh]` finishes the job. The wrapper is untransformed, so its
  * bottom edge sits at least a full screen below its top for the whole window,
  * which puts the next section off screen until the seam is done. Whatever the
  * drift is doing, the reader never sees the join until it is already correct
  * — the bug this guards against was watching the work's heading and the track
  * below it visibly finish connecting.
  *
- * Below `md`, and with motion off, nothing is transformed and the two regions
- * simply stack and scroll: a seam like this is not worth its cost on a phone,
- * and "one thing lags behind another" is the exact sensation reduced motion
- * asks to be spared.
+ * The seam runs at every width. It is two transforms on two elements and
+ * nothing about it is cheaper to skip on a phone, so a phone gets the same
+ * page a desktop does. With motion off it does not run at all — "one thing
+ * lags behind another" is the exact sensation that preference asks to be
+ * spared — and `useGsap` already gates the whole setup on that.
  *
  * Anything inside `under` that animates on arrival should trigger off
  * `js-reveal-cover` — the cover's bottom edge is the honest measure of how
@@ -74,33 +75,29 @@ export default function RevealUnder({
         const drift = el.querySelector<HTMLElement>(".js-reveal-drift");
         if (!cover || !drift) return;
 
-        const mm = gsap.matchMedia();
-
-        mm.add("(min-width: 768px)", () => {
-            gsap.fromTo(
-                drift,
-                // Read per refresh, so a resize re-measures the tuck rather
-                // than leaving the region parked at a stale offset.
-                { y: () => -window.innerHeight * SEAM_DRIFT },
-                {
-                    y: 0,
-                    ease: "none",
-                    scrollTrigger: {
-                        trigger: cover,
-                        start: "bottom bottom",
-                        end: "bottom top",
-                        scrub: true,
-                        invalidateOnRefresh: true,
-                    },
-                }
-            );
-        });
+        gsap.fromTo(
+            drift,
+            // Read per refresh, so a resize re-measures the tuck rather than
+            // leaving the region parked at a stale offset.
+            { y: () => -window.innerHeight * SEAM_DRIFT },
+            {
+                y: 0,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: cover,
+                    start: "bottom bottom",
+                    end: "bottom top",
+                    scrub: true,
+                    invalidateOnRefresh: true,
+                },
+            }
+        );
     });
 
     return (
         <div ref={scope} className={cn("relative", className)}>
             <div className="js-reveal-cover relative z-10">{children}</div>
-            <div className={cn("relative z-0 md:min-h-[100svh]", underClassName)}>
+            <div className={cn("relative z-0 min-h-[100svh]", underClassName)}>
                 <div className="js-reveal-drift">{under}</div>
             </div>
         </div>
