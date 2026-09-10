@@ -319,3 +319,46 @@ export function parallax(
         }
     );
 }
+
+/**
+ * Runs `handler` whenever the device pixel ratio changes, and returns an
+ * unsubscribe.
+ *
+ * This is the one screen change nothing else on the page hears. A canvas sizes
+ * its backing store in device pixels, so it has to be told when a device pixel
+ * stops being worth what it was — and dragging a window from a 1x monitor to a
+ * 2x one does exactly that without changing a single CSS pixel of layout.
+ * `resize` does not fire (the element is the same size), and a `ResizeObserver`
+ * has nothing to observe, so a canvas that read the ratio once at mount is left
+ * drawing at half resolution until the page is reloaded.
+ *
+ * `(resolution: Ndppx)` is the signal: it is true of exactly the current ratio
+ * and stops being true the instant that changes, at which point the query is
+ * re-armed against the new one. A browser that does not understand the feature
+ * simply never fires, which is the same behaviour as before this existed.
+ */
+export function onDprChange(handler: () => void) {
+    if (typeof window === "undefined") return () => {};
+
+    let query: MediaQueryList | null = null;
+    let live = true;
+
+    const arm = () => {
+        query = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+        query.addEventListener("change", fired);
+    };
+
+    const fired = () => {
+        query?.removeEventListener("change", fired);
+        if (!live) return;
+        arm();
+        handler();
+    };
+
+    arm();
+
+    return () => {
+        live = false;
+        query?.removeEventListener("change", fired);
+    };
+}
