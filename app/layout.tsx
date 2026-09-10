@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/components/shared/Providers";
 import SmoothScroll from "@/components/shared/SmoothScroll";
 import ScrollDock from "@/components/shared/ScrollDock";
+import ReloadNotice from "@/components/shared/ReloadNotice";
 import Footer from "@/components/shared/Footer";
 import { personal } from "@/lib/data";
 
@@ -143,6 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         Skip to content
                     </a>
                     <ScrollDock />
+                    <ReloadNotice />
                     <main id="main">{children}</main>
                     <Footer />
                     <div className="grain" aria-hidden="true" />
