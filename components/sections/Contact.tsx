@@ -12,15 +12,6 @@ const fields = [
     { name: "email", label: "Email", type: "email" },
 ] as const;
 
-/** The two standing facts under the address — where I am and what that means
-    for when you'll hear back. They replace the rows the social links used to
-    fill, and they are the only other things a reader actually needs before
-    writing. */
-const facts = [
-    { k: "Based in", v: personal.location },
-    { k: "Local time", v: personal.timezone },
-];
-
 /**
  * The close and the form in one place, since there is only one page and no
  * reason to ask twice.
@@ -32,10 +23,19 @@ const facts = [
  * then the statement, then the form — so nothing resolves before there is
  * anything to see it resolve against.
  *
- * The right-hand column fades in as one block rather than field by field:
- * "Send another" swaps the form out for a confirmation and back, and a
- * per-field reveal would leave the second set of fields sitting at the
- * pre-animation opacity nothing had tweened.
+ * There is one column, centred. It used to be two — the form on the right and
+ * the address, the location and the local time down the left — and the left
+ * one was a directory of things this page had already said: the address is in
+ * the about section's contact line, and so are the place and the timezone.
+ * What it had that the page did not is the standing offer and the fact that
+ * the form goes to a real inbox, and both of those are a line rather than a
+ * column. So the form is the section, set on the centre line of the page, and
+ * those two lines sit above and below it.
+ *
+ * The form fades in as one block rather than field by field: "Send another"
+ * swaps the form out for a confirmation and back, and a per-field reveal would
+ * leave the second set of fields sitting at the pre-animation opacity nothing
+ * had tweened.
  */
 export default function Contact() {
     const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -111,28 +111,30 @@ export default function Contact() {
         <section
             id="contact"
             ref={scope}
-            // The top padding is what a jump to this section lands on, and it
-            // is the only section where that matters: `scrollToSection` puts
-            // the section's top edge at the top of the screen, so every vh of
-            // padding here is a vh of empty paper the arrival opens on and a vh
-            // the form loses off the bottom. At 18vh the send button was cut in
-            // half on a laptop — the reader jumped to the contact section and
-            // landed on a form they could not finish without scrolling again.
+            // The top padding is a pause, and it is measured against the one
+            // the about section closes on — the ground under "That is the
+            // person. Below is the proof." is 43svh, and this is the same
+            // fall of black on the other side of the page. Two dark rooms of
+            // the same depth, one on the way out of the work and one on the
+            // way in to the close.
             //
-            // 8vh is the most this can hold and still bring the whole form,
-            // send button included, into frame on arrival. It reads better on
-            // the way in as well: the mark now clears the seam with the section
-            // rather than a screen behind it.
-            className="relative overflow-hidden bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[8vh] md:pb-32"
+            // It is not what a jump to this section lands on any more: the
+            // form nominates itself for that with `data-land` below, so the
+            // arrival is centred on the thing a reader came here to use and
+            // this ground is left to be scrolled through.
+            className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[43svh] md:pb-32"
         >
-            <div className="shell mx-auto max-w-shell">
+            {/* What a jump to this section is actually aimed at. The ground
+                above is a pause to scroll through, not a thing to land on —
+                see `landingFor` in lib/sections.ts. */}
+            <div data-land className="shell mx-auto max-w-shell">
                 <div className="flex items-center justify-between gap-6">
                     <span
                         aria-hidden="true"
                         className="js-converge-l h-px flex-1 origin-left bg-rule-strong"
                     />
-                    <span className="js-mark shrink-0 font-jp text-sm font-medium tracking-[0.3em] text-ink-3">
-                        連絡
+                    <span className="js-mark shrink-0 font-mono text-label uppercase tracking-[0.3em] text-ink-3">
+                        Contact
                     </span>
                     <span
                         aria-hidden="true"
@@ -140,165 +142,151 @@ export default function Contact() {
                     />
                 </div>
 
-                <h2 className="js-title mt-12 text-center font-display text-d3 font-bold tracking-[-0.035em] text-ink md:mt-16">
+                {/* The three margins down this column carry a short-screen step as
+                    well as a width one. A centred form is a taller shape than
+                    the two columns this replaced, and on a 720-tall laptop that
+                    difference is the send button: it is the last thing in the
+                    section and the first thing to go under the fold. */}
+                <h2 className="js-title mt-10 text-center font-display text-d3 font-bold tracking-[-0.035em] text-ink [@media(max-height:800px)]:!mt-6 md:mt-12">
                     <MaskLine>Have something</MaskLine>
                     <MaskLine className="font-serif font-normal italic text-ink-2">
                         you want built?
                     </MaskLine>
                 </h2>
 
-                <div className="mt-14 grid gap-12 md:mt-20 lg:grid-cols-12 lg:gap-x-16">
-                    {/* Direct channels */}
-                    <div data-anim="fade" className="js-soft lg:col-span-5">
-                        <p className="max-w-measure text-lead text-ink-2">
-                            A rough idea is enough to start.
-                        </p>
+                {/* The standing offer, on the centre line with the heading
+                    rather than off in a column of its own. */}
+                <div
+                    data-anim="fade"
+                    className="js-soft mt-6 flex flex-col items-center gap-4 text-center [@media(max-height:800px)]:!mt-4 md:mt-8"
+                >
+                    <p className="flex items-center gap-3 font-mono text-label uppercase text-ink-3">
+                        <span aria-hidden="true" className="h-1.5 w-1.5 bg-ink" />
+                        Available for work
+                    </p>
+                </div>
 
-                        {/* The address, set as the one thing in this column
-                            rather than as the first row of a list.
-
-                            It used to be a four-row `dl` — email, then three
-                            social links — where the label/value rhythm was the
-                            whole point and no single row had to carry the
-                            column on its own. With the socials gone that shape
-                            reads as a list missing its other rows, so the email
-                            is promoted to display size and given the space the
-                            list used to occupy: one address, large enough to be
-                            the answer to the heading above it. */}
-                        <div className="mt-12 border-t border-rule pt-8">
-                            <h3 className="font-mono text-label uppercase text-ink-3">Email</h3>
-                            <a
-                                href={`mailto:${personal.email}`}
-                                // `break-words`: the address is a single
-                                // unbroken token and this column is narrow on a
-                                // phone — without it the word sets past the
-                                // gutter rather than wrapping.
-                                className="link-rule tap mt-4 inline-block break-words font-display text-d1 font-semibold tracking-[-0.02em] text-ink transition-colors hover:text-accent"
-                            >
-                                {personal.email}
-                            </a>
-                        </div>
-
-                        {/* Where and when, two-up — enough to put the address
-                            in context and to keep the column reading as a
-                            composition rather than as a single stranded line. */}
-                        <dl className="mt-10 grid grid-cols-2 gap-x-8 border-t border-rule pt-8">
-                            {facts.map((fact) => (
-                                <div key={fact.k}>
-                                    <dt className="font-mono text-label uppercase text-ink-3">
-                                        {fact.k}
-                                    </dt>
-                                    <dd className="mt-3 text-body text-ink">{fact.v}</dd>
-                                </div>
-                            ))}
-                        </dl>
-
-                        <p className="mt-10 flex items-center gap-3 font-mono text-label uppercase text-ink-3">
-                            <span aria-hidden="true" className="h-1.5 w-1.5 bg-accent" />
-                            Available for work
-                        </p>
-                    </div>
-
-                    {/* Form */}
-                    <div data-anim="fade" className="js-soft relative lg:col-span-6 lg:col-start-7">
-                        {status === "sent" ? (
-                            <div
-                                className="confirm-rise border-t border-rule pt-10"
-                                role="status"
-                            >
-                                <span className="confirm-stamp inline-block">
-                                    <svg
-                                        aria-hidden="true"
-                                        viewBox="0 0 40 40"
-                                        className="h-11 w-11 text-accent"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="1.25"
-                                    >
-                                        <circle cx="20" cy="20" r="19" />
-                                        <path
-                                            d="M12.5 20.5l5 5L28 14"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                </span>
-                                <h3 className="mt-8 font-display text-d2 font-semibold text-ink">
-                                    Message sent.
-                                </h3>
-                                <p className="mt-5 max-w-measure text-body text-ink-2">
-                                    It landed in my inbox. I usually reply within a day or two.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => setStatus("idle")}
-                                    className="link-rule tap mt-8 font-mono text-label uppercase text-ink"
+                {/* The form, on the page's own centre line. `max-w-2xl` is
+                    what keeps a centred field from running the full width of
+                    the shell, which is a long way to drag an eye back. */}
+                <div
+                    data-anim="fade"
+                    className="js-soft relative mx-auto mt-10 w-full max-w-2xl [@media(max-height:800px)]:!mt-6 md:mt-12"
+                >
+                    {status === "sent" ? (
+                        <div
+                            className="confirm-rise border-t border-rule pt-10"
+                            role="status"
+                        >
+                            <span className="confirm-stamp inline-block">
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 40 40"
+                                    className="h-11 w-11 text-ink"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.25"
                                 >
-                                    Send another
-                                </button>
-                            </div>
-                        ) : (
-                            <form onSubmit={submit} noValidate className="grid gap-7">
-                                {fields.map((field) => (
-                                    <div key={field.name}>
-                                        <label
-                                            htmlFor={field.name}
-                                            className="block font-mono text-label uppercase text-ink-3"
-                                        >
-                                            {field.label}
-                                        </label>
-                                        <input
-                                            id={field.name}
-                                            name={field.name}
-                                            type={field.type}
-                                            value={form[field.name]}
-                                            onChange={update}
-                                            autoComplete={field.name === "email" ? "email" : "name"}
-                                            required
-                                            className="field mt-2.5 text-lead"
-                                        />
-                                    </div>
-                                ))}
-
-                                <div>
+                                    <circle cx="20" cy="20" r="19" />
+                                    <path
+                                        d="M12.5 20.5l5 5L28 14"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
+                                </svg>
+                            </span>
+                            <h3 className="mt-8 font-display text-d2 font-semibold text-ink">
+                                Message sent.
+                            </h3>
+                            <p className="mt-5 max-w-measure text-body text-ink-2">
+                                It landed in my inbox. I usually reply within a day or two.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setStatus("idle")}
+                                className="link-rule tap mt-8 font-mono text-label uppercase text-ink"
+                            >
+                                Send another
+                            </button>
+                        </div>
+                    ) : (
+                        <form onSubmit={submit} noValidate className="grid gap-6">
+                            {fields.map((field) => (
+                                <div key={field.name}>
                                     <label
-                                        htmlFor="message"
+                                        htmlFor={field.name}
                                         className="block font-mono text-label uppercase text-ink-3"
                                     >
-                                        What are you trying to build?
+                                        {field.label}
                                     </label>
-                                    <textarea
-                                        id="message"
-                                        name="message"
-                                        value={form.message}
+                                    <input
+                                        id={field.name}
+                                        name={field.name}
+                                        type={field.type}
+                                        value={form[field.name]}
                                         onChange={update}
-                                        rows={5}
+                                        autoComplete={field.name === "email" ? "email" : "name"}
                                         required
-                                        placeholder="What it is, who it is for, and roughly when you need it."
-                                        className="field mt-2.5 resize-none text-lead placeholder:text-body"
+                                        className="field mt-2.5 text-lead"
                                     />
                                 </div>
+                            ))}
 
-                                <div className="flex flex-wrap items-center gap-6">
-                                    <button
-                                        type="submit"
-                                        disabled={status === "sending"}
-                                        className="group inline-flex min-h-11 items-center gap-3 rounded border border-ink bg-ink px-8 py-4 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-ink disabled:opacity-50"
-                                    >
-                                        {status === "sending" ? "Sending" : "Send message"}
-                                        <span className="transition-transform duration-300 group-hover:translate-x-1">
-                                            →
-                                        </span>
-                                    </button>
+                            <div>
+                                <label
+                                    htmlFor="message"
+                                    className="block font-mono text-label uppercase text-ink-3"
+                                >
+                                    What are you trying to build?
+                                </label>
+                                <textarea
+                                    id="message"
+                                    name="message"
+                                    value={form.message}
+                                    onChange={update}
+                                    rows={4}
+                                    required
+                                    placeholder="What it is, who it is for, and roughly when you need it."
+                                    className="field mt-2.5 resize-none text-lead placeholder:text-sm"
+                                />
+                            </div>
 
-                                    <p aria-live="polite" className="font-mono text-meta text-ink-3">
-                                        {status === "error" &&
-                                            "Fill in all three fields, then try again."}
-                                    </p>
-                                </div>
-                            </form>
-                        )}
-                    </div>
+                            <div className="flex flex-wrap items-center justify-center gap-6">
+                                <button
+                                    type="submit"
+                                    disabled={status === "sending"}
+                                    className="group inline-flex min-h-11 items-center gap-3 rounded border border-ink bg-ink px-8 py-4 font-mono text-label uppercase text-on-ink transition-colors duration-300 hover:bg-transparent hover:text-ink disabled:opacity-50"
+                                >
+                                    {status === "sending" ? "Sending" : "Send message"}
+                                    <span className="transition-transform duration-300 group-hover:translate-x-1">
+                                        →
+                                    </span>
+                                </button>
+
+                                <p aria-live="polite" className="font-mono text-meta text-ink-3">
+                                    {status === "error" &&
+                                        "Fill in every field, then try again."}
+                                </p>
+                            </div>
+
+                            {/* Where it lands. One line, because it is the
+                                only thing the address column was really
+                                for — and the address is still a link for
+                                anyone who would rather write it himself. */}
+                            <p className="text-center font-mono text-meta text-ink-3">
+                                Sends straight to{" "}
+                                <a
+                                    href={`mailto:${personal.email}`}
+                                    // `break-words`: the address is a
+                                    // single unbroken token and this line
+                                    // is narrow on a phone.
+                                    className="link-rule tap break-words text-ink-2"
+                                >
+                                    {personal.email}
+                                </a>
+                            </p>
+                        </form>
+                    )}
                 </div>
             </div>
         </section>

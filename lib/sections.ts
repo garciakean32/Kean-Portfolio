@@ -59,6 +59,55 @@ const prefersReduced = () =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
+ * Where a jump to a section should actually stop.
+ *
+ * Landing on the section's top edge is only the right answer when the section
+ * opens on exactly one screen of content. Where it does not — the contact
+ * section is a long fall of ground and then a form — the top edge puts the
+ * beginning in frame and the end of it below the fold, which is the one place
+ * a reader is going to need it.
+ *
+ * So a section may nominate the block a jump is really aimed at, with
+ * `data-land`. If that block is shorter than the screen it is centred on it,
+ * and if it is taller the top of it is what the reader gets; a section that
+ * nominates nothing is its own landing block and behaves exactly as before.
+ *
+ * The result is never allowed above the section's own top edge. Every seam on
+ * this page finishes at that line — `RevealUnder` and `SlideOver` both spend
+ * their drift by it — so a centring that reached back past it would land the
+ * reader mid-transition, with the section still displaced from where it is
+ * about to settle.
+ */
+function landingFor(section: HTMLElement) {
+    const floor = documentTop(section) + SETTLE;
+    const land = section.querySelector<HTMLElement>("[data-land]");
+    if (!land) return Math.max(0, floor);
+
+    // Centred in the screen the reader actually has. Below `lg` the section
+    // menu is a bar along the bottom edge, and a block centred in the whole
+    // viewport puts its last line underneath it — which on the contact form is
+    // the line saying where the message goes.
+    const slack = window.innerHeight - bottomChrome() - land.offsetHeight;
+    const centred = documentTop(land) - Math.max(0, slack) / 2;
+    return Math.max(0, floor, centred);
+}
+
+/** How much of the bottom edge the chrome is standing on, in px. Only counts
+    what is both visible and actually against that edge, so the menu down the
+    right margin — same attribute, same element, different orientation — is
+    not mistaken for it. */
+function bottomChrome() {
+    let reserved = 0;
+    for (const el of document.querySelectorAll<HTMLElement>("[data-chrome]")) {
+        const rect = el.getBoundingClientRect();
+        if (rect.height > 0 && rect.bottom >= window.innerHeight - 2) {
+            reserved = Math.max(reserved, rect.height);
+        }
+    }
+    return reserved;
+}
+
+/**
  * Scroll to a section by id.
  *
  * Lenis re-asserts its own scroll position every frame, so a native anchor
@@ -74,10 +123,7 @@ export function scrollToSection(id: string) {
     // Clamped, so a jump to the last section cannot ask for a scroll position
     // the document does not have and land short of where it was aimed.
     const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    const y =
-        id === sections[0].id
-            ? 0
-            : Math.min(Math.max(0, documentTop(target) + SETTLE), max);
+    const y = id === sections[0].id ? 0 : Math.min(landingFor(target), max);
 
     const lenis = getLenis();
     if (lenis) {
