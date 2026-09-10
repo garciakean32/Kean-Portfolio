@@ -5,10 +5,7 @@ import ImageBand from "@/components/shared/ImageBand";
 import SectionMark from "@/components/shared/SectionMark";
 import { MaskLine } from "@/components/motion/Text";
 import { experience, facts, personal, skills } from "@/lib/data";
-import { cn } from "@/lib/utils";
 import { drawRule, EASE, fadeUp, gsap, riseMasks, useGsap } from "@/lib/motion";
-
-const JP = "font-jp text-sm font-medium tracking-[0.3em] text-ink-3";
 
 /** The poster voice: uppercase display, set tight and heavy. */
 const POSTER =
@@ -19,7 +16,7 @@ const POSTER =
  *
  * Both are built the same way: a small rule-and-label across the top, a name
  * or a title set as large uppercase display on one side, and a photograph on
- * the other laid over a vermilion disc. Under each, the detail — the bio and
+ * the other set inside a frame of type. Under each, the detail — the bio and
  * the contact line in the first, the four stops of the story in the second,
  * each with what it was set out to its right the way a date would be.
  *
@@ -78,16 +75,19 @@ export default function About() {
             );
         });
 
-        q(".js-seal").forEach((seal) => {
+        /* The ring around each photograph. It is concentric with the picture,
+           so it opens onto it rather than sliding in from a corner — the old
+           diagonal drift belonged to the offset plate this replaced. */
+        q(".js-plate").forEach((plate) => {
             gsap.fromTo(
-                seal,
-                { scale: 0.4, opacity: 0 },
+                plate,
+                { scale: 1.06, opacity: 0 },
                 {
                     scale: 1,
                     opacity: 1,
                     duration: 1.1,
                     ease: EASE.out,
-                    scrollTrigger: { trigger: seal, start: "top 88%" },
+                    scrollTrigger: { trigger: plate, start: "top 88%" },
                 }
             );
         });
@@ -134,71 +134,75 @@ export default function About() {
         >
             {/* ---------------------------------------------------------- */}
             {/* Panel one — who                                             */}
+            {/*                                                              */}
+            {/* The opening panel and the numbers under it are one screen,   */}
+            {/* and they own it: a jump to `#about` lands on the section's    */}
+            {/* top edge, so anything shorter than a viewport left the band   */}
+            {/* below already climbing into frame and the panel reading as    */}
+            {/* though it stopped short. `min-h` rather than `h` — the same   */}
+            {/* block is taller than the screen on a phone and simply flows.  */}
             {/* ---------------------------------------------------------- */}
-            <div className="js-head shell mx-auto max-w-shell pt-20 md:pt-28">
-                <div className="js-mark flex flex-wrap items-center justify-between gap-6">
-                    <SectionMark as="h2" label="About" />
-                    <span className={JP}>略歴</span>
-                </div>
-
-                <div className="mt-12 grid gap-12 md:mt-16 lg:grid-cols-12 lg:items-center lg:gap-x-12">
-                    <div className="lg:col-span-7">
-                        <h3 className={`js-name ${POSTER}`}>
-                            <MaskLine>Hello, I&apos;m</MaskLine>
-                            <MaskLine>Kean Valgere</MaskLine>
-                            <MaskLine className="text-accent">Garcia</MaskLine>
-                        </h3>
-
-                        <p className="js-head-copy mt-8 max-w-measure text-body text-ink-2 md:mt-10">
-                            {personal.bio}
-                        </p>
+            <div className="flex min-h-[100svh] flex-col justify-center pt-20 md:pt-28 lg:pt-0">
+                <div className="js-head shell mx-auto w-full max-w-shell">
+                    <div className="js-mark flex flex-wrap items-center justify-between gap-6">
+                        <SectionMark as="h2" label="About" />
+                        <span aria-hidden="true" className="h-px flex-1 bg-rule" />
                     </div>
 
-                    <Portrait
-                        src="/images/kean suit.png"
-                        alt={personal.name}
-                        priority
-                        // The disc leans away from the page edge: this
-                        // portrait sits in the right column, where a
-                        // right-hand offset would push it under the dock.
-                        side="left"
-                        className="lg:col-span-4 lg:col-start-9"
-                    />
-                </div>
+                    <div className="mt-12 grid gap-12 md:mt-16 lg:grid-cols-12 lg:items-center lg:gap-x-12">
+                        <div className="lg:col-span-7">
+                            <h3 className={`js-name ${POSTER}`}>
+                                <MaskLine>Hello, I&apos;m</MaskLine>
+                                <MaskLine>Kean Valgere</MaskLine>
+                                <MaskLine className="text-ink-3">Garcia</MaskLine>
+                            </h3>
 
-                {/* The contact line, the way the poster carries one along its
-                    bottom edge — small, spaced, and the same on every panel. */}
-                <div className="js-head-copy mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-rule pt-6 font-mono text-meta uppercase text-ink-3 md:mt-16">
-                    <a href={`mailto:${personal.email}`} className="link-rule tap lowercase">
-                        {personal.email}
-                    </a>
-                    <span>{personal.location}</span>
-                    <span>{personal.timezone}</span>
-                </div>
-            </div>
-
-            {/* The numbers */}
-            <div className="js-facts shell mx-auto mt-16 max-w-shell md:mt-24">
-                <dl className="grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-4">
-                    {facts.map((fact) => (
-                        <div
-                            key={fact.label}
-                            data-anim="fade"
-                            className="js-fact border-t border-rule pt-4"
-                        >
-                            <dd className="font-display text-d2 font-bold tracking-[-0.03em] text-ink">
-                                {fact.value}
-                            </dd>
-                            <dt className="mt-2 font-mono text-label uppercase text-ink-3">
-                                {fact.label}
-                            </dt>
+                            <p className="js-head-copy mt-8 max-w-measure text-body text-ink-2 md:mt-10">
+                                {personal.bio}
+                            </p>
                         </div>
-                    ))}
-                </dl>
+
+                        <Portrait
+                            src="/images/kean suit.png"
+                            alt={personal.name}
+                            className="lg:col-span-4 lg:col-start-9"
+                        />
+                    </div>
+
+                    {/* The contact line, the way the poster carries one along its
+                        bottom edge — small, spaced, and the same on every panel. */}
+                    <div className="js-head-copy mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-rule pt-6 font-mono text-meta uppercase text-ink-3 md:mt-16">
+                        <a href={`mailto:${personal.email}`} className="link-rule tap lowercase">
+                            {personal.email}
+                        </a>
+                        <span>{personal.location}</span>
+                        <span>{personal.timezone}</span>
+                    </div>
+                </div>
+
+                {/* The numbers */}
+                <div className="js-facts shell mx-auto mt-16 w-full max-w-shell md:mt-24">
+                    <dl className="grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-4">
+                        {facts.map((fact) => (
+                            <div
+                                key={fact.label}
+                                data-anim="fade"
+                                className="js-fact border-t border-rule pt-4"
+                            >
+                                <dd className="font-display text-d2 font-bold tracking-[-0.03em] text-ink">
+                                    {fact.value}
+                                </dd>
+                                <dt className="mt-2 font-mono text-label uppercase text-ink-3">
+                                    {fact.label}
+                                </dt>
+                            </div>
+                        ))}
+                    </dl>
+                </div>
             </div>
 
             <ImageBand
-                src="/images/gray tatami mat.webp"
+                src="/images/tatami mat.png"
                 alt=""
                 tone="from-paper-3 to-paper"
                 height="h-[36svh] min-h-[12rem] md:h-[52svh]"
@@ -211,14 +215,13 @@ export default function About() {
             <div className="js-story shell mx-auto mt-20 max-w-shell md:mt-28">
                 <div className="js-story-mark flex flex-wrap items-center justify-between gap-6">
                     <SectionMark as="h3" label="Experience" />
-                    <span className={JP}>経験</span>
+                    <span aria-hidden="true" className="h-px flex-1 bg-rule" />
                 </div>
 
                 <div className="mt-12 grid gap-12 md:mt-16 lg:grid-cols-12 lg:gap-x-12">
                     <Portrait
                         src="/images/kean grad.jpg"
                         alt={`${personal.name} at his college graduation`}
-                        side="right"
                         className="lg:col-span-4 lg:row-start-1 lg:self-start"
                     />
 
@@ -242,13 +245,8 @@ export default function About() {
                                         <h5 className="font-display text-d1 font-bold tracking-[-0.025em] text-ink">
                                             {stop.title}
                                         </h5>
-                                        <span className="flex items-baseline gap-3 whitespace-nowrap">
-                                            <span className="font-jp text-[0.8125rem] text-ink-3">
-                                                {stop.jp}
-                                            </span>
-                                            <span className="font-mono text-label uppercase text-accent">
-                                                {stop.label}
-                                            </span>
+                                        <span className="whitespace-nowrap font-mono text-label uppercase text-ink-3">
+                                            {stop.label}
                                         </span>
                                     </div>
                                     <p className="js-stop-in mt-3 max-w-measure text-body text-ink-2">
@@ -276,13 +274,13 @@ export default function About() {
             <div className="js-shelf shell mx-auto mt-20 max-w-shell md:mt-28">
                 <div className="js-shelf-in flex flex-wrap items-center justify-between gap-6">
                     <SectionMark as="h3" label="Tools I reach for" />
-                    <span className={JP}>道具</span>
+                    <span aria-hidden="true" className="h-px flex-1 bg-rule" />
                 </div>
 
                 <p className="js-shelf-line mt-10 font-display text-d2 font-bold tracking-[-0.035em] text-ink md:mt-14">
-                    <MaskLine>Three</MaskLine>
+                    <MaskLine>What I</MaskLine>
                     <MaskLine className="pl-[8%] font-serif font-normal italic text-ink-2">
-                        shelves.
+                        work with.
                     </MaskLine>
                 </p>
 
@@ -294,12 +292,9 @@ export default function About() {
                                 data-anim="rule-x"
                                 className="js-group-rule block h-px w-full origin-left bg-rule-strong"
                             />
-                            <div className="js-group-in mt-5 flex items-baseline justify-between gap-4">
-                                <h4 className="font-display text-d1 font-semibold tracking-[-0.025em] text-ink">
-                                    {group.category}
-                                </h4>
-                                <span className={JP}>{group.jp}</span>
-                            </div>
+                            <h4 className="js-group-in mt-5 font-display text-d1 font-semibold tracking-[-0.025em] text-ink">
+                                {group.category}
+                            </h4>
                             <ul className="js-group-in mt-5 space-y-2">
                                 {group.items.map((item) => (
                                     <li key={item} className="text-body text-ink-2">
@@ -320,7 +315,7 @@ export default function About() {
             {/* reveal always begins with this beat filling the screen top   */}
             {/* to bottom, no matter how much grows above it.                */}
             {/* ---------------------------------------------------------- */}
-            <div className="js-last relative mt-24 flex h-[100svh] flex-col items-center overflow-hidden pt-[14vh] text-center md:mt-36 md:pt-[18vh]">
+            <div className="js-last relative mt-24 flex h-[100svh] flex-col items-center overflow-hidden pt-[24vh] text-center md:mt-36 md:pt-[32vh]">
                 <span
                     aria-hidden="true"
                     data-anim="rule-y"
@@ -336,43 +331,76 @@ export default function About() {
 }
 
 /**
- * A photograph laid over a vermilion disc — 日の丸, the site's one loud mark.
+ * The frame's rule, set as type — and the one thing about it that has to be
+ * exact is that it closes.
  *
- * The disc sits behind the frame and offset past its top-right corner rather
- * than centred on it. Centred, a disc only a little larger than a 4:5
- * rectangle shows as a few pixels of red down two edges and reads as a
- * rendering fault; pushed off one corner, the same disc reads as what it is.
- * It is sized and offset in percentages of the wrapper, and the wrapper is
- * what carries `max-w`, so the whole device scales with the column. Both come
- * in a step below 640px, where the wrapper is centred in a column barely wider
- * than itself and a full-size offset would run the disc off the screen.
+ * `KeanImage ·` eighteen times, joined by a space: 215 characters, ending on
+ * the separator rather than on a space. The path it runs around is 455.02 user
+ * units, so at a 3-unit mono face (0.6em per character, JetBrains Mono) the
+ * spacing that makes 216 character-widths span exactly that is 0.3066 — and
+ * the 216th width, the one the string does not spend, is the gap between the
+ * last `·` and the first `K`. It is the same width as every other gap in the
+ * run, so the seam is invisible and there is nowhere the `·` is missing.
+ *
+ * Keep the three numbers below in step with the path in `Portrait`: change the
+ * inset, the radius or the box and the perimeter changes with them.
+ */
+const FRAME_TEXT = Array.from({ length: 18 }, () => "KeanImage ·").join(" ");
+const FRAME_SIZE = 3;
+const FRAME_TRACKING = 0.3048;
+
+/**
+ * A photograph inside a frame written out of its own name.
+ *
+ * The rule around the picture is not a rule: it is "KeanImage" repeated around
+ * a rounded rectangle, small enough that at a glance it still reads as one,
+ * and close enough to read as a caption running around the mount.
+ *
+ * It sits concentric with the photograph and a hair outside its edge — the
+ * frame the picture is in, not a second frame leaning out from behind it. The
+ * ring's own corners are struck at the picture's corner radius plus that gap,
+ * so the two curves are parallel the whole way round rather than merely both
+ * being round.
+ *
+ * The geometry is one aspect ratio said twice. The box is the photograph's 4:5
+ * grown by three units on every side — `3%` of the width and `2.4%` of the
+ * height are the same distance, on a box where the height is 1.25x the width —
+ * so the viewBox below matches it exactly at any size and nothing is stretched.
  */
 function Portrait({
     src,
     alt,
-    side,
     className,
     priority = false,
 }: {
     src: string;
     alt: string;
-    /** Which corner the disc leans out of — away from the nearest page edge. */
-    side: "left" | "right";
     className?: string;
     priority?: boolean;
 }) {
     return (
         <div className={className}>
             <div className="relative mx-auto w-full max-w-[17rem] lg:mx-0">
-                <span
+                <svg
                     aria-hidden="true"
-                    className={cn(
-                        "js-seal seal -top-[12%] aspect-square w-[86%] sm:-top-[16%] sm:w-full",
-                        side === "right"
-                            ? "-right-[8%] sm:-right-[16%]"
-                            : "-left-[8%] sm:-left-[16%]"
-                    )}
-                />
+                    viewBox="0 0 106 131"
+                    className="js-plate plate -inset-x-[3%] -inset-y-[2.4%]"
+                >
+                    <path
+                        id="portrait-frame"
+                        fill="none"
+                        d="M5.2 1.6H100.8A3.6 3.6 0 0 1 104.4 5.2V125.8A3.6 3.6 0 0 1 100.8 129.4H5.2A3.6 3.6 0 0 1 1.6 125.8V5.2A3.6 3.6 0 0 1 5.2 1.6Z"
+                    />
+                    <text
+                        dominantBaseline="middle"
+                        className="fill-ink-3 font-mono"
+                        fontSize={FRAME_SIZE}
+                        letterSpacing={FRAME_TRACKING}
+                    >
+                        <textPath href="#portrait-frame">{FRAME_TEXT}</textPath>
+                    </text>
+                </svg>
+
                 <div className="js-figure relative z-10 aspect-[4/5] w-full overflow-hidden rounded-md bg-paper-3">
                     <Image
                         src={src}

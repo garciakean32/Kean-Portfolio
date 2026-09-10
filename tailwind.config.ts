@@ -14,11 +14,9 @@ const config: Config = {
     theme: {
         extend: {
             fontFamily: {
-                display: ['var(--font-archivo)', 'system-ui', 'sans-serif'],
-                serif: ['var(--font-newsreader)', 'Georgia', 'serif'],
-                mono: ['var(--font-plex-mono)', 'ui-monospace', 'monospace'],
-                // Only the handful of Japanese words use this
-                jp: ['var(--font-noto-jp)', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'sans-serif'],
+                display: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+                serif: ['var(--font-serif)', 'Georgia', 'serif'],
+                mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
             },
             colors: {
                 paper: {

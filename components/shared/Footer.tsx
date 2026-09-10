@@ -3,8 +3,6 @@ import ResumeButton from "./ResumeButton";
 import SectionLink from "./SectionLink";
 
 export default function Footer() {
-    const year = new Date().getFullYear();
-
     return (
         <footer className="border-t border-rule bg-paper-2">
             {/* The extra bottom padding is clearance for the scroll dock, which
@@ -39,11 +37,8 @@ export default function Footer() {
                                 <li key={section.id}>
                                     <SectionLink
                                         id={section.id}
-                                        className="link-rule tap inline-flex items-baseline gap-3 text-body text-ink-2 transition-colors hover:text-ink"
+                                        className="link-rule tap inline-block text-body text-ink-2 transition-colors hover:text-ink"
                                     >
-                                        <span className="font-jp text-[0.8125rem] text-ink-3">
-                                            {section.jp}
-                                        </span>
                                         {section.label}
                                     </SectionLink>
                                 </li>
@@ -53,9 +48,7 @@ export default function Footer() {
                 </div>
 
                 <div className="mt-16 flex flex-col gap-3 border-t border-rule pt-6 font-mono text-meta uppercase tracking-[0.12em] text-ink-3 sm:flex-row sm:items-center sm:justify-between">
-                    <span>
-                        © {year} {personal.name}
-                    </span>
+                    <span>© {personal.name}</span>
                     <span>
                         {personal.location} · {personal.timezone}
                     </span>
