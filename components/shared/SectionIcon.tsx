@@ -10,9 +10,9 @@ import { cn } from "@/lib/utils";
  * heaviest thing on the screen. These sit at 1.25 and read as part of the same
  * drawing.
  *
- * Recognisability wins over theming here. The rail around them carries the
- * Japanese reading; the marks themselves stay plain enough that nobody has to
- * learn them: a house, a figure, stacked sheets, a set of panes, an envelope.
+ * Recognisability wins over theming here. The dock sets each label beside its
+ * mark, and the marks stay plain enough that nobody has to learn them: a
+ * house, a figure, stacked sheets, a set of panes, an envelope.
  */
 const PATHS: Record<string, React.ReactNode> = {
     top: (

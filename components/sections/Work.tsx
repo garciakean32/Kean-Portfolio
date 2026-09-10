@@ -38,32 +38,52 @@ export function WorkIntro() {
     });
 
     return (
-        <div id="work" ref={scope} className="pt-[30vh] md:pt-[36vh]">
-            <div className="shell mx-auto max-w-shell">
-                <div className="js-hint flex flex-wrap items-center justify-between gap-6">
-                    <SectionMark as="h2" label="Selected work" />
-                    <span className="font-jp text-sm font-medium tracking-[0.3em] text-ink-3">
-                        作品
-                    </span>
-                </div>
+        // Two boxes, and the split is what makes the heading land centred.
+        //
+        // The seam needs a little under half a viewport of room above the
+        // heading — the reveal displaces this region by half a screen, so
+        // anything less and the heading is already off the top by the time the
+        // cover clears it. That used to be a flat `pt-[42svh]` on the element
+        // the dock jumps to, which meant a jump landed on 42svh of empty paper
+        // with the heading pushed into the bottom half of the screen.
+        //
+        // Now the read-time is paid twice: a fixed spacer above, and the rest
+        // as the empty half of a full-screen box that centres its own content.
+        // The two add up to the same measure at rest, but the second half is
+        // room the arrival lands *inside* rather than above — so `#work` sits
+        // on the box, and a jump puts the heading in the middle of the screen
+        // at any height rather than at a fixed fraction down it.
+        <div ref={scope}>
+            <span aria-hidden="true" className="block h-[20svh]" />
 
-                <p className="js-title mt-10 max-w-3xl font-display text-d3 font-bold tracking-[-0.035em] text-ink md:mt-14">
-                    <MaskLine>Two products,</MaskLine>
-                    <MaskLine className="pl-[8%] font-serif font-normal italic text-ink-2">
-                        both live.
-                    </MaskLine>
-                </p>
+            <div
+                id="work"
+                className="flex min-h-[100svh] flex-col justify-center"
+            >
+                <div className="shell mx-auto w-full max-w-shell">
+                    <div className="js-hint flex flex-wrap items-center justify-between gap-6">
+                        <SectionMark as="h2" label="Selected work" />
+                        <span aria-hidden="true" className="h-px flex-1 bg-rule" />
+                    </div>
 
-                <div className="js-hint mt-10 flex flex-wrap items-center justify-between gap-6 pb-[8vh] md:pb-[12vh] md:mt-14">
-                    <p className="max-w-measure text-lead text-ink-2">
-                        Built end to end, from an empty repository to something anyone can
-                        open.
+                    <p className="js-title mt-10 max-w-3xl font-display text-d3 font-bold tracking-[-0.035em] text-ink md:mt-14">
+                        <MaskLine>Products I built</MaskLine>
+                        <MaskLine className="pl-[8%] font-serif font-normal italic text-ink-2">
+                            and shipped.
+                        </MaskLine>
                     </p>
-                    <span className="hidden shrink-0 items-center gap-3 font-mono text-label uppercase text-ink-3 lg:flex">
-                        One at a time, moving sideways
-                        <span aria-hidden="true" className="h-px w-12 bg-accent" />
-                        <span aria-hidden="true">→</span>
-                    </span>
+
+                    <div className="js-hint mt-10 flex flex-wrap items-center justify-between gap-6 md:mt-14">
+                        <p className="max-w-measure text-lead text-ink-2">
+                            Built end to end, from an empty repository to something anyone can
+                            open.
+                        </p>
+                        <span className="hidden shrink-0 items-center gap-3 font-mono text-label uppercase text-ink-3 lg:flex">
+                            Keep scrolling — the work moves sideways
+                            <span aria-hidden="true" className="h-px w-12 bg-ink-3" />
+                            <span aria-hidden="true">→</span>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,15 +113,28 @@ export default function Work() {
 
             const drift = sideScroll(el, { stage, track });
 
-            q(".js-panel").forEach((panel, i) => {
+            const panels = q(".js-panel");
+
+            panels.forEach((panel, i) => {
                 // The first panel is on screen before the stage is ever held,
                 // and a `containerAnimation` trigger reads a position along a
                 // track that has not started moving yet — so the opener
                 // reveals on its own sighting and only the rest ride the track.
+                // The closing panel is a third the width of a project and it
+                // is the last thing on the track, so it only ever enters the
+                // screen in the final moments of the drift. Held to the same
+                // "most of the way across" cue as the projects, its reveal
+                // landed after the reader had already arrived at it. It gets
+                // its own: the moment its leading edge is in frame.
+                const last = i === panels.length - 1;
                 const at =
                     i === 0
                         ? { trigger: el, start: "top 80%" }
-                        : { trigger: panel, containerAnimation: drift, start: "left 72%" };
+                        : {
+                              trigger: panel,
+                              containerAnimation: drift,
+                              start: last ? "left 100%" : "left 72%",
+                          };
 
                 gsap.fromTo(
                     panel.querySelectorAll(".js-panel-in"),
@@ -188,7 +221,7 @@ export default function Work() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     aria-label={`${project.title} — open the live site`}
-                                    className="js-shot group relative block aspect-[4/3] w-full overflow-hidden rounded-md bg-paper-3 lg:col-span-7"
+                                    className="js-shot group relative block aspect-[4/3] w-full overflow-hidden rounded-md border border-rule-strong bg-paper-3 lg:col-span-7"
                                 >
                                     <div className="js-panel-img absolute inset-0">
                                         <Image
@@ -202,19 +235,32 @@ export default function Work() {
                                     </div>
                                     <span
                                         aria-hidden="true"
-                                        className="absolute bottom-0 left-0 z-10 h-px w-full origin-left scale-x-0 bg-accent transition-transform duration-700 ease-out group-hover:scale-x-100"
+                                        className="absolute bottom-0 left-0 z-10 h-px w-full origin-left scale-x-0 bg-ink transition-transform duration-700 ease-out group-hover:scale-x-100"
                                     />
+
+                                    {/* The screenshot is the control now, so
+                                        it has to say so on its own. A standing
+                                        label rather than one that appears on
+                                        hover: hover is not a thing a phone
+                                        has, and this is the only affordance
+                                        left once the button below is gone. It
+                                        lifts and darkens under the cursor,
+                                        which is the part hover is good for. */}
+                                    <span
+                                        aria-hidden="true"
+                                        className="pointer-events-none absolute bottom-4 right-4 z-10 inline-flex min-h-9 items-center gap-2.5 rounded-full border border-ink/10 bg-paper/85 px-4 py-2 font-mono text-label uppercase text-ink shadow-[0_6px_20px_-8px_rgb(0_0_0/0.45)] backdrop-blur-md transition-[transform,background-color,color] duration-500 ease-out group-hover:-translate-y-1 group-hover:bg-ink group-hover:text-on-ink"
+                                    >
+                                        Visit live site
+                                        <span className="transition-transform duration-500 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                                            ↗
+                                        </span>
+                                    </span>
                                 </a>
 
                                 <div className="lg:col-span-4 lg:col-start-9">
-                                    <div className="js-panel-in flex items-baseline gap-4">
-                                        <span className="font-mono text-label uppercase text-ink-3">
-                                            {project.type}
-                                        </span>
-                                        <span className="font-jp text-lg text-accent">
-                                            {project.jp}
-                                        </span>
-                                    </div>
+                                    <span className="js-panel-in block font-mono text-label uppercase text-ink-3">
+                                        {project.type}
+                                    </span>
 
                                     <h3 className="js-panel-in mt-5 font-display text-d3 font-bold tracking-[-0.035em] text-ink">
                                         {project.title}
@@ -228,36 +274,13 @@ export default function Work() {
                                         status={project.status}
                                         className="js-panel-in mt-8"
                                     />
-
-                                    <ul className="js-panel-in mt-8 flex flex-wrap gap-x-5 gap-y-2">
-                                        {project.stack.map((tech) => (
-                                            <li
-                                                key={tech}
-                                                className="font-mono text-meta uppercase text-ink-3"
-                                            >
-                                                {tech}
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    <a
-                                        href={project.liveUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="js-panel-in group mt-10 inline-flex min-h-11 items-center gap-3 rounded border border-ink px-7 py-3.5 font-mono text-label uppercase text-ink transition-colors duration-300 hover:bg-ink hover:text-on-ink"
-                                    >
-                                        Visit {project.title}
-                                        <span className="transition-transform duration-300 group-hover:translate-x-1">
-                                            ↗
-                                        </span>
-                                    </a>
                                 </div>
                             </div>
                         </article>
                     ))}
 
                     {/* Closing panel — narrower than a full screen, so it reads
-                        as the end of the run rather than a third project. */}
+                        as the end of the run rather than another project. */}
                     <div className="js-panel hscroll-panel shell flex items-center py-16 [--hs-w:min(56vw,34rem)] lg:py-0">
                         <div className="js-panel-in w-full border-t border-rule pt-8">
                             <span className="font-mono text-label uppercase text-ink-3">

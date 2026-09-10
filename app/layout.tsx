@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Newsreader, IBM_Plex_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/shared/Providers";
 import SmoothScroll from "@/components/shared/SmoothScroll";
@@ -8,46 +8,29 @@ import ReloadNotice from "@/components/shared/ReloadNotice";
 import Footer from "@/components/shared/Footer";
 import { personal } from "@/lib/data";
 
-const archivo = Archivo({
+const inter = Inter({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700", "800"],
-    variable: "--font-archivo",
+    variable: "--font-sans",
     display: "swap",
 });
 
-const newsreader = Newsreader({
+const sourceSerif = Source_Serif_4({
     subsets: ["latin"],
     // 400 only, upright and italic: nothing on the site sets the serif at any
     // other weight, and every weight listed here is a font file that ships.
     weight: ["400"],
     style: ["normal", "italic"],
-    variable: "--font-newsreader",
+    variable: "--font-serif",
     display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+const jetbrainsMono = JetBrains_Mono({
     subsets: ["latin"],
     weight: ["400", "500"],
-    variable: "--font-plex-mono",
+    variable: "--font-mono",
     display: "swap",
 });
-
-/* The handful of Japanese characters the site sets, requested as a `text`
-   subset so the download stays a couple of kilobytes. Anything set in
-   `font-jp` anywhere on the site has to appear here or it has no font to
-   render in. */
-const JP_GLYPHS =
-    // the dock's section marks and the hero
-    "表紙略歴作品仕事連絡和風" +
-    // marquee and the "what I build" marks
-    "ウェブ制作アプリ開発設計・実装裏側の構築管理画面サイト刷新保守改善" +
-    // process steps
-    "相談公" +
-    // about: the experience stops and the shelf
-    "学び卒業自実務受託経験道具衣脳";
-const JP_FONT_URL = `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&text=${encodeURIComponent(
-    JP_GLYPHS
-)}&display=swap`;
 
 /* Runs before first paint. Gates every pre-animation state in globals.css so
    markup is never left hidden when JS is unavailable or motion is unwanted.
@@ -108,7 +91,7 @@ const PERSON_SCHEMA = {
 
 export const viewport: Viewport = {
     // The site has one mode.
-    themeColor: "#020203",
+    themeColor: "#000000",
     // Said in a meta tag rather than only in CSS, because the browser reads it
     // before the stylesheet arrives: it is what the base canvas is painted
     // with in the gap between one document being released and the next one
@@ -122,12 +105,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html
             lang="en"
             suppressHydrationWarning
-            className={`dark ${archivo.variable} ${newsreader.variable} ${plexMono.variable}`}
+            className={`dark ${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
         >
             <head>
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-                <link rel="stylesheet" href={JP_FONT_URL} />
                 <script dangerouslySetInnerHTML={{ __html: MOTION_GATE }} />
                 <script
                     type="application/ld+json"

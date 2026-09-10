@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motionEnabled } from "@/lib/motion";
+import { motionEnabled, onDprChange } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
@@ -39,10 +39,10 @@ const FRAGMENT_SHADER = `
   uniform float uDistortion;  // chromatic split, radial
   uniform float uGlow;        // core brightness — the falloff numerator
   uniform float uOpacity;     // master, applied after everything
-  uniform vec3 uCore;         // the centre of the stroke
-  uniform vec3 uAsh;          // the copy that frays ahead of it
-  uniform vec3 uSmoke;        // the copy that frays behind it
-  uniform vec3 uFar;          // the band set further back
+  uniform vec3 uWhite;        // the brightest of the four strokes
+  uniform vec3 uDarkWhite;    // one step down
+  uniform vec3 uLightBlack;   // one step further
+  uniform vec3 uBlack;        // the last of them, barely lit
 
   void main() {
     vec2 uv = gl_FragCoord.xy / uResolution;
@@ -55,33 +55,39 @@ const FRAGMENT_SHADER = `
     // axis to its own extent makes the band read identically at every width.
     vec2 p = uv * 2.0 - 1.0;
 
-    // Three copies of the same wave, sampled at slightly different x — the
-    // original's chromatic split, kept for its shape and stripped of its
-    // colour. The offset grows with distance from centre, so the band stays
-    // one clean stroke through the middle and only separates at its ends.
+    // Four strokes, and they are four waves rather than four copies of one.
+    // This used to be a single line with two frayed copies either side of it
+    // plus a dimmer band behind — a chromatic split, kept from the original
+    // for its shape. That reads as one stroke with a wet edge, which is one
+    // stroke. These have their own offsets down the frame, their own crest
+    // counts and their own speeds, and no two of the speeds divide into each
+    // other, so the set never lines up into a thicker single line.
+    //
+    // The fray is kept, but only where it earns its keep: the split grows
+    // with distance from the centre, so it is applied to the two brightest
+    // strokes and with opposite sign, and only their ends separate.
     float d = length(p) * uDistortion;
-    float lead = uGlow / abs(p.y + sin((p.x * (1.0 + d) + uTime) * uXScale) * uYScale);
-    float core = uGlow / abs(p.y + sin((p.x + uTime) * uXScale) * uYScale);
-    float trail = uGlow / abs(p.y + sin((p.x * (1.0 - d) + uTime) * uXScale) * uYScale);
 
-    // The band behind: set lower, swinging wider, and travelling the other way
-    // at a little over half the speed — the two never line up, which is what
-    // keeps the pair from reading as one thick stroke. Both numbers are held
-    // where its lowest crest still clears the vertical falloff below, so the
-    // fade never eats into the band it is there to protect.
-    float far = uGlow * 0.55 / abs(p.y + 0.26 + sin((p.x - uTime * 0.58) * uXScale * 0.6) * uYScale * 1.2);
+    float white = uGlow / abs(
+      p.y - 0.20 + sin((p.x * (1.0 + d) + uTime) * uXScale) * uYScale);
+
+    float darkWhite = uGlow * 0.86 / abs(
+      p.y - 0.03 + sin((p.x * (1.0 - d) - uTime * 0.73) * uXScale * 0.82) * uYScale * 1.1);
+
+    float lightBlack = uGlow * 0.72 / abs(
+      p.y + 0.16 + sin((p.x + uTime * 0.51) * uXScale * 1.27) * uYScale * 0.92);
+
+    float black = uGlow * 0.62 / abs(
+      p.y + 0.33 + sin((p.x - uTime * 0.37) * uXScale * 0.64) * uYScale * 1.25);
 
     // Every lobe is clamped before it is tinted: 1/abs(y) is unbounded at the
     // crest line, and left alone it blows the tint out to white on the one row
-    // of pixels that matters most.
-    //
-    // The centre keeps its white. The two that fray off it are ash and smoke
-    // rather than red and blue, so where the stroke separates it reads as wet
-    // ink bleeding either side of the line instead of a screen tearing.
-    vec3 col = uCore * min(core, 1.3)
-      + uAsh * min(lead, 1.15)
-      + uSmoke * min(trail, 1.15)
-      + uFar * min(far, 1.0);
+    // of pixels that matters most — which would make all four the same colour
+    // exactly where the difference between them is the point.
+    vec3 col = uWhite * min(white, 1.3)
+      + uDarkWhite * min(darkWhite, 1.15)
+      + uLightBlack * min(lightBlack, 1.05)
+      + uBlack * min(black, 1.0);
 
     // Nothing touches the frame, on either axis, and the vertical half of that
     // is not cosmetic — it is what stops the element being visible as an
@@ -99,10 +105,14 @@ const FRAGMENT_SHADER = `
       * smoothstep(1.0, 0.7, abs(p.y));
     col = min(col * edge * uOpacity, vec3(1.0));
 
-    // Premultiplied: alpha is the brightest channel, so the band carries
-    // exactly as much of itself as it is lit and the ground around it stays
-    // clear.
-    gl_FragColor = vec4(col, max(col.r, max(col.g, col.b)));
+    // Opaque, ground and all. This used to write its own brightness into the
+    // alpha channel, so the strokes were a wash the hero's black showed
+    // through and every one of them was quietly diluted by whatever it was
+    // laid over. The ground it needs is black, and the section is already
+    // painted black, so the honest thing is to draw that black rather than
+    // leave a hole where it should be: the strokes land at their own strength
+    // and the frame around them is the same colour it was pretending to be.
+    gl_FragColor = vec4(col, 1.0);
   }
 `;
 
@@ -136,21 +146,30 @@ function createProgram(gl: WebGLRenderingContext) {
     return program;
 }
 
-/** The palette the band is mixed from: a white core, then ash and smoke either
-    side of it, then a dim neutral for the band set further back. All four are
-    off the same cool grey axis the rest of the page sits on — nothing here is
-    a hue, which is the whole difference between this and the original. */
-const CORE: readonly [number, number, number] = [0.93, 0.95, 0.98];
-const ASH: readonly [number, number, number] = [0.33, 0.37, 0.45];
-const SMOKE: readonly [number, number, number] = [0.19, 0.2, 0.24];
-const FAR: readonly [number, number, number] = [0.3, 0.31, 0.35];
+/** The four tones the site is built from, and now the four strokes: white,
+    dark white, light black, black. They are the same values as `--ink`,
+    `--ink-2`, `--paper-3` and `--paper` in globals.css, read as light rather
+    than as surfaces — this is additive over a black ground, so the two dark
+    ones are not dark paint but dim light, and they read as the smoke the two
+    bright ones are throwing rather than as lines of their own until you look
+    for them. Nothing here is a hue, which is the whole difference between this
+    and the original. */
+const WHITE: readonly [number, number, number] = [1.0, 1.0, 1.0];
+const DARK_WHITE: readonly [number, number, number] = [0.75, 0.75, 0.75];
+const LIGHT_BLACK: readonly [number, number, number] = [0.28, 0.28, 0.29];
+const BLACK: readonly [number, number, number] = [0.11, 0.11, 0.12];
 
 type Props = {
     className?: string;
     /** Wave travel, in phase per second. The Framer default works out to about
         0.6; a third of that is half the point of this port. */
     speed?: number;
-    /** Master multiplier on the whole band, 0-1. */
+    /** Master multiplier on the strokes, 0-1. Not on the ground, which is
+        black either way — this is how hard the light is driven. It sat at 0.5
+        while the strokes were a transparent wash and the hero's black was
+        showing through them; opaque, the same figure reads far hotter, so it
+        is held a little over it rather than at the full drive the change made
+        available. */
     opacity?: number;
     /** Crests across the band, which is now the full width at every size. */
     xScale?: number;
@@ -166,11 +185,11 @@ type Props = {
 export default function ShaderFlow({
     className,
     speed = 0.2,
-    opacity = 0.5,
+    opacity = 0.62,
     xScale = 2.2,
     yScale = 0.26,
     distortion = 0.09,
-    glow = 0.032,
+    glow = 0.034,
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -187,7 +206,11 @@ export default function ShaderFlow({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const gl = canvas.getContext("webgl", { alpha: true, premultipliedAlpha: true });
+        // No alpha channel at all: the shader writes every pixel of every
+        // frame and the ground it writes is opaque black, so a channel for
+        // "how much of this is really here" is one the compositor would only
+        // ever be told 1 in.
+        const gl = canvas.getContext("webgl", { alpha: false });
         if (!gl) return;
 
         const program = createProgram(gl);
@@ -215,18 +238,23 @@ export default function ShaderFlow({
             uDistortion: gl.getUniformLocation(program, "uDistortion"),
             uGlow: gl.getUniformLocation(program, "uGlow"),
             uOpacity: gl.getUniformLocation(program, "uOpacity"),
-            uCore: gl.getUniformLocation(program, "uCore"),
-            uAsh: gl.getUniformLocation(program, "uAsh"),
-            uSmoke: gl.getUniformLocation(program, "uSmoke"),
-            uFar: gl.getUniformLocation(program, "uFar"),
+            uWhite: gl.getUniformLocation(program, "uWhite"),
+            uDarkWhite: gl.getUniformLocation(program, "uDarkWhite"),
+            uLightBlack: gl.getUniformLocation(program, "uLightBlack"),
+            uBlack: gl.getUniformLocation(program, "uBlack"),
         };
 
         // A band-wide fragment shader is the one thing on this page that is
         // genuinely fill-rate bound, and none of what it draws is detail a
         // second device pixel would resolve. Capped well below the portrait.
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        //
+        // Read per resize rather than once: the ratio changes when the window
+        // is dragged to a screen of a different density, and a buffer sized
+        // against the old one is the wrong size until the page is reloaded.
+        const density = () => Math.min(window.devicePixelRatio || 1, 1.5);
 
         const resize = () => {
+            const dpr = density();
             const rect = canvas.getBoundingClientRect();
             const w = Math.max(1, Math.round(rect.width * dpr));
             const h = Math.max(1, Math.round(rect.height * dpr));
@@ -245,13 +273,17 @@ export default function ShaderFlow({
         // element is resized. Uploaded once here rather than on every frame
         // with the handful that actually animate — five uniform writes a frame
         // is not what makes this expensive, but there is no reason to do them.
-        gl.uniform3f(uniforms.uCore, CORE[0], CORE[1], CORE[2]);
-        gl.uniform3f(uniforms.uAsh, ASH[0], ASH[1], ASH[2]);
-        gl.uniform3f(uniforms.uSmoke, SMOKE[0], SMOKE[1], SMOKE[2]);
-        gl.uniform3f(uniforms.uFar, FAR[0], FAR[1], FAR[2]);
+        gl.uniform3f(uniforms.uWhite, WHITE[0], WHITE[1], WHITE[2]);
+        gl.uniform3f(uniforms.uDarkWhite, DARK_WHITE[0], DARK_WHITE[1], DARK_WHITE[2]);
+        gl.uniform3f(uniforms.uLightBlack, LIGHT_BLACK[0], LIGHT_BLACK[1], LIGHT_BLACK[2]);
+        gl.uniform3f(uniforms.uBlack, BLACK[0], BLACK[1], BLACK[2]);
 
         const resizeObserver = new ResizeObserver(resize);
         resizeObserver.observe(canvas);
+
+        // A density change moves no CSS pixel, so neither the observer above
+        // nor a `resize` listener would ever hear it.
+        const stopDprWatch = onDprChange(resize);
 
         let visible = true;
         const intersectionObserver = new IntersectionObserver((entries) => {
@@ -329,6 +361,7 @@ export default function ShaderFlow({
 
         return () => {
             cancelAnimationFrame(rafId);
+            stopDprWatch();
             resizeObserver.disconnect();
             intersectionObserver.disconnect();
             window.removeEventListener("pagehide", hide);

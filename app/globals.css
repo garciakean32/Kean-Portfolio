@@ -9,28 +9,29 @@
    ------------------------------------------------------------------ */
 
 :root {
-  /* Surfaces — plain white through grey. Neutral on purpose: the only colour
-     on the site is the accent, and it is quiet. */
-  --paper: 245 245 246;
+  /* Surfaces — white through dark white. There is no colour on this site:
+     the whole palette is black, light black, white and dark white. */
+  --paper: 245 245 245;
   --paper-2: 255 255 255;
-  --paper-3: 234 234 236;
+  --paper-3: 232 232 232;
 
   /* Foreground */
-  --ink: 22 22 24;
-  --ink-2: 62 62 68;
-  --ink-3: 92 92 99;
-  --on-ink: 250 250 251;
+  --ink: 10 10 10;
+  --ink-2: 64 64 64;
+  --ink-3: 102 102 102;
+  --on-ink: 255 255 255;
 
   /* Structure */
-  --rule: 223 223 226;
-  --rule-strong: 194 194 199;
+  --rule: 219 219 219;
+  --rule-strong: 176 176 176;
 
-  /* Accent — a dimmed blue, well off saturation. Held a step darker here so
-     it still carries against white. */
-  --accent: 62 88 124;
+  /* Emphasis — not a hue. It is simply the darkest ink the surface has, so
+     the one thing on a panel that has to carry weight can be pushed to the
+     end of the scale rather than given a colour of its own. */
+  --accent: 10 10 10;
 
   /* Status — work that is live but not finished */
-  --warn: 124 98 40;
+  --warn: 102 102 102;
 
   /* Texture */
   --grain: 0.035;
@@ -43,33 +44,30 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-io: cubic-bezier(0.76, 0, 0.24, 1);
 
-  /* Japanese glyphs arrive as a `text` subset loaded in the root layout */
-  --font-noto-jp: "Noto Sans JP";
-
   color-scheme: light;
 }
 
 .dark {
-  /* Near-black rather than charcoal — the three steps stay close together so
-     the tonal drift between sections still reads, without any of them
-     drifting up into grey. */
-  --paper: 2 2 3;
-  --paper-2: 8 8 9;
-  --paper-3: 14 14 16;
+  /* Black, then two steps of light black. They stay close together so the
+     tonal drift between sections still reads without any of them lifting off
+     black into grey. */
+  --paper: 0 0 0;
+  --paper-2: 10 10 10;
+  --paper-3: 18 18 18;
 
-  --ink: 245 245 246;
-  --ink-2: 165 166 170;
-  --ink-3: 128 129 134;
-  --on-ink: 6 6 7;
+  --ink: 255 255 255;
+  --ink-2: 191 191 191;
+  --ink-3: 138 138 138;
+  --on-ink: 0 0 0;
 
-  --rule: 34 34 38;
-  --rule-strong: 56 56 62;
+  --rule: 38 38 38;
+  --rule-strong: 64 64 64;
 
-  /* The same dimmed blue, opened up a step so it reads at the same weight on
-     black as the darker mix does on white */
-  --accent: 108 132 164;
+  /* Same idea as above, at the other end of the scale: on black the strongest
+     thing the palette has is plain white. */
+  --accent: 255 255 255;
 
-  --warn: 196 170 116;
+  --warn: 168 168 168;
 
   --grain: 0.05;
 
@@ -85,21 +83,21 @@
    ------------------------------------------------------------------ */
 
 .light-panel {
-  --paper: 245 245 246;
+  --paper: 245 245 245;
   --paper-2: 255 255 255;
-  --paper-3: 234 234 236;
+  --paper-3: 232 232 232;
 
-  --ink: 22 22 24;
-  --ink-2: 62 62 68;
-  --ink-3: 92 92 99;
-  --on-ink: 250 250 251;
+  --ink: 10 10 10;
+  --ink-2: 64 64 64;
+  --ink-3: 102 102 102;
+  --on-ink: 255 255 255;
 
-  --rule: 223 223 226;
-  --rule-strong: 194 194 199;
+  --rule: 219 219 219;
+  --rule-strong: 176 176 176;
 
-  --accent: 62 88 124;
+  --accent: 10 10 10;
 
-  --warn: 124 98 40;
+  --warn: 102 102 102;
 
   color-scheme: light;
   background-color: rgb(var(--paper));
@@ -144,15 +142,15 @@
   body {
     background-color: rgb(var(--paper));
     color: rgb(var(--ink));
-    font-family: var(--font-archivo), system-ui, sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overflow-x: clip;
   }
 
   ::selection {
-    background: rgb(var(--accent));
-    color: #fff;
+    background: rgb(var(--ink));
+    color: rgb(var(--paper));
   }
 
   :focus-visible {
@@ -345,10 +343,10 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     will-change: transform;
   }
 
-  /* Vertical Japanese setting */
-  .tate {
+  /* A line set down the margin rather than across the page. Latin rotates
+     with the line rather than standing each letter up. */
+  .vertical {
     writing-mode: vertical-rl;
-    text-orientation: upright;
   }
 
   /* Underline that draws in from the left on hover/focus */
@@ -428,39 +426,56 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
 
 /* Hero ground.
 
-   The hero is the one surface on the site that is not a flat tone: a soft
-   light sits behind the figure and falls away to near-black at the edges, the
-   way a studio backdrop does. Everything in it is neutral — the only colour
-   anywhere on the page is the accent. */
+   Black, and only black. The section's whole backdrop is the WebGL band drawn
+   on top of it (see ShaderFlow), so anything painted here beyond the ground
+   itself only ever competed with it — and the page below opens on exactly
+   this same black, which is what keeps the seam invisible. */
 .hero-ground {
-  background-color: rgb(2 2 3);
-  /* Both layers are shaped so that neither one ends inside the frame.
+  background-color: rgb(0 0 0);
+}
 
-     They used to. The light was 80% tall from 34% down, so it was fully spent
-     by about three quarters of the way down; the tone under it made its last
-     move at 58% and then held. Between them the bottom quarter of the hero was
-     flat, unlit black with a visible line where the light had run out — the
-     one part of the section that looked like a mistake rather than a backdrop.
+/* The hero on an upright screen — a phone, and a tablet held that way too.
+   Three rules, and they are all answers to the same measurement.
 
-     Now the light reaches past the bottom edge before it reaches zero, so what
-     is on screen is only ever part of its falloff, and the tone steps the
-     whole way down. It still lands on exactly rgb(2 2 3) at 100%, which is
-     what the section below opens on, so the seam stays invisible. */
-  background-image: radial-gradient(
-      128% 108% at 50% 38%,
-      rgba(150, 154, 162, 0.17) 0%,
-      rgba(104, 108, 117, 0.10) 34%,
-      rgba(52, 53, 60, 0.04) 62%,
-      rgba(24, 24, 27, 0) 100%
-    ),
-    linear-gradient(
-      to bottom,
-      rgb(17 17 19) 0%,
-      rgb(13 13 15) 26%,
-      rgb(9 9 11) 52%,
-      rgb(5 5 6) 76%,
-      rgb(2 2 3) 100%
-    );
+   The cut-out is 1100x2048 and it is contain-fit, so it can only ever be as
+   wide as the frame or as tall as it, whichever binds first. On a screen
+   narrower than 0.537:1 the width binds — and contain centres the letterbox
+   as well as the figure, so the figure floats in the middle of the frame with
+   empty room above and below it and the hard crop at its waist sitting in open
+   view. The taller the screen the worse it gets, which is exactly the phone
+   that has the most room to look right on.
+
+   So the figure is pinned to the bottom edge instead: the crop leaves the
+   screen with it, and the room the letterbox was spending on both ends is
+   collected at the top, where the type is. `min()` takes the natural height
+   first — 186vw is the cut-out's own aspect, and a box that tall is filled
+   edge to edge with nothing left over — and never lets it past 74% of the
+   frame, which is what guarantees the band the wordmark sits in is clear of
+   the figure's head at any height.
+
+   The name is set against that: one word, dropped well down the frame so it
+   lands across the top of the figure's head rather than floating under the
+   top row. Centred over the middle of the frame it would be behind the chest
+   — the widest, most opaque part of the cut-out — and effectively gone; the
+   head is the one band of the figure narrow enough to leave the outer letters
+   in the clear, and 12svh is where the word sits on it.
+
+   Keyed to the shape of the screen rather than to a width because that is the
+   condition: the same 1024px-wide tablet is fine in one orientation and buried
+   in the other. 4/5 is a little past where the word and the figure are the
+   same width, so the treatment is in place before it is needed rather than
+   after. */
+@media (max-aspect-ratio: 4 / 5) {
+  .hero-figure {
+    top: auto;
+    bottom: 0;
+    height: min(74%, 186vw);
+  }
+
+  .hero-name-band {
+    align-items: flex-start;
+    padding-top: 12svh;
+  }
 }
 
 /* Ink wipe.
@@ -500,14 +515,41 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   );
 }
 
-/* The disc a portrait is set against, in the accent. Sits behind its figure
-   and is deliberately larger than it, so the photograph reads as something
-   placed on the mark rather than framed by it. */
-.seal {
+/* The frame a portrait is set against. Sits behind its figure and offset past
+   one corner of it, deliberately larger, so the photograph reads as something
+   laid onto a drawn frame rather than boxed inside one.
+
+   The rule itself is drawn in the markup now — see `Portrait` in About.tsx,
+   where the four edges are one line of type running around a rounded
+   rectangle rather than a border. All that is left here is the placement. */
+.plate {
   position: absolute;
-  border-radius: 9999px;
-  background-color: rgb(var(--accent));
   pointer-events: none;
+}
+
+/* The two rings of the process rail's opening mark, turning against each
+   other. `transform-box: fill-box` puts the origin at each ring's own centre
+   rather than at the SVG's user-space origin. Slow enough to read as drift,
+   and stopped outright by the reduced-motion block at the end of this file —
+   the mark is a drawing either way. See `StartMark` in Services.tsx. */
+.spin-slow,
+.spin-slower {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.spin-slow {
+  animation: spin 52s linear infinite;
+}
+
+.spin-slower {
+  animation: spin 84s linear infinite reverse;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Paper grain — one fixed layer, no per-element cost */
@@ -553,43 +595,6 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     flex-shrink: 0;
     width: var(--hs-w, 100vw);
     height: var(--hs-h, 100%);
-  }
-}
-
-/* Horizontal stack marquee */
-.marquee {
-  display: flex;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 8%,
-    black 92%,
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 8%,
-    black 92%,
-    transparent
-  );
-}
-
-.marquee-track {
-  display: flex;
-  flex-shrink: 0;
-  min-width: 100%;
-  align-items: center;
-  animation: marquee 58s linear infinite;
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
   }
 }
 
@@ -712,7 +717,4 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     scroll-behavior: auto !important;
   }
 
-  .marquee-track {
-    animation: none;
-  }
 }

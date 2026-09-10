@@ -13,8 +13,8 @@ import { EASE, gsap, motionEnabled, useGsap } from "@/lib/motion";
     rather than a fixed offset.
 
     Ash one side, near-black the other, not magenta and cyan: the tear is a
-    wet double of the word, the way ink lifts and smears off a page, and the
-    only colour anywhere on this site is the accent. Keep in step with `ASH`
+    wet double of the word, the way ink lifts and smears off a page, and there
+    is no colour anywhere on this site to tear into. Keep in step with `ASH`
     and `SMOKE` in PrismDrift, which give the portrait the same two edges. */
 const fringe = (px: number) =>
     `${px}px 0 rgba(198,205,216,0.8), ${-px}px 0 rgba(6,6,8,0.9)`;
@@ -104,7 +104,7 @@ export default function Hero() {
         // it still arrives with the frame, it just never tears with it.
         const struck = [
             ...q(".js-role"),
-            ...q(".js-tate"),
+            ...q(".js-vertical"),
             ...q(".js-body:not(.js-steady)"),
             wordmark,
         ];
@@ -243,7 +243,7 @@ export default function Hero() {
         // figure is torn into it at the end.
         draw(q(".js-flow"), 0, DOLLY);
         draw([wordmark], STEP * 4, WIPE * 1.3);
-        draw([...q(".js-role"), ...q(".js-tate")], STEP * 8, WIPE);
+        draw([...q(".js-role"), ...q(".js-vertical")], STEP * 8, WIPE);
         draw(q(".js-body"), STEP * 9, WIPE);
 
         // 3 — the room is whole by now, and it is struck twice on the way into
@@ -365,19 +365,61 @@ export default function Hero() {
             {/* Top — the mark on the left, one small line centred, and the
                 vertical run down the right margin at every size.
 
-                和風 and the vertical run are both centred on the row, rather
-                than pinned to an edge of it.
+                The mark and the vertical run are both centred on the row,
+                rather than pinned to an edge of it.
+
+                Below `sm` the mark turns down its own margin as well, and that
+                is what squares the row up. The outer columns are `1fr` each,
+                which splits the free space evenly but never goes narrower than
+                what is in them — so a horizontal "Portfolio" on the left
+                against a vertical "Philippines" on the right made the left
+                column five times the width of the right one, and the centre
+                column, sitting between two unequal margins, was nowhere near
+                the middle of the screen. Two vertical runs are the same width
+                as each other, and the line between them lands centred without
+                anything having to be told where the centre is.
 
                 z-20: stays in front of the portrait, which only needs to sit
                 over the name below. */}
-            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-center gap-3 pt-10 md:gap-6 md:pt-12">
-                <p
-                    data-anim="fade"
-                    data-glitch="jp"
-                    className="js-body col-start-1 translate-y-2 font-jp text-[0.6875rem] leading-none text-white"
-                >
-                    和風
-                </p>
+            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-center gap-3 pt-10 max-sm:items-start md:gap-6 md:pt-12">
+                {/* The half-turn lives on this wrapper rather than on the
+                    line itself, for the same reason the wordmark's resting
+                    offset does — see the note further down. The line is one of
+                    the elements the closing glitch tears, so GSAP owns its
+                    transform outright from the first hit, and Tailwind v4
+                    writes `rotate-180` as the standalone `rotate` property,
+                    which GSAP explicitly nulls (`rotate: none`) when it takes
+                    over. A breakpoint-conditional turn set on the line itself
+                    is therefore erased the moment the intro plays and never
+                    comes back: the layout it was in at load is the layout it
+                    is stuck in, so crossing `sm` left "Portfolio" upside down
+                    and halfway to the middle of the screen until a reload.
+                    Nothing reads or writes this wrapper, so the breakpoint
+                    answers for itself.
+
+                    `justify-self-start` goes with the writing mode, not beside
+                    it: a stretched grid item set `vertical-rl` lays its one
+                    line of text down the *right* edge of its box, which on a
+                    `1fr` column is halfway to the middle of the screen. Shrunk
+                    to its own width the box has no right edge to speak of, and
+                    the run sits in the margin where "Philippines" sits in the
+                    other one.
+
+                    Turned through half a circle on top of that, so it reads
+                    upward while the right-hand run reads downward. Both
+                    margins then run *away* from the centre of the frame rather
+                    than both pointing the same way down the page, which is
+                    what makes the pair read as two edges of one poster instead
+                    of two copies of the same idea. */}
+                <div className="col-start-1 translate-y-2 max-sm:rotate-180 max-sm:justify-self-start">
+                    <p
+                        data-anim="fade"
+                        data-glitch="mark"
+                        className="js-body font-mono text-[0.6875rem] uppercase leading-none tracking-[0.14em] text-white max-sm:[writing-mode:vertical-rl]"
+                    >
+                        Portfolio
+                    </p>
+                </div>
 
                 <p
                     data-anim="fade"
@@ -390,10 +432,10 @@ export default function Hero() {
                 <span
                     aria-hidden="true"
                     data-anim="fade"
-                    data-glitch="tate"
-                    className="js-tate tate col-start-3 justify-self-end translate-y-2 font-jp text-[0.6875rem] tracking-[0.4em] text-white"
+                    data-glitch="vertical"
+                    className="js-vertical vertical col-start-3 justify-self-end translate-y-2 font-mono text-[0.6875rem] uppercase tracking-[0.24em] text-white"
                 >
-                    ウェブ制作
+                    Philippines
                 </span>
             </div>
 
@@ -401,6 +443,14 @@ export default function Hero() {
                 section — it shrinks or grows to stay fully in frame, never
                 cropped by the section's overflow-hidden. `object-contain`
                 centres it, which happens to land the figure over the name.
+
+                `hero-figure` is the one thing that changes on an upright
+                screen: contain-fit centres the letterbox as well as the
+                figure, so on anything narrower than the cut-out's own 1100x2048
+                the figure floats in the middle of the frame with the hard crop
+                at its waist showing. See globals.css for what that rule does
+                and why it is keyed to the shape of the screen rather than to a
+                width.
 
                 z-10: above the name (z-0) it overlaps, below every other row
                 (z-20) so only KEAN sits behind it. */}
@@ -413,7 +463,7 @@ export default function Hero() {
                 // ground shadow that was always here. Written as a single
                 // `filter` because they have to stack, which Tailwind's
                 // `drop-shadow-*` chain has room for only one of.
-                className="js-portrait pointer-events-none absolute inset-0 z-10 [filter:drop-shadow(0_0_3px_rgba(0,0,0,0.95))_drop-shadow(0_25px_45px_rgba(0,0,0,0.45))]"
+                className="js-portrait hero-figure pointer-events-none absolute inset-0 z-10 [filter:drop-shadow(0_0_3px_rgba(0,0,0,0.95))_drop-shadow(0_25px_45px_rgba(0,0,0,0.45))]"
             >
                 <PrismDrift
                     ref={prism}
@@ -427,7 +477,7 @@ export default function Hero() {
             {/* Centre — the name, the whole point of the frame, and the
                 largest thing anywhere on the site. z-0: the only row the
                 portrait sits in front of. */}
-            <div className="relative z-0 flex flex-1 items-center justify-center px-[var(--gutter)]">
+            <div className="hero-name-band relative z-0 flex flex-1 items-center justify-center px-[var(--gutter)]">
                 {/* The resting offset lives here, on a wrapper, rather than on
                     the name itself — and that is a correctness point, not a
                     tidiness one. GSAP owns the name's `transform` outright the
@@ -439,7 +489,7 @@ export default function Hero() {
                     the name back 32px from where it belonged. On a wrapper
                     nothing reads it and nothing restores it; the breakpoint
                     just answers for itself. */}
-                <div className="-translate-y-8 sm:-translate-y-4 lg:-translate-y-6">
+                <div className="w-full sm:-translate-y-4 lg:-translate-y-6">
                 <h1
                     aria-label="Kean"
                     // The whole name reveals as one stroke rather than the two
@@ -448,28 +498,21 @@ export default function Hero() {
                     data-anim="fade"
                     // Sized to very nearly span the frame, the way a poster
                     // wordmark does. The number is not free: "KEAN" sets about
-                    // 2.78x its own font size wide and cannot wrap, so the
-                    // ceiling below `sm` is whatever still clears the two
-                    // gutters — 32.5vw is as large as that gets without
-                    // clipping down to 320px wide. From `sm` the ceiling is
-                    // whatever still fits between the two edges the scroll
-                    // section menu reserves for itself instead — 28vw clears
-                    // those from 640px up, measured at 1024 where they are
-                    // tightest. It is capped against the viewport's height
+                    // 2.78x its own font size wide and cannot wrap. From `sm`
+                    // the ceiling is whatever still fits between the two edges
+                    // the scroll section menu reserves for itself — 25vw
+                    // clears those from 640px up, measured at 1024 where they
+                    // are tightest. It is capped against the viewport's height
                     // too, so a short laptop screen shrinks the word rather
                     // than letting it eat the room the rest of the frame
                     // needs. `min()` takes whichever axis is tighter.
                     //
-                    // Pushed up below `sm`, against the portrait. The figure
-                    // is a cutout and dead centre is where the torso is widest,
-                    // which buries the word almost entirely; the higher the
-                    // name goes the more of it clears. Sampling the source
-                    // PNG's alpha channel at each candidate offset is what
-                    // settled the number rather than eyeballing it — at 32px
-                    // about a third of the word is in the clear, and going
-                    // further starts pulling the name off the centre of the
-                    // frame the dolly is closing on.
-                    className="js-wordmark select-none font-display text-[clamp(4.25rem,32vw,8rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]"
+                    // Below `sm` it is a step under what would fit edge to
+                    // edge: the word is one piece there, set over the figure
+                    // rather than around it (see `hero-name-band` in
+                    // globals.css), and at the full width the outer letters
+                    // ran into the gutters with nothing left to breathe.
+                    className="js-wordmark select-none font-display text-[clamp(3.5rem,28vw,8rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]"
                 >
                     {/* Two halves rather than one word, and the split is what
                         the glitch is written against: the closing hits swap the
@@ -595,17 +638,21 @@ export default function Hero() {
                                 </span>
 
                                 {/* Two arrows, not one: the resting glyph leaves
-                                    to the upper right while its twin arrives
-                                    from the lower left, both clipped to the disc
-                                    so neither is ever seen outside it. */}
+                                    to the right while its twin arrives from the
+                                    left, both clipped to the disc so neither is
+                                    ever seen outside it. Straight along the line
+                                    the arrow already points, which is the
+                                    direction the control means — and on the way
+                                    back out of hover the same two transitions
+                                    run in reverse without being written twice. */}
                                 <span
                                     aria-hidden="true"
                                     className="relative z-10 h-8 w-8 shrink-0 overflow-hidden rounded-full text-accent"
                                 >
-                                    <span className="absolute inset-0 grid place-items-center transition-transform duration-500 ease-out group-hover:-translate-y-6 group-hover:translate-x-6">
+                                    <span className="absolute inset-0 grid place-items-center transition-transform duration-500 ease-out group-hover:translate-x-8">
                                         →
                                     </span>
-                                    <span className="absolute inset-0 grid -translate-x-6 translate-y-6 place-items-center transition-transform duration-500 ease-out group-hover:translate-x-0 group-hover:translate-y-0">
+                                    <span className="absolute inset-0 grid -translate-x-8 place-items-center transition-transform duration-500 ease-out group-hover:translate-x-0">
                                         →
                                     </span>
                                 </span>
