@@ -78,10 +78,25 @@ export default function SmoothScroll() {
         window.addEventListener("resize", onResize);
         window.addEventListener("orientationchange", onResize);
 
+        /* The one change of size that arrives without a `resize` event: a
+           back-button return out of the back/forward cache. The document is
+           restored whole — measurements, pin positions and scroll budget all
+           as they were when it was frozen — and if the window is not the size
+           it was then, none of them describe the page any more. There is no
+           layout still moving to wait for here, so this re-measures at once
+           rather than through the settle above. */
+        const onRestore = (event: PageTransitionEvent) => {
+            if (!event.persisted) return;
+            lenis.resize();
+            ScrollTrigger.refresh();
+        };
+        window.addEventListener("pageshow", onRestore);
+
         return () => {
             window.clearTimeout(settle);
             window.removeEventListener("resize", onResize);
             window.removeEventListener("orientationchange", onResize);
+            window.removeEventListener("pageshow", onRestore);
             ScrollTrigger.removeEventListener("refresh", remeasure);
             gsap.ticker.remove(update);
             setLenis(null);
