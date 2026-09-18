@@ -182,7 +182,7 @@ export default function About() {
 
                 {/* The numbers */}
                 <div className="js-facts shell mx-auto mt-16 w-full max-w-shell md:mt-24">
-                    <dl className="grid grid-cols-2 gap-x-8 gap-y-8 md:grid-cols-4">
+                    <dl className="grid grid-cols-3 gap-x-6 gap-y-8 md:gap-x-8">
                         {facts.map((fact) => (
                             <div
                                 key={fact.label}
@@ -323,7 +323,7 @@ export default function About() {
                 />
 
                 <p className="js-last-in mt-8 max-w-xl px-[var(--gutter)] font-serif text-d1 leading-snug text-ink">
-                    That is the person. Below is the proof.
+                    Everything below is live. You can open it and use it.
                 </p>
             </div>
         </section>

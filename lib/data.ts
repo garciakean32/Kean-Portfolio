@@ -173,20 +173,9 @@ export const projectsNote =
    Derived stats
    ------------------------------------------------------------------ */
 
-const getAge = () => {
-    const today = new Date();
-    const birthday = new Date(2002, 1, 28); // month is 0-indexed, so 1 = February
-    let age = today.getFullYear() - birthday.getFullYear();
-    const hasHadBirthdayThisYear =
-        today.getMonth() > birthday.getMonth() ||
-        (today.getMonth() === birthday.getMonth() && today.getDate() >= birthday.getDate());
-    if (!hasHadBirthdayThisYear) age--;
-    return age;
-};
-
 const getCodingYears = () => {
     const today = new Date();
-    const started = new Date(2023, 2, 10); // month 0-indexed, 2 = March
+    const started = new Date(2025, 1, 9); // month 0-indexed, 1 = February
     let years = today.getFullYear() - started.getFullYear();
     const hasPassed =
         today.getMonth() > started.getMonth() ||
@@ -198,6 +187,5 @@ const getCodingYears = () => {
 export const facts = [
     { value: getCodingYears(), label: "Years coding" },
     { value: "2", label: "Live products" },
-    { value: `${getAge()}`, label: "Years of age" },
     { value: personal.timezone, label: "Timezone" },
 ];

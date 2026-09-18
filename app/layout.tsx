@@ -42,12 +42,14 @@ const jetbrainsMono = JetBrains_Mono({
    component so the scroll dock is already faded out on the first frame. */
 const MOTION_GATE = `(function(){var d=document.documentElement;try{var m=window.matchMedia('(prefers-reduced-motion: reduce)');var s=function(){d.dataset.motion=m.matches?'off':'on'};s();m.addEventListener?m.addEventListener('change',s):m.addListener(s)}catch(e){d.dataset.motion='off'}d.dataset.intro=d.dataset.motion==='on'&&!location.hash?'pending':'off';})();`;
 
+const TITLE = "Kean Garcia | Portfolio";
+
 const DESCRIPTION =
     "Full-stack web developer building modern, responsive websites and web applications for businesses and clients. Based in Philippines.";
 
 export const metadata: Metadata = {
     metadataBase: new URL(personal.siteUrl),
-    title: `${personal.name} — ${personal.role}`,
+    title: TITLE,
     description: DESCRIPTION,
     // One page, one address: said out loud so a crawler that arrives on an
     // anchor or with a tracking parameter still indexes the one URL.
@@ -60,7 +62,7 @@ export const metadata: Metadata = {
         googleBot: { index: true, follow: true, "max-image-preview": "large" },
     },
     openGraph: {
-        title: `${personal.name} — ${personal.role}`,
+        title: TITLE,
         description:
             "Websites and web applications, built end to end. Based in Philippines.",
         url: "/",
@@ -70,7 +72,7 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary",
-        title: `${personal.name} — ${personal.role}`,
+        title: TITLE,
         description:
             "Websites and web applications, built end to end. Based in Philippines.",
     },

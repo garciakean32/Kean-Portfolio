@@ -309,22 +309,23 @@ export default function Services() {
                                 className="scale-[1.18] object-cover"
                             />
                         </div>
-                        <figcaption className="js-close-in mt-4 font-mono text-label uppercase text-ink-3">
-                            Some things take a season
-                        </figcaption>
                     </figure>
 
                     <div className="lg:col-span-4 lg:col-start-5 lg:row-start-1">
                         <p className="js-close-line font-serif text-d2 leading-tight text-ink">
-                            <MaskWords text="Most of the work is decisions," />{" "}
-                            <span className="text-ink-3">
-                                <MaskWords text="not typing." />
-                            </span>
+                            <MaskWords text="You own it all at handover." />
                         </p>
-                        <p className="js-close-in mt-8 max-w-measure text-body text-ink-2">
-                            The typing is the quick part. The deciding is what makes a site
-                            feel built for you rather than assembled from a template.
-                        </p>
+                        <ul className="js-close-in mt-8 max-w-measure space-y-4 text-body text-ink-2">
+                            <li className="border-t border-rule pt-4">
+                                The repository, with the full commit history.
+                            </li>
+                            <li className="border-t border-rule pt-4">
+                                Hosting, domain and database accounts, in your name.
+                            </li>
+                            <li className="border-t border-rule pt-4">
+                                No license fee, no retainer, nothing tied to me.
+                            </li>
+                        </ul>
                     </div>
 
                     <figure className="lg:col-span-3 lg:col-start-10 lg:row-start-1">
@@ -338,9 +339,6 @@ export default function Services() {
                                 className="scale-[1.18] object-cover object-center"
                             />
                         </div>
-                        <figcaption className="js-close-in mt-4 font-mono text-label uppercase text-ink-3">
-                            Away from the desk, still thinking about it
-                        </figcaption>
                     </figure>
                 </div>
             </div>
