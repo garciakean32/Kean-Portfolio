@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
            change without a deploy, so there is nothing to be gained from
            re-optimising them every few minutes. */
         minimumCacheTTL: 60 * 60 * 24 * 365,
+        /* Dev only: the optimiser keeps a variant per source URL and never
+           restats the file behind it, so replacing an image in place under the
+           same name keeps serving the old pixels — and only at the widths that
+           happen to be cached, which reads as "broken on some screen sizes".
+           Lowering the TTL does not help; the entry is held for the life of the
+           server. Serving the file unoptimised in dev means an edit shows up on
+           the next reload. Production still goes through AVIF/WebP as before. */
+        unoptimized: process.env.NODE_ENV !== "production",
     },
 };
 

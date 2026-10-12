@@ -11,6 +11,19 @@ Commands:
 
 Do not start a dev server to "verify" a change unless asked; prefer `npm run build` or nothing.
 
+# Images
+
+- Images in `public/` update on reload in dev because `next.config.ts` sets
+  `images.unoptimized` there. The dev optimiser holds one variant per source URL
+  for the life of the server and never restats the file, so an image replaced
+  under the same name kept serving old pixels at whichever widths were already
+  cached — which reads as "broken on some screen sizes". Do not drop that flag
+  without replacing it.
+- Only a local production run caches optimised variants; if a swapped image
+  looks stale there, `rm -rf .next/cache/images`.
+- Cut-out PNGs must keep a real alpha channel. If the "transparency" is a
+  checkerboard baked into the pixels, say so instead of shipping it.
+
 # General Behavior
 
 - Keep responses concise and action-oriented.
