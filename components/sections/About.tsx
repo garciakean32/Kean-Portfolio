@@ -1,164 +1,89 @@
 "use client";
 
-import Image from "next/image";
-import ImageBand from "@/components/shared/ImageBand";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import SectionMark from "@/components/shared/SectionMark";
-import { MaskLine } from "@/components/motion/Text";
-import { experience, facts, personal, skills } from "@/lib/data";
-import { drawRule, EASE, fadeUp, gsap, riseMasks, useGsap } from "@/lib/motion";
+import { RevealText } from "@/components/motion/Reveal";
+import { Portrait, driftPortraits } from "@/components/shared/Portrait";
+import { ThreadLines, type Thread } from "@/components/shared/Thread";
+import { TextMorph } from "@/components/ui/text-morph";
+import ExperienceDialog from "@/components/sections/ExperienceDialog";
+import { aboutFacts, personal } from "@/lib/data";
+import { bowLine, dropLine, handLine, sineInOut, type Pt2 } from "@/lib/hand";
+import { fadeUp, gsap, motionEnabled, useGsap } from "@/lib/motion";
 
 /** The poster voice: uppercase display, set tight and heavy. */
 const POSTER =
     "font-display text-d4 font-extrabold uppercase leading-[0.92] tracking-[-0.03em] text-ink";
 
 /**
- * Who is building it, and how he got here — two panels in the same language.
+ * Every section here owns at least one full screen, with its content centred
+ * in it — so whichever one a reader is in, the next is a clear scroll away
+ * rather than already crowding in from below.
+ */
+const SCREEN = "flex min-h-[100svh] flex-col justify-center py-20 md:py-28";
+
+/**
+ * Who is building it, and how he got here — two sections in the same
+ * language.
  *
  * Both are built the same way: a small rule-and-label across the top, a name
  * or a title set as large uppercase display on one side, and a photograph on
  * the other set inside a frame of type. Under each, the detail — the bio and
- * the contact line in the first, the four stops of the story in the second,
- * each with what it was set out to its right the way a date would be.
+ * a line cycling through a few facts in the first, the stops of the story in
+ * the second, each with what it was set out to its right the way a date would
+ * be.
  *
  * Every photograph on this page is the same shape and the same size on
  * purpose. The old layout gave each one its own crop and its own column width
  * and the section never settled; one frame repeated is what makes a run of
  * pictures read as a set.
- *
- * This is also `RevealUnder`'s cover on the page, which is the one structural
- * thing to know about it: the whole section scrolls away upwards to uncover
- * the work waiting underneath, and the reveal is keyed to the section's bottom
- * edge. So the last thing here (`.js-last`) is a fixed viewport holding almost
- * nothing — it is the screen the seam is peeled off.
  */
 export default function About() {
+    const head = useRef<HTMLDivElement>(null);
+    const facts = useRef<HTMLParagraphElement>(null);
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
 
-        /* Masthead */
+        /* The label. The name and the bio reveal themselves — see
+           `RevealText` — and so does the photograph. */
         const head = q(".js-head")[0];
         fadeUp(q(".js-mark"), { trigger: head, start: "top 82%" });
-        riseMasks(q(".js-name .js-mask-inner"), { trigger: head, start: "top 78%", stagger: 0.09 });
-        fadeUp(q(".js-head-copy"), { trigger: head, start: "top 74%", stagger: 0.1 });
 
-        /* The numbers */
-        fadeUp(q(".js-fact"), { trigger: q(".js-facts")[0], start: "top 84%", stagger: 0.08, y: 18 });
+        /* The facts, on their own screen — cued by it, not by the masthead */
+        const facts = q(".js-facts")[0];
+        fadeUp(q(".js-facts-in"), { trigger: facts, start: "top 60%" });
 
-        /* Every photograph: uncovered from alternating edges, then drifting
-           inside its own frame for as long as it is on screen. The disc behind
-           it opens on the same cue, from nothing. */
-        q(".js-figure").forEach((figure, i) => {
-            gsap.fromTo(
-                figure,
-                { clipPath: i % 2 === 0 ? "inset(100% 0 0 0)" : "inset(0 0 100% 0)" },
-                {
-                    clipPath: "inset(0% 0 0% 0)",
-                    duration: 1.3,
-                    ease: EASE.io,
-                    scrollTrigger: { trigger: figure, start: "top 88%" },
-                }
-            );
-
-            gsap.fromTo(
-                figure.querySelector("img"),
-                { yPercent: -5 },
-                {
-                    yPercent: 5,
-                    ease: "none",
-                    scrollTrigger: {
-                        trigger: figure,
-                        start: "top bottom",
-                        end: "bottom top",
-                        scrub: 0.8,
-                    },
-                }
-            );
-        });
-
-        /* The ring around each photograph. It is concentric with the picture,
-           so it opens onto it rather than sliding in from a corner — the old
-           diagonal drift belonged to the offset plate this replaced. */
-        q(".js-plate").forEach((plate) => {
-            gsap.fromTo(
-                plate,
-                { scale: 1.06, opacity: 0 },
-                {
-                    scale: 1,
-                    opacity: 1,
-                    duration: 1.1,
-                    ease: EASE.out,
-                    scrollTrigger: { trigger: plate, start: "top 88%" },
-                }
-            );
-        });
-
-        /* Experience */
-        const story = q(".js-story")[0];
-        fadeUp(q(".js-story-mark"), { trigger: story, start: "top 84%" });
-        riseMasks(q(".js-story-title .js-mask-inner"), {
-            trigger: story,
-            start: "top 80%",
-            stagger: 0.09,
-        });
-        q(".js-stop").forEach((stop) => {
-            const m = gsap.utils.selector(stop);
-            drawRule(m(".js-stop-rule"), { trigger: stop, start: "top 90%" });
-            fadeUp(m(".js-stop-in"), { trigger: stop, start: "top 88%", stagger: 0.08, y: 18 });
-        });
-        /* The shelf */
-        const shelf = q(".js-shelf")[0];
-        riseMasks(q(".js-shelf-line .js-mask-inner"), {
-            trigger: shelf,
-            start: "top 82%",
-            stagger: 0.09,
-        });
-        fadeUp(q(".js-shelf-in"), { trigger: shelf, start: "top 84%", stagger: 0.08 });
-        q(".js-group").forEach((group) => {
-            const m = gsap.utils.selector(group);
-            drawRule(m(".js-group-rule"), { trigger: group, start: "top 90%" });
-            fadeUp(m(".js-group-in"), { trigger: group, start: "top 88%", stagger: 0.06 });
-        });
-
-        /* The last screen — arrives late on purpose, since the reveal begins
-           the moment it has finished filling the screen. */
-        const last = q(".js-last")[0];
-        drawRule(q(".js-last-rule"), { trigger: last, start: "top 70%", axis: "y" });
-        fadeUp(q(".js-last-in"), { trigger: last, start: "top 62%", stagger: 0.15 });
+        driftPortraits(el);
     });
 
-    return (
-        <section
-            id="about"
-            ref={scope}
-            className="relative overflow-hidden bg-gradient-to-b from-paper-3 to-paper"
-        >
-            {/* ---------------------------------------------------------- */}
-            {/* Panel one — who                                             */}
-            {/*                                                              */}
-            {/* The opening panel and the numbers under it are one screen,   */}
-            {/* and they own it: a jump to `#about` lands on the section's    */}
-            {/* top edge, so anything shorter than a viewport left the band   */}
-            {/* below already climbing into frame and the panel reading as    */}
-            {/* though it stopped short. `min-h` rather than `h` — the same   */}
-            {/* block is taller than the screen on a phone and simply flows.  */}
-            {/* ---------------------------------------------------------- */}
-            <div className="flex min-h-[100svh] flex-col justify-center pt-20 md:pt-28 lg:pt-0">
-                <div className="js-head shell mx-auto w-full max-w-shell">
-                    <div className="js-mark flex flex-wrap items-center justify-between gap-6">
-                        <SectionMark as="h2" label="About" />
-                        <span aria-hidden="true" className="h-px flex-1 bg-rule" />
-                    </div>
+    const loop = useFactsLoop(scope, head, facts, aboutFacts);
 
-                    <div className="mt-12 grid gap-12 md:mt-16 lg:grid-cols-12 lg:items-center lg:gap-x-12">
+    return (
+        <section id="about" ref={scope} className="relative overflow-hidden bg-paper">
+            <div className={SCREEN}>
+                <div className="js-head shell mx-auto w-full max-w-shell">
+                    <SectionMark as="h2" label="About" className="js-mark" />
+
+                    <div
+                        ref={head}
+                        className="mt-8 grid gap-10 md:mt-16 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-x-12"
+                    >
                         <div className="lg:col-span-7">
-                            <h3 className={`js-name ${POSTER}`}>
-                                <MaskLine>Hello, I&apos;m</MaskLine>
-                                <MaskLine>Kean Valgere</MaskLine>
-                                <MaskLine className="text-ink-3">Garcia</MaskLine>
+                            {/* One line at a time, each a beat after the
+                                last, so the name reads down the page. */}
+                            <h3 className={POSTER}>
+                                <RevealText text="Hello, I'm" />
+                                <RevealText text="Kean Valgere" delay={0.18} />
+                                <RevealText text="Garcia" delay={0.36} className="text-ink-3" />
                             </h3>
 
-                            <p className="js-head-copy mt-8 max-w-measure text-body text-ink-2 md:mt-10">
-                                {personal.bio}
+                            <p className="mt-6 max-w-measure text-copy text-ink-2 md:mt-10">
+                                <RevealText
+                                    text={personal.bio}
+                                    delay={0.4}
+                                    stagger={0.012}
+                                    distance={12}
+                                />
                             </p>
                         </div>
 
@@ -168,251 +93,584 @@ export default function About() {
                             className="lg:col-span-4 lg:col-start-9"
                         />
                     </div>
-
-                    {/* The contact line, the way the poster carries one along its
-                        bottom edge — small, spaced, and the same on every panel. */}
-                    <div className="js-head-copy mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-rule pt-6 font-mono text-meta uppercase text-ink-3 md:mt-16">
-                        <a href={`mailto:${personal.email}`} className="link-rule tap lowercase">
-                            {personal.email}
-                        </a>
-                        <span>{personal.location}</span>
-                        <span>{personal.timezone}</span>
-                    </div>
-                </div>
-
-                {/* The numbers */}
-                <div className="js-facts shell mx-auto mt-16 w-full max-w-shell md:mt-24">
-                    <dl className="grid grid-cols-3 gap-x-6 gap-y-8 md:gap-x-8">
-                        {facts.map((fact) => (
-                            <div
-                                key={fact.label}
-                                data-anim="fade"
-                                className="js-fact border-t border-rule pt-4"
-                            >
-                                <dd className="font-display text-d2 font-bold tracking-[-0.03em] text-ink">
-                                    {fact.value}
-                                </dd>
-                                <dt className="mt-2 font-mono text-label uppercase text-ink-3">
-                                    {fact.label}
-                                </dt>
-                            </div>
-                        ))}
-                    </dl>
                 </div>
             </div>
 
-            <ImageBand
-                src="/images/tatami mat.png"
-                alt=""
-                tone="from-paper-3 to-paper"
-                height="h-[36svh] min-h-[12rem] md:h-[52svh]"
-                className="mt-16 md:mt-24"
-            />
+            {/* A few facts, one at a time, morphing from each into the next —
+                on a screen of their own, so a reader who stops on them sees
+                nothing else. The email is not among them; it lives with the
+                form in the contact section. The full list is read out once
+                for screen readers, since the morph itself is decoration.
 
-            {/* ---------------------------------------------------------- */}
-            {/* Panel two — how I got here                                  */}
-            {/* ---------------------------------------------------------- */}
-            <div className="js-story shell mx-auto mt-20 max-w-shell md:mt-28">
-                <div className="js-story-mark flex flex-wrap items-center justify-between gap-6">
-                    <SectionMark as="h3" label="Experience" />
-                    <span aria-hidden="true" className="h-px flex-1 bg-rule" />
-                </div>
-
-                <div className="mt-12 grid gap-12 md:mt-16 lg:grid-cols-12 lg:gap-x-12">
-                    <Portrait
-                        src="/images/kean grad.jpg"
-                        alt={`${personal.name} at his college graduation`}
-                        className="lg:col-span-4 lg:row-start-1 lg:self-start"
-                    />
-
-                    <div className="lg:col-span-7 lg:col-start-6 lg:row-start-1">
-                        <h4 className={`js-story-title ${POSTER}`}>
-                            <MaskLine>My</MaskLine>
-                            <MaskLine>Experience</MaskLine>
-                        </h4>
-
-                        {/* Title on the left, what it was on the right — the
-                            place where a CV would put the years. */}
-                        <ol className="mt-10 md:mt-14">
-                            {experience.map((stop) => (
-                                <li key={stop.title} className="js-stop pb-7 pt-7 first:pt-0">
-                                    <span
-                                        aria-hidden="true"
-                                        data-anim="rule-x"
-                                        className="js-stop-rule mb-7 block h-px w-full origin-left bg-rule"
-                                    />
-                                    <div className="js-stop-in flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-                                        <h5 className="font-display text-d1 font-bold tracking-[-0.025em] text-ink">
-                                            {stop.title}
-                                        </h5>
-                                        <span className="whitespace-nowrap font-mono text-label uppercase text-ink-3">
-                                            {stop.label}
-                                        </span>
-                                    </div>
-                                    <p className="js-stop-in mt-3 max-w-measure text-body text-ink-2">
-                                        {stop.line}
-                                    </p>
-                                </li>
-                            ))}
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            {/* Full bleed, edge to edge — the same treatment the wave gets */}
-            <ImageBand
-                src="/images/tori gate.webp"
-                alt=""
-                tone="from-paper to-paper-3"
-                height="h-[36svh] min-h-[12rem] md:h-[56svh]"
-                className="mt-16 md:mt-24"
-            />
-
-            {/* ---------------------------------------------------------- */}
-            {/* The shelf — names only                                      */}
-            {/* ---------------------------------------------------------- */}
-            <div className="js-shelf shell mx-auto mt-20 max-w-shell md:mt-28">
-                <div className="js-shelf-in flex flex-wrap items-center justify-between gap-6">
-                    <SectionMark as="h3" label="Tools I reach for" />
-                    <span aria-hidden="true" className="h-px flex-1 bg-rule" />
-                </div>
-
-                <p className="js-shelf-line mt-10 font-display text-d2 font-bold tracking-[-0.035em] text-ink md:mt-14">
-                    <MaskLine>What I</MaskLine>
-                    <MaskLine className="pl-[8%] font-serif font-normal italic text-ink-2">
-                        work with.
-                    </MaskLine>
-                </p>
-
-                <div className="mt-12 grid gap-10 md:mt-16 md:grid-cols-3 md:gap-x-10">
-                    {skills.map((group) => (
-                        <div key={group.category} className="js-group">
-                            <span
-                                aria-hidden="true"
-                                data-anim="rule-x"
-                                className="js-group-rule block h-px w-full origin-left bg-rule-strong"
-                            />
-                            <h4 className="js-group-in mt-5 font-display text-d1 font-semibold tracking-[-0.025em] text-ink">
-                                {group.category}
-                            </h4>
-                            <ul className="js-group-in mt-5 space-y-2">
-                                {group.items.map((item) => (
-                                    <li key={item} className="text-body text-ink-2">
-                                        {item}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* ---------------------------------------------------------- */}
-            {/* The last screen — the one the reveal peels away.             */}
-            {/*                                                              */}
-            {/* Fixed at exactly one viewport and last in the section, so    */}
-            {/* its bottom edge and the section's are the same point: the    */}
-            {/* reveal always begins with this beat filling the screen top   */}
-            {/* to bottom, no matter how much grows above it.                */}
-            {/* ---------------------------------------------------------- */}
-            <div className="js-last relative mt-24 flex h-[100svh] flex-col items-center overflow-hidden pt-[24vh] text-center md:mt-36 md:pt-[32vh]">
-                <span
-                    aria-hidden="true"
-                    data-anim="rule-y"
-                    className="js-last-rule h-[9vh] w-px origin-top bg-rule-strong"
-                />
-
-                <p className="js-last-in mt-8 max-w-xl px-[var(--gutter)] font-serif text-d1 leading-snug text-ink">
-                    Everything below is live. You can open it and use it.
+                The same size as the section titles, so the screen reads as
+                one of them. "1+ years of coding" is the longest, 8.3x its
+                own size wide, and fits the column at every width. The type
+                is set on the line rather than on the morph so
+                `min-h` can reserve it before the morph has measured itself —
+                otherwise the screen jumps on hydration. */}
+            <div className="js-facts shell relative mx-auto flex min-h-[100svh] w-full max-w-shell items-center justify-center">
+                <p ref={facts} className="js-facts-in relative z-10 min-h-[1.1em] text-center font-display text-d4 font-bold leading-[1.02] tracking-[-0.035em] text-ink">
+                    <TextMorph words={aboutFacts} interval={1100} morphDuration={560} />
+                    <span className="sr-only">{aboutFacts.join(", ")}</span>
                 </p>
             </div>
+
+            {/* A line from the middle of the page under the masthead, down
+                and twice round the facts — a hand-drawn ring round them, with
+                its tail running back to where the reader came from — and out
+                of the bottom of the ring, down to the foot of the section in
+                the middle, where the experience section's thread picks it up.
+                Measured from where the two actually are, see
+                `useFactsLoop`, and drawn as the page scrolls down it. */}
+            <ThreadLines thread={loop} />
         </section>
     );
 }
 
 /**
- * The frame's rule, set as type — and the one thing about it that has to be
- * exact is that it closes.
+ * The ring round the facts: its tail starts a little left of the middle of
+ * the page, just under the masthead — the name, the bio and the photograph —
+ * sweeps down in one smooth stroke to the ring's upper left, and the line
+ * goes round twice — then on along the bottom and out of it, down to the foot
+ * of the section in the middle, so the thread carries on into the next.
  *
- * `KeanImage ·` eighteen times, joined by a space: 215 characters, ending on
- * the separator rather than on a space. The path it runs around is 455.02 user
- * units, so at a 3-unit mono face (0.6em per character, JetBrains Mono) the
- * spacing that makes 216 character-widths span exactly that is 0.3066 — and
- * the 216th width, the one the string does not spend, is the gap between the
- * last `·` and the first `K`. It is the same width as every other gap in the
- * run, so the seam is invisible and there is nowhere the `·` is missing.
+ * It is big on purpose: most of the screen's height, so the ring holds a lot
+ * of open space round the facts rather than leaving the screen bare outside
+ * it, and only a third as wide again as it is tall, so it reads as a ring
+ * rather than a band. Never smaller than it needs to be to stay clear of the
+ * words, either — it is sized against the widest of the facts, measured in
+ * the line's own font, not whichever one is showing, so the line never
+ * crosses them as they change. On a phone it is held inside the width of the
+ * screen and runs tall instead.
  *
- * Keep the three numbers below in step with the path in `Portrait`: change the
- * inset, the radius or the box and the perimeter changes with them.
+ * And it is drawn the way a hand draws one. The two passes are not one
+ * ellipse traced twice: each is its own, centred a little differently, a
+ * touch wider or taller, tipped a degree or two — so they cross each other
+ * here and there instead of running round in parallel like a compass's.
  */
-const FRAME_TEXT = Array.from({ length: 18 }, () => "KeanImage ·").join(" ");
-const FRAME_SIZE = 3;
-const FRAME_TRACKING = 0.3048;
+function useFactsLoop(
+    section: React.RefObject<HTMLElement | null>,
+    from: React.RefObject<HTMLElement | null>,
+    around: React.RefObject<HTMLElement | null>,
+    words: string[]
+) {
+    const [path, setPath] = useState<Thread | null>(null);
+
+    useLayoutEffect(() => {
+        const box = section.current;
+        const start = from.current;
+        const line = around.current;
+        const host = line?.parentElement;
+        if (!box || !start || !line || !host) return;
+        const ctx = document.createElement("canvas").getContext("2d");
+
+        const measure = () => {
+            const o = box.getBoundingClientRect();
+            const a = start.getBoundingClientRect();
+            const style = getComputedStyle(line);
+            const size = parseFloat(style.fontSize);
+
+            let widest = line.offsetWidth;
+            if (ctx) {
+                ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+                if ("letterSpacing" in ctx) ctx.letterSpacing = style.letterSpacing;
+                widest = Math.max(...words.map((word) => ctx.measureText(word).width));
+            }
+
+            // The centre of the text, in the section's pixels. Across, the
+            // line's own middle; down, the middle of its screen — the line
+            // itself is still lifted by its reveal when this first runs.
+            const l = line.getBoundingClientRect();
+            const h = host.getBoundingClientRect();
+            const cx = l.left - o.left + l.width / 2;
+            const cy = h.top - o.top + h.height / 2;
+
+            // 36% of the screen's height up and down from the centre, and
+            // 1.35x that across — held inside the screen, with room for the
+            // passes to wander — and never so small that the words' box
+            // reaches past 62% of the way to the line, which leaves room for
+            // the passes to wander inwards too.
+            const halfW = widest / 2;
+            const halfH = size * 0.55;
+            const room = Math.min(cx, o.width - cx) - 8;
+            let ry = Math.max(h.height * 0.36, halfH * 2.6);
+            const rx = Math.min(Math.max(ry * 1.35, halfW / 0.8), room / 1.09);
+            ry = Math.max(ry, halfH / Math.sqrt(Math.max(0.62 - (halfW / rx) ** 2, 0.04)));
+
+            // A point on the ring, `t` of the way through both passes. Each
+            // pass is its own slightly different ellipse — the centre
+            // drifting, the width and height breathing, the whole thing
+            // tipping a little — which is what makes the two cross.
+            const at = (th: number, t: number) => {
+                const ox = rx * 0.045 * Math.cos(Math.PI * t);
+                const oy = ry * 0.05 * Math.sin(Math.PI * t + 0.6);
+                const sx = rx * (1 + 0.03 * Math.sin(2 * Math.PI * t + 0.4));
+                const sy = ry * (0.97 + 0.06 * t);
+                const tilt = 0.07 * (t - 0.5);
+                const wobble = 1 + 0.012 * Math.sin(3 * th + 4 * t);
+                const ex = sx * wobble * Math.cos(th);
+                const ey = sy * wobble * Math.sin(th);
+                return {
+                    x: cx + ox + ex * Math.cos(tilt) - ey * Math.sin(tilt),
+                    y: cy + oy + ex * Math.sin(tilt) + ey * Math.cos(tilt),
+                };
+            };
+
+            // It joins the ring at the upper left. One curve and no wiggle:
+            // it leaves heading straight down and arrives already running the
+            // way the ring runs from there — down and round by the left — so
+            // the two read as one stroke of the pen.
+            const enter = (3 * Math.PI) / 2 - 0.6;
+            const join = at(enter, 0);
+            const next = at(enter - 0.01, 0);
+            const sx = o.width / 2 - o.width * 0.06;
+            const sy = a.bottom - o.top + 32;
+            const reach = Math.hypot(join.x - sx, join.y - sy) * 0.4;
+            const along = Math.hypot(next.x - join.x, next.y - join.y);
+            const c2x = join.x - ((next.x - join.x) / along) * reach;
+            const c2y = join.y - ((next.y - join.y) / along) * reach;
+            const tail = `M${sx.toFixed(1)} ${sy.toFixed(1)} C${sx.toFixed(1)} ${(sy + reach).toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${join.x.toFixed(1)} ${join.y.toFixed(1)}`;
+
+            // Twice round, and on past where it started — down the left and
+            // along the bottom, to just short of the bottom's middle, still
+            // running the way the ring runs.
+            const ring: string[] = [];
+            const turns = 5 * Math.PI - 0.95;
+            for (let i = 1; i <= 270; i++) {
+                const t = i / 270;
+                const p = at(enter - t * turns, t);
+                ring.push(`${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
+            }
+
+            // Then it leaves the ring the way it is heading and bends down
+            // to the foot of the section, in the middle — where the line in
+            // the section below picks it up.
+            const last = at(enter - turns, 1);
+            const prev = at(enter - turns + 0.01, 1);
+            const run = Math.hypot(last.x - prev.x, last.y - prev.y);
+            const ex = o.width / 2;
+            const ey = o.height + 2;
+            const pull = Math.hypot(ex - last.x, ey - last.y) * 0.45;
+            const leave = `C${(last.x + ((last.x - prev.x) / run) * pull).toFixed(1)} ${(last.y + ((last.y - prev.y) / run) * pull).toFixed(1)} ${ex.toFixed(1)} ${(ey - pull).toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`;
+
+            setPath({
+                w: Math.round(o.width),
+                h: Math.round(o.height),
+                // Three strokes, end to end: the tail down to the ring; the
+                // ring itself, drawn quickly and done by the time the facts
+                // are mid-screen; and the way out of it, down to the next
+                // section.
+                lines: [
+                    tail,
+                    { d: `M${join.x.toFixed(1)} ${join.y.toFixed(1)} L${ring.join(" L")}`, until: cy },
+                    `M${last.x.toFixed(1)} ${last.y.toFixed(1)} ${leave}`,
+                ],
+            });
+        };
+
+        measure();
+        // The facts are measured in their own font, which may land later.
+        document.fonts?.ready.then(measure);
+        const observer = new ResizeObserver(measure);
+        observer.observe(box);
+        return () => observer.disconnect();
+    }, [section, from, around, words]);
+
+    return path;
+}
 
 /**
- * A photograph inside a frame written out of its own name.
- *
- * The rule around the picture is not a rule: it is "KeanImage" repeated around
- * a rounded rectangle, small enough that at a glance it still reads as one,
- * and close enough to read as a caption running around the mount.
- *
- * It sits concentric with the photograph and a hair outside its edge — the
- * frame the picture is in, not a second frame leaning out from behind it. The
- * ring's own corners are struck at the picture's corner radius plus that gap,
- * so the two curves are parallel the whole way round rather than merely both
- * being round.
- *
- * The geometry is one aspect ratio said twice. The box is the photograph's 4:5
- * grown by three units on every side — `3%` of the width and `2.4%` of the
- * height are the same distance, on a box where the height is 1.25x the width —
- * so the viewBox below matches it exactly at any size and nothing is stretched.
+ * How I got here — its own section so the menu can take a reader straight to
+ * it. The photograph and the title share a screen; the button that opens the
+ * story itself as a full-screen carousel of cards has the next one to itself.
  */
-function Portrait({
-    src,
-    alt,
-    className,
-    priority = false,
-}: {
-    src: string;
-    alt: string;
-    className?: string;
-    priority?: boolean;
-}) {
-    return (
-        <div className={className}>
-            <div className="relative mx-auto w-full max-w-[17rem] lg:mx-0">
-                <svg
-                    aria-hidden="true"
-                    viewBox="0 0 106 131"
-                    className="js-plate plate -inset-x-[3%] -inset-y-[2.4%]"
-                >
-                    <path
-                        id="portrait-frame"
-                        fill="none"
-                        d="M5.2 1.6H100.8A3.6 3.6 0 0 1 104.4 5.2V125.8A3.6 3.6 0 0 1 100.8 129.4H5.2A3.6 3.6 0 0 1 1.6 125.8V5.2A3.6 3.6 0 0 1 5.2 1.6Z"
-                    />
-                    <text
-                        dominantBaseline="middle"
-                        className="fill-ink-3 font-mono"
-                        fontSize={FRAME_SIZE}
-                        letterSpacing={FRAME_TRACKING}
-                    >
-                        <textPath href="#portrait-frame">{FRAME_TEXT}</textPath>
-                    </text>
-                </svg>
+export function Experience() {
+    const scope = useGsap<HTMLElement>((el) => {
+        const q = gsap.utils.selector(el);
 
-                <div className="js-figure relative z-10 aspect-[4/5] w-full overflow-hidden rounded-md bg-paper-3">
-                    <Image
-                        src={src}
-                        alt={alt}
-                        fill
-                        priority={priority}
-                        quality={90}
-                        sizes="(min-width: 1024px) 17rem, 70vw"
-                        className="scale-105 object-cover object-[center_25%]"
-                    />
+        const story = q(".js-story")[0];
+        fadeUp(q(".js-story-mark"), { trigger: story, start: "top 84%" });
+
+        // The button only fades in: it holds still.
+        const cta = q(".js-story-cta")[0];
+        fadeUp(q(".js-story-cta-in"), { trigger: cta, start: "top 60%", y: 0 });
+
+        driftPortraits(el);
+    });
+
+    const head = useRef<HTMLDivElement>(null);
+    const target = useRef<HTMLDivElement>(null);
+    const thread = useThread(scope, head, target);
+    const cta = useRef<HTMLDivElement>(null);
+    const calls = useCallArrows(cta, target);
+    const [pointing, setPointing] = useState(false);
+    const [held, setHeld] = useState(false);
+    const ink = useRef({ p: 0 });
+    const settle = useRef<(() => void) | null>(null);
+
+    // Pressed while they are showing, the arrows stay pointing at the button
+    // — whatever the pointer does, the page opening over them included —
+    // until the page it opens is closed again. Pressed before they are all
+    // in, they finish first and the page waits for them, the button saying
+    // so. All in already, or never started, and it opens straight away.
+    const holdArrows = () => {
+        const p = ink.current.p;
+        if (p <= 0) return;
+        setHeld(true);
+        if (p >= 1) return;
+        return new Promise<void>((resolve) => {
+            settle.current = resolve;
+        });
+    };
+    const arrowsDrawn = () => {
+        settle.current?.();
+        settle.current = null;
+    };
+
+    return (
+        <section id="experience" ref={scope} className="relative overflow-hidden bg-paper">
+            <div className={SCREEN}>
+                <div className="js-story shell mx-auto w-full max-w-shell">
+                    <SectionMark as="h2" label="Experience" className="js-story-mark" />
+
+                    <div
+                        ref={head}
+                        className="mt-8 grid gap-10 md:mt-16 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-x-12"
+                    >
+                        <Portrait
+                            src="/images/kean grad.jpg"
+                            alt={`${personal.name} at his college graduation`}
+                            className="lg:col-span-4"
+                        />
+
+                        <div className="lg:col-span-7 lg:col-start-6">
+                            <h3 className={POSTER}>
+                                <RevealText text="My" />
+                                <RevealText text="Experience" delay={0.18} className="text-ink-3" />
+                            </h3>
+                            <p className="mt-6 max-w-measure text-copy text-ink-2 md:mt-8">
+                                <RevealText
+                                    text="Every step that brought me here, from university to the work I do now: a degree in Information Technology, an internship at MeldCX Philippines, the personal projects I build on my own time, and the freelance work I take on today. Open them all with the button below."
+                                    delay={0.3}
+                                    stagger={0.012}
+                                    distance={12}
+                                />
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            {/* The button, on a screen of its own — and, while a mouse is on
+                it, five arrows at it from round the screen; see `CallArrows`. */}
+            <div ref={cta} className="js-story-cta relative flex min-h-[100svh] items-center justify-center">
+                {calls && (
+                    <CallArrows
+                        art={calls}
+                        on={pointing || held}
+                        ink={ink}
+                        onDrawn={arrowsDrawn}
+                    />
+                )}
+                <div className="js-story-cta-in relative">
+                    {/* A mouse only, and only where the arrows are shown. */}
+                    <div
+                        ref={target}
+                        onPointerEnter={(e) => {
+                            if (e.pointerType === "mouse" && window.matchMedia("(min-width: 768px)").matches) {
+                                setPointing(true);
+                            }
+                        }}
+                        onPointerLeave={() => setPointing(false)}
+                    >
+                        <ExperienceDialog beforeOpen={holdArrows} onClosed={() => setHeld(false)} />
+                    </div>
+                </div>
+            </div>
+
+            {/* The thread through the section, in three pieces and all of it
+                down the middle: in from the section above until just short
+                of the masthead, which it leaves alone; on again under it,
+                down to the button, stopping just short of it; and on again
+                just past the button, to the section below. Laid out in the
+                section's own pixels, from where everything actually is, and
+                again whenever the section changes size; drawn as the page
+                scrolls down it. */}
+            <ThreadLines thread={thread} />
+        </section>
+    );
+}
+
+/* How far the thread stops short of the button, above it and below: enough
+   that the button stands on its own rather than being run through. */
+const BUTTON_GAP = 20;
+
+/**
+ * The thread through the experience section, in `section`'s own pixels:
+ *
+ * - in from the top edge, in the middle — where the line round the facts
+ *   leaves the section above — and stopping short of the masthead, `story`;
+ * - on again from the middle just under `from`, the photograph and the title,
+ *   down to just above `to`, the button;
+ * - and on from just below the button to the bottom edge, in the middle,
+ *   where the line in the video section picks it up.
+ *
+ * Measured, because where these sit depends on the screen: the masthead is a
+ * row on a desktop and a column on a phone, and the button is half a screen
+ * further down either way.
+ */
+function useThread(
+    section: React.RefObject<HTMLElement | null>,
+    from: React.RefObject<HTMLElement | null>,
+    to: React.RefObject<HTMLElement | null>
+) {
+    const [path, setPath] = useState<{ w: number; h: number; lines: string[] } | null>(null);
+
+    useLayoutEffect(() => {
+        const box = section.current;
+        const start = from.current;
+        const end = to.current;
+        const story = box?.querySelector(".js-story");
+        if (!box || !start || !end || !story) return;
+
+        const measure = () => {
+            const o = box.getBoundingClientRect();
+            const a = start.getBoundingClientRect();
+            const b = end.getBoundingClientRect();
+            const s = story.getBoundingClientRect();
+            const mid = o.width / 2;
+            const bx = b.left - o.left + b.width / 2;
+            setPath({
+                w: Math.round(o.width),
+                h: Math.round(o.height),
+                lines: [
+                    dropLine(mid, -2, mid + 4, s.top - o.top - 24, 0.03),
+                    bowLine(mid, a.bottom - o.top + 32, bx, b.top - o.top - BUTTON_GAP, 0.12),
+                    dropLine(bx, b.bottom - o.top + BUTTON_GAP, mid, o.height + 2, -0.04),
+                ],
+            });
+        };
+
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(box);
+        return () => observer.disconnect();
+    }, [section, from, to]);
+
+    return path;
+}
+
+/* The calls, round the button clockwise from the top left — the thread has
+   the top to itself, and the foot below the button too. Each starts off the
+   edge of the screen (`from`, in fractions of it), passes through `via`, and
+   comes in to a tip off one side of the button — `tip` is which side, -1, 0
+   or 1 across and down, then how far past it in pixels — the last stretch
+   coming in from `come`, in pixels from the tip. `at` is its beat in the
+   drawing: the top left and the bottom together, then the top right, the
+   bottom left, and the bottom right last. */
+const CALLS: {
+    from: Pt2;
+    via: Pt2[];
+    tip: [number, number, number, number];
+    come: Pt2;
+    width: number;
+    at: number;
+}[] = [
+    { from: [-0.04, -0.05], via: [[0.18, 0.22]], tip: [-1, 0, -40, -30], come: [-90, -30], width: 2.8, at: 0 },
+    { from: [0.8, -0.05], via: [[0.7, 0.15], [0.72, 0.3]], tip: [1, 0, 40, -34], come: [85, -40], width: 2.4, at: 1 },
+    { from: [1.04, 0.78], via: [[0.86, 0.72]], tip: [1, 0, 36, 30], come: [90, 30], width: 2.2, at: 3 },
+    { from: [0.6, 1.05], via: [[0.66, 0.9]], tip: [0, 1, 40, 40], come: [30, 110], width: 3, at: 0 },
+    { from: [-0.04, 0.78], via: [[0.18, 0.88], [0.27, 0.72]], tip: [-1, 0, -36, 34], come: [-80, 50], width: 2.6, at: 2 },
+];
+
+/* The pen's pause lifting from a shaft to its head, in pixels of line it
+   could have drawn instead. */
+const LIFT_HEAD = 60;
+
+/* In seconds: how long each arrow takes to draw, shaft and head; how far
+   apart the beats they start on are; and how long they all take to rewind
+   together. */
+const ARROW_TIME = 0.9;
+const STAGGER = 0.1;
+const CLEAR_TIME = 1.2;
+
+/**
+ * The calls' strokes in the screen's own pixels, in the order the pen takes
+ * them — each shaft, then its head — measured from where the button actually
+ * is and redrawn whenever the screen changes size.
+ */
+function useCallArrows(
+    screen: React.RefObject<HTMLElement | null>,
+    button: React.RefObject<HTMLElement | null>
+) {
+    const [art, setArt] = useState<{
+        w: number;
+        h: number;
+        strokes: { d: string; len: number; width: number }[];
+    } | null>(null);
+
+    useLayoutEffect(() => {
+        const box = screen.current;
+        const end = button.current;
+        if (!box || !end) return;
+
+        const measure = () => {
+            const o = box.getBoundingClientRect();
+            const b = end.getBoundingClientRect();
+            const cx = b.left - o.left + b.width / 2;
+            const cy = b.top - o.top + b.height / 2;
+
+            const strokes = CALLS.flatMap((call, i) => {
+                const [sx, sy, dx, dy] = call.tip;
+                const tip: Pt2 = [cx + (sx * b.width) / 2 + dx, cy + (sy * b.height) / 2 + dy];
+                const come: Pt2 = [tip[0] + call.come[0], tip[1] + call.come[1]];
+                const pts: Pt2[] = [
+                    [call.from[0] * o.width, call.from[1] * o.height],
+                    ...call.via.map(([x, y]): Pt2 => [x * o.width, y * o.height]),
+                    come,
+                    tip,
+                ];
+                const shaft = handLine(pts, i * 1.7 + 0.4);
+
+                // An open head, one stroke barb to tip to barb, lined up with
+                // the way the shaft arrives — not quite even, as a hand's is.
+                const l = Math.hypot(call.come[0], call.come[1]);
+                const ux = call.come[0] / l;
+                const uy = call.come[1] / l;
+                const barb = (turn: number, size: number): Pt2 => [
+                    tip[0] + (ux * Math.cos(turn) - uy * Math.sin(turn)) * size,
+                    tip[1] + (ux * Math.sin(turn) + uy * Math.cos(turn)) * size,
+                ];
+                const a = barb(0.52, 21 + (i % 3));
+                const c = barb(-0.44, 17 + (i % 2) * 2);
+                const head = {
+                    d: `M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${tip[0].toFixed(1)} ${tip[1].toFixed(1)} L${c[0].toFixed(1)} ${c[1].toFixed(1)}`,
+                    len: Math.hypot(a[0] - tip[0], a[1] - tip[1]) + Math.hypot(c[0] - tip[0], c[1] - tip[1]),
+                };
+                return [
+                    { d: shaft.d, len: shaft.len, width: call.width },
+                    { ...head, width: call.width },
+                ];
+            });
+
+            setArt({ w: Math.round(o.width), h: Math.round(o.height), strokes });
+        };
+
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(box);
+        return () => observer.disconnect();
+    }, [screen, button]);
+
+    return art;
+}
+
+/**
+ * Five more arrows at the button, from every other way into the screen, for
+ * as long as the pointer is on it.
+ *
+ * They are drawn there and then, the way a hand would — all five at once,
+ * on their beats (`at`): the shaft in from off the edge and then its head,
+ * the pen easing in and out of every stroke and lifting between. When the
+ * pointer leaves they all take themselves back off together, each the way
+ * the doodle's Clear takes a drawing — last point first, all the way back to
+ * the first, easing in and out over the whole. Either way, it carries on from
+ * wherever the other left off.
+ *
+ * `ink` is how far through the whole drawing it is, 0..1, held by the page
+ * so the button can see it; `onDrawn` is called each time it is all in.
+ */
+function CallArrows({
+    art,
+    on,
+    ink,
+    onDrawn,
+}: {
+    art: NonNullable<ReturnType<typeof useCallArrows>>;
+    on: boolean;
+    ink: React.RefObject<{ p: number }>;
+    onDrawn: () => void;
+}) {
+    const lines = useRef<(SVGPathElement | null)[]>([]);
+    const drawn = useRef(onDrawn);
+    useEffect(() => {
+        drawn.current = onDrawn;
+    });
+
+    useEffect(() => {
+        const { strokes } = art;
+        const arrows = strokes.length / 2;
+        const drawTime = ARROW_TIME + STAGGER * Math.max(...CALLS.map((c) => c.at));
+        // Each arrow's share of the whole, and how far apart the beats are,
+        // both as fractions of it.
+        const span = ARROW_TIME / drawTime;
+        const step = STAGGER / drawTime;
+
+        const stroke = (i: number, k: number) => {
+            const el = lines.current[i];
+            if (!el) return;
+            const len = strokes[i].len;
+            const shown = len * sineInOut(Math.min(1, Math.max(0, k)));
+            el.style.strokeDashoffset = String(len - shown);
+            el.style.visibility = shown > 0.5 ? "visible" : "hidden";
+        };
+        const paint = () => {
+            for (let a = 0; a < arrows; a++) {
+                const shaft = strokes[a * 2].len;
+                const head = strokes[a * 2 + 1].len;
+                const run = shaft + LIFT_HEAD + head;
+                const pen = Math.min(1, Math.max(0, (ink.current.p - CALLS[a].at * step) / span)) * run;
+                stroke(a * 2, pen / shaft);
+                stroke(a * 2 + 1, (pen - shaft - LIFT_HEAD) / head);
+            }
+        };
+        paint();
+
+        const p = ink.current.p;
+        const tween = on
+            ? gsap.to(ink.current, {
+                  p: 1,
+                  duration: drawTime * (1 - p),
+                  ease: "none",
+                  onUpdate: paint,
+                  onComplete: () => drawn.current(),
+              })
+            : gsap.to(ink.current, {
+                  p: 0,
+                  duration: CLEAR_TIME * p,
+                  ease: "power1.inOut",
+                  onUpdate: paint,
+              });
+        if (!motionEnabled()) tween.progress(1);
+        return () => {
+            tween.kill();
+        };
+    }, [on, art, ink]);
+
+    return (
+        <svg
+            aria-hidden="true"
+            width={art.w}
+            height={art.h}
+            viewBox={`0 0 ${art.w} ${art.h}`}
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="pointer-events-none absolute left-0 top-0 hidden text-ink opacity-85 md:block"
+        >
+            {art.strokes.map((s, i) => (
+                <path
+                    key={i}
+                    ref={(el) => {
+                        lines.current[i] = el;
+                    }}
+                    d={s.d}
+                    strokeWidth={s.width}
+                    strokeDasharray={s.len}
+                    className="invisible"
+                />
+            ))}
+        </svg>
     );
 }

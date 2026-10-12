@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import HeroDoodles, { type HeroDoodlesHandle } from "@/components/home/HeroDoodles";
 import PrismDrift, { type PrismDriftHandle } from "@/components/motion/PrismDrift";
-import ShaderFlow from "@/components/motion/ShaderFlow";
 import SectionLink from "@/components/shared/SectionLink";
 import { heroList } from "@/lib/data";
 import { claimIntro, endIntro, revealChrome } from "@/lib/intro";
@@ -61,6 +61,12 @@ const STEP = 0.17;
 const REVEAL_END = STEP * 9 + WIPE;
 const GLITCH_AT = REVEAL_END + 0.06;
 
+/** When the doodles round the poster start drawing themselves: with the
+    small type, eight beats in. They take a little under two seconds between
+    them, so the halo and the crown — the last to finish — land just after
+    the figure has. */
+const DOODLES_AT = STEP * 8;
+
 /** How long the curtains take to pull clear — long enough to still be moving
     on the portrait's last hit, short enough that they're not lagging behind
     once the frame has settled. */
@@ -68,6 +74,7 @@ const CURTAIN_DURATION = HITS * HIT_GAP + HIT_HOLD + 0.3;
 
 export default function Hero() {
     const prism = useRef<PrismDriftHandle>(null);
+    const doodles = useRef<HeroDoodlesHandle>(null);
 
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
@@ -234,17 +241,16 @@ export default function Hero() {
             0
         );
 
-        // 2 — the order, and the order is depth. The band of light is the
-        // furthest thing back and comes up first, over the whole intro, as the
-        // section's own backdrop; the name is behind it; the small type in the
-        // corners is last, because it sits on the glass rather than in the
-        // room. Read this list top to bottom and you are walking towards the
-        // frame. The portrait is not in it: the room is built empty and the
-        // figure is torn into it at the end.
-        draw(q(".js-flow"), 0, DOLLY);
+        // 2 — the order, and the order is depth. The name is furthest back;
+        // the small type in the corners is last, because it sits on the glass
+        // rather than in the room, and the doodles round it are drawn on the
+        // glass with it. Read this list top to bottom and you are walking
+        // towards the frame. The portrait is not in it: the room is built
+        // empty and the figure is torn into it at the end.
         draw([wordmark], STEP * 4, WIPE * 1.3);
         draw([...q(".js-role"), ...q(".js-vertical")], STEP * 8, WIPE);
         draw(q(".js-body"), STEP * 9, WIPE);
+        tl.call(() => doodles.current?.draw(), undefined, DOODLES_AT);
 
         // 3 — the room is whole by now, and it is struck twice on the way into
         // its last tenth of a second of travel — which is where the figure
@@ -330,7 +336,17 @@ export default function Hero() {
             // A full screen, always: the hero is a poster, and a poster that
             // stops halfway down the viewport is a banner. `hero-ground` is
             // the sumi-and-washi backdrop — see globals.css.
-            className="hero-ground relative h-[100svh] min-h-[34rem] overflow-hidden"
+            //
+            // `--frame` is the poster's margin from `sm` up, and it is the
+            // same on all four sides: the small type sits in the corners and
+            // on the centre lines of one inset rectangle, and the name spans
+            // it edge to edge. 5rem from `lg` is what clears the section menu
+            // down the right margin (64px from the edge) with room to spare,
+            // so the right side no longer needs a wider margin of its own.
+            // Below `lg` that menu is a bar along the bottom edge instead, and
+            // `--hero-low` lifts the bottom row clear of it — the bar is the
+            // frame's bottom edge there. Phones keep their own layout.
+            className="hero-ground relative h-[100svh] min-h-[34rem] overflow-hidden [--frame:2rem] [--hero-low:4rem] lg:[--frame:5rem] lg:[--hero-low:0px]"
         >
             {/* The poster, and only the poster: everything in the section
                 except the ground it is printed on. It exists so the intro has
@@ -345,22 +361,11 @@ export default function Hero() {
                 context, which is why every `z-index` below is relative to this
                 and not to the page. */}
             <div className="js-dolly absolute inset-0 flex flex-col">
-            {/* The shader is the section's background now: it fills the whole
-                frame rather than a band drifting across the middle of it, so
-                the hero's backdrop is the shaderflow itself instead of a shape
-                laid over `hero-ground`. See components/motion/ShaderFlow.tsx
-                for what it is.
-
-                Painted first, before everything else in the poster, with no
-                `z-index` — it sits under the name (z-0) without opening a
-                stacking context of its own. */}
-            <div
-                data-anim="fade"
-                aria-hidden="true"
-                className="js-flow pointer-events-none absolute inset-0"
-            >
-                <ShaderFlow />
-            </div>
+            {/* Doodles round the poster, drawn in a marker on the glass — a
+                halo, a crown, a squiggle and the rest, laid out from where
+                the words and the figure actually are so none of them ever
+                crosses one. See HeroDoodles. */}
+            <HeroDoodles ref={doodles} />
 
             {/* Top — the mark on the left, one small line centred, and the
                 vertical run down the right margin at every size.
@@ -380,8 +385,13 @@ export default function Hero() {
                 anything having to be told where the centre is.
 
                 z-20: stays in front of the portrait, which only needs to sit
-                over the name below. */}
-            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-center gap-3 pt-10 max-sm:items-start md:gap-6 md:pt-12">
+                over the name below.
+
+                4.5rem down on a phone, where the doodle dock sits in the top
+                right corner: clear of it, so "Philippines" is never under it.
+                The name below is lifted by as much again — see
+                `hero-name-band` in globals.css — so it stays where it was. */}
+            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-start gap-3 pt-[4.5rem] sm:max-w-none sm:px-[var(--frame)] sm:pt-[var(--frame)] md:gap-6">
                 {/* The half-turn lives on this wrapper rather than on the
                     line itself, for the same reason the wordmark's resting
                     offset does — see the note further down. The line is one of
@@ -411,7 +421,7 @@ export default function Hero() {
                     than both pointing the same way down the page, which is
                     what makes the pair read as two edges of one poster instead
                     of two copies of the same idea. */}
-                <div className="col-start-1 translate-y-2 max-sm:rotate-180 max-sm:justify-self-start">
+                <div className="col-start-1 translate-y-2 max-sm:rotate-180 max-sm:justify-self-start sm:translate-y-0">
                     <p
                         data-anim="fade"
                         data-glitch="mark"
@@ -424,7 +434,7 @@ export default function Hero() {
                 <p
                     data-anim="fade"
                     data-glitch="role"
-                    className="js-role col-start-2 self-start text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white sm:tracking-[0.28em]"
+                    className="js-role col-start-2 self-start text-center font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white sm:leading-none sm:tracking-[0.28em]"
                 >
                     Full-Stack Web Developer
                 </p>
@@ -433,7 +443,7 @@ export default function Hero() {
                     aria-hidden="true"
                     data-anim="fade"
                     data-glitch="vertical"
-                    className="js-vertical vertical col-start-3 justify-self-end translate-y-2 font-mono text-[0.6875rem] uppercase tracking-[0.24em] text-white"
+                    className="js-vertical vertical col-start-3 justify-self-end translate-y-2 font-mono text-[0.6875rem] uppercase tracking-[0.24em] text-white sm:translate-y-0"
                 >
                     Philippines
                 </span>
@@ -459,8 +469,8 @@ export default function Hero() {
                 aria-hidden="true"
                 // Two shadows, and they do different jobs: the tight one is an
                 // outline, dark enough to hold the figure's edge against the
-                // band of light now moving behind it, and the wide one is the
-                // ground shadow that was always here. Written as a single
+                // name behind it, and the wide one is the ground shadow that
+                // was always here. Written as a single
                 // `filter` because they have to stack, which Tailwind's
                 // `drop-shadow-*` chain has room for only one of.
                 className="js-portrait hero-figure pointer-events-none absolute inset-0 z-10 [filter:drop-shadow(0_0_3px_rgba(0,0,0,0.95))_drop-shadow(0_25px_45px_rgba(0,0,0,0.45))]"
@@ -476,8 +486,13 @@ export default function Hero() {
 
             {/* Centre — the name, the whole point of the frame, and the
                 largest thing anywhere on the site. z-0: the only row the
-                portrait sits in front of. */}
-            <div className="hero-name-band relative z-0 flex flex-1 items-center justify-center px-[var(--gutter)]">
+                portrait sits in front of.
+
+                From `lg` it is centred on the screen itself rather than on
+                the gap between the two rows: those rows are different heights,
+                so the gap's middle is not the frame's middle, and the name sat
+                off it. */}
+            <div className="hero-name-band relative z-0 flex flex-1 items-center justify-center px-[var(--gutter)] sm:px-[var(--frame)] lg:absolute lg:inset-0">
                 {/* The resting offset lives here, on a wrapper, rather than on
                     the name itself — and that is a correctness point, not a
                     tidiness one. GSAP owns the name's `transform` outright the
@@ -489,38 +504,46 @@ export default function Hero() {
                     the name back 32px from where it belonged. On a wrapper
                     nothing reads it and nothing restores it; the breakpoint
                     just answers for itself. */}
-                <div className="w-full sm:-translate-y-4 lg:-translate-y-6">
+                <div className="w-full sm:-translate-y-4 lg:translate-y-0">
                 <h1
                     aria-label="Kean"
                     // The whole name reveals as one stroke rather than the two
                     // halves doing it independently, so the gate sits here and
                     // `draw` in the timeline above masks this element.
                     data-anim="fade"
-                    // Sized to very nearly span the frame, the way a poster
-                    // wordmark does. The number is not free: "KEAN" sets about
-                    // 2.78x its own font size wide and cannot wrap. From `sm`
-                    // the ceiling is whatever still fits between the two edges
-                    // the scroll section menu reserves for itself — 25vw
-                    // clears those from 640px up, measured at 1024 where they
-                    // are tightest. It is capped against the viewport's height
-                    // too, so a short laptop screen shrinks the word rather
-                    // than letting it eat the room the rest of the frame
-                    // needs. `min()` takes whichever axis is tighter.
+                    // From `sm` it takes three quarters of the frame's width,
+                    // centred in it. The numbers are measured, not free: at
+                    // this weight and tracking the letters of "KEAN" are
+                    // 2.6127x the font size from the K's stem to the N's, so
+                    // the frame's width over that is the size that would land
+                    // both on the margins — and over 3.4836 (2.6127 / 0.75)
+                    // is three quarters of it. Spanning the whole frame was
+                    // too much name. It is capped against the height
+                    // too — half the screen, less the frame, less the room
+                    // the corner type takes (7.25rem), over the letters'
+                    // half-height of 0.365 — so a short screen shrinks the
+                    // word rather than running it into the corners.
                     //
                     // Below `sm` it is a step under what would fit edge to
                     // edge: the word is one piece there, set over the figure
                     // rather than around it (see `hero-name-band` in
                     // globals.css), and at the full width the outer letters
                     // ran into the gutters with nothing left to breathe.
-                    className="js-wordmark select-none font-display text-[clamp(3.5rem,28vw,8rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(25vw,45vh)]"
+                    className="js-wordmark select-none font-display text-[clamp(3.5rem,28vw,8rem)] font-extrabold leading-[0.82] tracking-[-0.055em] text-white sm:text-[min(calc((100vw_-_2*var(--frame))/3.4836),calc((50svh_-_var(--frame)_-_var(--hero-low)_-_7.25rem)/0.365))]"
                 >
                     {/* Two halves rather than one word, and the split is what
                         the glitch is written against: the closing hits swap the
                         pair for KY and RA, which only works while each half is
                         its own text node. The layout is always the resting one,
                         which is also exactly what a visitor with motion off
-                        gets. */}
-                    <span className="flex items-center justify-center">
+                        gets.
+
+                        The nudge left is the letters' own centre: the K
+                        stands a little in from its box and the N's tracking
+                        runs past it, so the ink sits 0.0297em right of the
+                        box's middle. Here rather than on the name, which GSAP
+                        owns the transform of. */}
+                    <span className="flex items-center justify-center sm:-translate-x-[0.0297em]">
                         <span className="js-name-part inline-block">KE</span>
                         <span className="js-name-part inline-block">AN</span>
                     </span>
@@ -561,8 +584,11 @@ export default function Hero() {
                 column two — would otherwise be pushed onto a second row rather
                 than back into the gap the offer had just skipped over.
 
-                z-20: see the top row above. */}
-            <div className="shell relative z-20 mx-auto w-full max-w-shell pb-24 lg:pb-12">
+                z-20: see the top row above. From `sm` it sits on the same
+                frame as the top row, lifted clear of the section bar below
+                `lg`; from `lg` the name has left the flow, so `mt-auto` is
+                what keeps this row on the bottom edge. */}
+            <div className="shell relative z-20 mx-auto w-full max-w-shell pb-24 sm:max-w-none sm:px-[var(--frame)] sm:pb-[calc(var(--frame)+var(--hero-low))] lg:mt-auto">
                 <div className="grid grid-cols-2 items-stretch gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end md:gap-8">
                     <div className="hidden h-full flex-col justify-end md:flex md:contents">
                         <ul
@@ -589,7 +615,7 @@ export default function Hero() {
                         <p
                             data-anim="fade"
                             data-glitch="offer"
-                            className="js-body order-1 whitespace-nowrap font-mono text-[0.625rem] uppercase tracking-[0.08em] text-ink md:order-none md:col-start-3 md:row-start-1 md:justify-self-end md:text-[0.6875rem] md:tracking-[0.2em] md:text-right"
+                            className="js-body order-1 whitespace-nowrap font-mono text-[0.625rem] uppercase tracking-[0.08em] text-ink [text-shadow:0_1px_8px_rgb(0_0_0/0.95)] md:order-none md:col-start-3 md:row-start-1 md:justify-self-end md:text-[0.6875rem] md:tracking-[0.2em] md:text-right md:[text-shadow:none]"
                         >
                             Available for work
                         </p>

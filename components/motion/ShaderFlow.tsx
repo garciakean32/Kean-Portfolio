@@ -44,6 +44,18 @@ const FRAGMENT_SHADER = `
   uniform vec3 uLightBlack;   // one step further
   uniform vec3 uBlack;        // the last of them, barely lit
 
+  // One stroke of light: bright at its line, a short soft edge either side,
+  // and nothing beyond that. The falloff on its own, glow / distance, never
+  // reaches zero — across the whole frame each stroke was still putting out
+  // a few percent of grey, and four of them together washed the hero's black
+  // into a lit haze. The exponential takes that tail away within a few
+  // percent of the frame's height, so the lines wave over a ground that
+  // stays black.
+  float stroke(float dist, float glow) {
+    float a = abs(dist);
+    return glow / max(a, 0.002) * exp(-a * 26.0);
+  }
+
   void main() {
     vec2 uv = gl_FragCoord.xy / uResolution;
 
@@ -68,17 +80,17 @@ const FRAGMENT_SHADER = `
     // strokes and with opposite sign, and only their ends separate.
     float d = length(p) * uDistortion;
 
-    float white = uGlow / abs(
-      p.y - 0.20 + sin((p.x * (1.0 + d) + uTime) * uXScale) * uYScale);
+    float white = stroke(
+      p.y - 0.20 + sin((p.x * (1.0 + d) + uTime) * uXScale) * uYScale, uGlow);
 
-    float darkWhite = uGlow * 0.86 / abs(
-      p.y - 0.03 + sin((p.x * (1.0 - d) - uTime * 0.73) * uXScale * 0.82) * uYScale * 1.1);
+    float darkWhite = stroke(
+      p.y - 0.03 + sin((p.x * (1.0 - d) - uTime * 0.73) * uXScale * 0.82) * uYScale * 1.1, uGlow * 0.86);
 
-    float lightBlack = uGlow * 0.72 / abs(
-      p.y + 0.16 + sin((p.x + uTime * 0.51) * uXScale * 1.27) * uYScale * 0.92);
+    float lightBlack = stroke(
+      p.y + 0.16 + sin((p.x + uTime * 0.51) * uXScale * 1.27) * uYScale * 0.92, uGlow * 0.72);
 
-    float black = uGlow * 0.62 / abs(
-      p.y + 0.33 + sin((p.x - uTime * 0.37) * uXScale * 0.64) * uYScale * 1.25);
+    float black = stroke(
+      p.y + 0.33 + sin((p.x - uTime * 0.37) * uXScale * 0.64) * uYScale * 1.25, uGlow * 0.62);
 
     // Every lobe is clamped before it is tinted: 1/abs(y) is unbounded at the
     // crest line, and left alone it blows the tint out to white on the one row

@@ -15,7 +15,6 @@ const config: Config = {
         extend: {
             fontFamily: {
                 display: ['var(--font-sans)', 'system-ui', 'sans-serif'],
-                serif: ['var(--font-serif)', 'Georgia', 'serif'],
                 mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
             },
             colors: {
@@ -42,20 +41,31 @@ const config: Config = {
                    wordmark sets its own size off the viewport (see Hero.tsx) —
                    everything in this scale is deliberately a step below it, and
                    ceilinged so a 1280x720 laptop gets a whole section on screen
-                   rather than one heading. */
+                   rather than one heading.
+
+                   The display steps are straight lines through two points: a
+                   360px phone, and the width each one used to reach its
+                   ceiling. So a desktop gets exactly the sizes it always had,
+                   and a phone gets a step or so smaller than it did, scaling
+                   smoothly through every width in between — 320px included,
+                   where the floor takes over. */
                 // Utility / metadata
                 label: ['0.75rem', { lineHeight: '1.2', letterSpacing: '0.1em' }],
                 meta: ['0.75rem', { lineHeight: '1.6', letterSpacing: '0.07em' }],
                 // Body
-                body: ['clamp(0.9375rem, 0.9rem + 0.22vw, 1.0625rem)', { lineHeight: '1.7' }],
-                lead: ['clamp(1.0625rem, 1rem + 0.4vw, 1.3125rem)', { lineHeight: '1.55' }],
+                body: ['clamp(0.9375rem, 0.839rem + 0.437vw, 1.0625rem)', { lineHeight: '1.7' }],
+                lead: ['clamp(1rem, 0.9175rem + 0.506vw, 1.3125rem)', { lineHeight: '1.55' }],
+                /* The paragraph under each section's title. A step under
+                   body, so every one of them can say a little more and still
+                   come out at about the same length on the page. */
+                copy: ['clamp(0.875rem, 0.83rem + 0.2vw, 0.9375rem)', { lineHeight: '1.75' }],
                 // Display
-                d1: ['clamp(1.375rem, 1.15rem + 0.9vw, 1.875rem)', { lineHeight: '1.25' }],
-                d2: ['clamp(1.875rem, 1.5rem + 1.5vw, 2.75rem)', { lineHeight: '1.1' }],
-                d3: ['clamp(2.25rem, 1.75rem + 2.1vw, 3.5rem)', { lineHeight: '1.02' }],
+                d1: ['clamp(1.25rem, 1.008rem + 1.076vw, 1.875rem)', { lineHeight: '1.25' }],
+                d2: ['clamp(1.5rem, 1.0375rem + 2.056vw, 2.75rem)', { lineHeight: '1.1' }],
+                d3: ['clamp(1.75rem, 1.1025rem + 2.878vw, 3.5rem)', { lineHeight: '1.02' }],
                 /* Poster headings — the two places the page sets a name or a
                    title at full volume. Still a long way under the hero. */
-                d4: ['clamp(2.5rem, 1.7rem + 3.5vw, 4.5rem)', { lineHeight: '0.94' }],
+                d4: ['clamp(2rem, 1.022rem + 4.348vw, 4.5rem)', { lineHeight: '0.94' }],
             },
             maxWidth: {
                 measure: '38rem',

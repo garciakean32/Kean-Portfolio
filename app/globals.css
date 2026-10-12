@@ -74,35 +74,6 @@
   color-scheme: dark;
 }
 
-/* ------------------------------------------------------------------
-   Light panels
-   The site runs dark. A section can invert to paper by carrying this
-   class: it re-declares the tokens for its own subtree, so every
-   `bg-paper` / `text-ink` inside resolves to the light values without
-   any component needing to know which mode it is in.
-   ------------------------------------------------------------------ */
-
-.light-panel {
-  --paper: 245 245 245;
-  --paper-2: 255 255 255;
-  --paper-3: 232 232 232;
-
-  --ink: 10 10 10;
-  --ink-2: 64 64 64;
-  --ink-3: 102 102 102;
-  --on-ink: 255 255 255;
-
-  --rule: 219 219 219;
-  --rule-strong: 176 176 176;
-
-  --accent: 10 10 10;
-
-  --warn: 102 102 102;
-
-  color-scheme: light;
-  background-color: rgb(var(--paper));
-}
-
 @media (min-width: 768px) {
   :root {
     --gutter: 2rem;
@@ -181,29 +152,12 @@ html[data-motion="on"] [data-anim="fade"] {
   opacity: 0;
 }
 
-html[data-motion="on"] [data-anim="mask"] > * {
-  /* Must exceed 100% + the mask's vertical padding, or the top of the line
-     peeks below the clip edge before it animates. Keep in step with
-     MASK_HIDDEN in lib/motion.ts. */
-  transform: translateY(135%);
-}
-
 html[data-motion="on"] [data-anim="wipe"] {
   clip-path: inset(0 100% 0 0);
 }
 
 html[data-motion="on"] [data-anim="rise"] {
   clip-path: inset(100% 0 0 0);
-}
-
-html[data-motion="on"] [data-anim="rule-x"] {
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-
-html[data-motion="on"] [data-anim="rule-y"] {
-  transform: scaleY(0);
-  transform-origin: top center;
 }
 
 /* ------------------------------------------------------------------
@@ -330,19 +284,6 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     padding-right: calc(var(--rail) + var(--gutter));
   }
 
-  /* Line-mask wrapper for text reveals.
-     The padding/margin pair keeps descenders from being clipped. */
-  .mask {
-    display: block;
-    overflow: hidden;
-    padding-block: 0.22em;
-    margin-block: -0.22em;
-  }
-  .mask > * {
-    display: block;
-    will-change: transform;
-  }
-
   /* A line set down the margin rather than across the page. Latin rotates
      with the line rather than standing each letter up. */
   .vertical {
@@ -386,29 +327,6 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     width: max(100%, 44px);
     height: max(100%, 44px);
   }
-
-  /* Form fields read as fields: a real box, not a hairline */
-  .field {
-    width: 100%;
-    border: 1px solid rgb(var(--rule-strong));
-    border-radius: 6px;
-    background: rgb(var(--paper-2));
-    padding: 0.875rem 1rem;
-    color: rgb(var(--ink));
-    transition: border-color 0.25s var(--ease-out),
-      box-shadow 0.25s var(--ease-out), background-color 0.25s var(--ease-out);
-  }
-  .field::placeholder {
-    color: rgb(var(--ink-3));
-  }
-  .field:hover {
-    border-color: rgb(var(--ink-3));
-  }
-  .field:focus {
-    outline: none;
-    border-color: rgb(var(--accent));
-    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.14);
-  }
 }
 
 /* ------------------------------------------------------------------
@@ -426,10 +344,10 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
 
 /* Hero ground.
 
-   Black, and only black. The section's whole backdrop is the WebGL band drawn
-   on top of it (see ShaderFlow), so anything painted here beyond the ground
-   itself only ever competed with it — and the page below opens on exactly
-   this same black, which is what keeps the seam invisible. */
+   Black, and only black. What brings it to life are the doodles drawn round
+   the poster (see HeroDoodles), white marker on this black, and the page
+   below opens on exactly this same black, which is what keeps the seam
+   invisible. */
 .hero-ground {
   background-color: rgb(0 0 0);
 }
@@ -475,6 +393,15 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   .hero-name-band {
     align-items: flex-start;
     padding-top: 12svh;
+  }
+}
+
+/* A phone's top row is 2rem further down than it was, to clear the doodle
+   dock in the corner (see Hero.tsx); the name is lifted by the same, so it
+   still lands where the note above puts it. */
+@media (max-aspect-ratio: 4 / 5) and (max-width: 639.98px) {
+  .hero-name-band {
+    padding-top: calc(12svh - 2rem);
   }
 }
 
@@ -527,31 +454,6 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   pointer-events: none;
 }
 
-/* The two rings of the process rail's opening mark, turning against each
-   other. `transform-box: fill-box` puts the origin at each ring's own centre
-   rather than at the SVG's user-space origin. Slow enough to read as drift,
-   and stopped outright by the reduced-motion block at the end of this file —
-   the mark is a drawing either way. See `StartMark` in Services.tsx. */
-.spin-slow,
-.spin-slower {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-}
-
-.spin-slow {
-  animation: spin 52s linear infinite;
-}
-
-.spin-slower {
-  animation: spin 84s linear infinite reverse;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Paper grain — one fixed layer, no per-element cost */
 .grain {
   position: fixed;
@@ -560,61 +462,6 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   pointer-events: none;
   opacity: var(--grain);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* Horizontal tracks
-   A track only runs sideways while GSAP is there to move it, so the layout is
-   gated on the same motion flag as everything else: with motion off (or no
-   JS) the panels stay a plain vertical stack and every one of them is still
-   reachable by scrolling down.
-
-   The stage is held with `sticky`, not a pin — see `sideScroll` in
-   lib/motion.ts. The section around it carries no styles here; its height is
-   the scroll budget and is set from JS, since only JS knows how wide the
-   track turned out to be.
-
-   Panels size themselves off `--hs-w` / `--hs-h` so one rule covers both a
-   full-screen step and a narrower card. */
-@media (min-width: 1024px) {
-  html[data-motion="on"] .hscroll-stage {
-    position: sticky;
-    top: 0;
-    height: 100svh;
-    overflow: hidden;
-  }
-
-  html[data-motion="on"] .hscroll-track {
-    flex-direction: row;
-    align-items: center;
-    width: max-content;
-    height: 100%;
-    padding-bottom: 0;
-  }
-
-  html[data-motion="on"] .hscroll-panel {
-    flex-shrink: 0;
-    width: var(--hs-w, 100vw);
-    height: var(--hs-h, 100%);
-  }
-}
-
-/* The status tooltip pops out of its info icon rather than just appearing —
-   `transform-origin` is set per corner in ProjectStatus, this just supplies
-   the scale/fade. Covered by the reduced-motion block below like every other
-   animation on the page. */
-.tooltip-pop {
-  animation: tooltip-pop 180ms var(--ease-out) both;
-}
-
-@keyframes tooltip-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }
 
 /* Dialog — the resume confirmation.
@@ -701,6 +548,593 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
     opacity: 1;
     transform: none;
   }
+}
+
+/* ------------------------------------------------------------------
+   Icon bar — from Bencho (bencho.dev), MIT licensed: bencho.dev/licence.
+   The section menu (components/ui/icon-bar.tsx, placed by ScrollDock).
+   ------------------------------------------------------------------ */
+
+/* ── Bencho's tokens, mapped onto this site ──────────────────
+   The rules further down read these and do not define them.
+   Each one is pointed at whatever this site already uses for
+   the same job; where the site has nothing for it, it is set
+   here, on the bar's own root, so none of it leaks into the
+   rest of the page.
+
+   --ink is this site's own --ink: the white every other piece
+   of type here is set in, re-declared nowhere. The one catch is
+   format. Bencho's --ink is a whole colour; this site's is three
+   bare channels (so Tailwind's /opacity works on it). Defining
+   --ink here in terms of itself would be a cycle, which the
+   browser throws away, so instead the three rules below that
+   paint with it read it as rgb(var(--ink)) rather than var(--ink).
+
+   --ink-rgb is not read by any rule in this block — only named in
+   the flat-pane comment — so it is left undefined rather than
+   invented. If one ever needs it: this site's channels are space
+   separated, so it is rgb(var(--ink) / a), not rgba(var(--ink-rgb), a).
+
+   --g-shadow is left unset on purpose. It is an override: unset,
+   the glass rule composes its shadow from --g-spec and --g-lift;
+   set, it replaces both.
+
+   --try-edge belongs to Bencho's side-by-side test boards (.gtry),
+   which this site does not have, so it is not set either. */
+/* The doodle dock's options are the same glass as the bar — see
+   components/shared/DoodleArea.tsx — so they read the same tokens. */
+.icon-bar,
+.doodle-dock {
+  /* The bar. A 40px slot with the 6px inset the component hugs
+     it with makes 52px across — the size the corner in
+     icon-bar.tsx (26, half of it) and the comments below were
+     drawn at. */
+  --bar-slot: 40px;
+  --bar-pad: 6px;
+  --bar-gap: 4px;
+
+  /* The pane is the page's own black, nearly opaque, so the bar
+     reads as a dark slab over whatever passes under it. The frost is
+     the 12px the section menu has always had — the 2px Bencho
+     ships is drawn for a pale wall, and over this page's white
+     type that much clear glass reads as text under a smear. */
+  --pane: rgb(var(--paper) / 0.9);
+  --pane-thumb: rgb(var(--ink) / 0.12);
+  --pane-edge: rgb(var(--rule));
+  --g-blur: 12px;
+  --g-sat: 150%;
+  --g-bright: 100%;
+
+  /* The rim and the thickness, tuned for a dark pane: the lit
+     corner a little stronger than on white, since there is far
+     less ground for it to stand out from. */
+  --g-edge-hi: 0.38;
+  --g-edge-lo: 0.06;
+  --g-edge-far: 0.16;
+  --g-spec: 0.12;
+
+  /* And the shadow the menu has always cast: black, at 0.6. */
+  --shadow-rgb: 0, 0, 0;
+  --g-lift: 0.6;
+}
+
+/* ── glass navigation ──────────────────────────────────────
+   Same recipe as .gcard: 60% white, 2px frost, refraction,
+   lit inner edge. Shapes differ, the material does not. */
+
+/* The bare pane. Same recipe as .gnav and .gdock, with no
+   layout of its own — for components that are just a surface
+   and want to arrange themselves. A card with a title in one
+   corner and a chip in the other is a house style, not a
+   requirement, and most things do not need either. */
+.gpane, .gnav, .gdock {
+  position: relative;
+  background: var(--pane);
+  -webkit-backdrop-filter:
+    blur(var(--g-blur, 2px)) saturate(var(--g-sat, 150%)) brightness(var(--g-bright, 100%));
+  backdrop-filter:
+    blur(var(--g-blur, 2px)) saturate(var(--g-sat, 150%)) brightness(var(--g-bright, 100%));
+  isolation: isolate;
+  color: rgb(var(--ink));}
+
+.gpane::before, .gnav::before, .gdock::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* transparent unless Stroke says otherwise — see the
+     stroke block below */
+  border: 1px solid transparent;
+  pointer-events: none;
+  z-index: 3;}
+
+/* One number sizes the bar. --slot is the square an icon sits
+   in, set per instance from the component; the gap, the
+   padding and the indicator inset are all derived from it, so
+   a bigger bar stays in proportion instead of needing four
+   numbers kept in sync. */
+/* Same slot, inset and gap as the toolbar, so the two bars
+   sit at one height. Only the radius differs — a full pill
+   against the toolbar's 14px — because they are still two
+   different objects and should not be mistaken for one. */
+.gnav {
+  --slot: var(--bar-slot);
+  --nav-pad: var(--bar-pad);
+  display: inline-flex;
+  gap: var(--bar-gap);
+  padding: var(--nav-pad);
+  border-radius: var(--gnav-r, 999px);}
+
+.gnav[data-orientation="vertical"] { flex-direction: column; border-radius: var(--gnav-r, 30px); }
+
+.gnav-ind {
+  position: absolute;
+  top: var(--nav-pad);
+  left: 0;
+  height: calc(100% - var(--nav-pad) * 2);
+  border-radius: var(--gnav-r, 999px);
+  /* Just a wash — no border, no inset highlight, no penumbra,
+     and no frost of its own. The pane underneath already
+     carries the glass; stacking a second lit surface on top
+     of it made the indicator read as a white lozenge floating
+     over the bar rather than a selected slot in it.
+
+     The active icon going from 0.42 to full opacity is doing
+     most of the work, so this only has to hint at the slot. */
+  background: var(--pane-thumb);
+  pointer-events: none;
+  will-change: transform, width;}
+
+.gnav[data-orientation="vertical"] .gnav-ind {
+  top: 0;
+  left: var(--nav-pad);
+  width: calc(100% - var(--nav-pad) * 2);
+  height: auto;}
+
+/* Two phases, two rules, and every number in them now comes
+   from the component — durations off one rate, and the settle
+   curve's overshoot off one Bounce. The fallbacks are the
+   values this was tuned at, so the bar still moves correctly
+   if it is ever mounted without them. */
+.gnav-ind[data-phase="stretch"] {
+  --d: var(--ind-stretch, 190ms);
+  transition:
+    transform var(--d) cubic-bezier(0.32, 0.72, 0.24, 1),
+    width var(--d) cubic-bezier(0.32, 0.72, 0.24, 1),
+    height var(--d) cubic-bezier(0.32, 0.72, 0.24, 1);}
+
+.gnav-ind[data-phase="settle"] {
+  --d: var(--ind-settle, 420ms);
+  transition:
+    transform var(--d) var(--ind-move, cubic-bezier(0.28, 1.28, 0.36, 1)),
+    width var(--d) var(--ind-size, cubic-bezier(0.24, 1.34, 0.38, 1)),
+    height var(--d) var(--ind-size, cubic-bezier(0.24, 1.34, 0.38, 1));}
+
+.gnav-ind[data-phase="idle"] { transition: none; }
+
+.gnav-item {
+  position: relative;
+  z-index: 1;
+  width: var(--slot, 38px); height: var(--slot, 38px);
+  border: 0; border-radius: var(--gnav-r, 999px);
+  background: none;
+  color: rgb(var(--ink));
+  opacity: 0.42;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: opacity 260ms cubic-bezier(0.32, 0.72, 0.24, 1);}
+
+.gnav-item:hover { opacity: 0.72; }
+
+.gnav-item[data-active="true"] { opacity: 1; }
+
+.gnav-item:focus-visible { outline: 1.5px solid rgb(var(--ink)); outline-offset: 2px; }
+
+/* ── flat panes ────────────────────────────────────────────
+   Set data-surface="flat" on any ancestor and every glass
+   surface under it becomes a solid fill with a hairline. The
+   inner buttons already sit on rgba(var(--ink-rgb), 0.05)
+   with no border, which is what flat wants anyway, so they
+   need nothing.
+
+   The frost is switched off at the element rather than through
+   a token. A var() holding a url() filter cannot be validated
+   at parse time, so the browser would treat it as invalid at
+   computed-value time and drop the property outright — which
+   breaks the two-declaration fallback the glass depends on. */
+/* ══ stroke ═════════════════════════════════════════════════
+   Whether a component draws a hairline round itself. OFF by
+   default, which is the change: every glass surface carried
+   one unconditionally, and a grey line round everything makes
+   a wall of components look like a wall of boxes rather than
+   a wall of things.
+
+   The line is not load-bearing. A flat pane is a fill against
+   a different fill and reads on its own; the ring was there
+   to sharpen an edge that was already there.
+
+   Placed ABOVE the glass rules on purpose. Glass draws its
+   own lit rim, and that rim is the material rather than a
+   stroke — it is what gives a pane thickness. So glass wins
+   the border wherever the two meet, and Stroke governs the
+   drawn line that flat surfaces would otherwise have. */
+[data-stroke="on"] .lab::before,
+[data-stroke="on"] .gcard::before,
+[data-stroke="on"] .gpane::before,
+[data-stroke="on"] .gnav::before,
+[data-stroke="on"] .gdock::before,
+/* the playful blocks. None of them is glass, so none has a
+   lit rim for the stroke to lose to — the hairline is the
+   only edge they can have, and it is the whole of what this
+   control does for them. */
+[data-stroke="on"] .esc-btn::before,
+[data-stroke="on"] .slo-track::before,
+[data-stroke="on"] .sek-skin::before {
+  border-color: var(--pane-edge);}
+
+/* ── the rim ─────────────────────────────────────────────────
+   Every glass surface already drew a 1px ring in one flat
+   colour. A flat rim is the single clearest tell that a thing
+   is a rectangle with a border rather than a pane with
+   thickness: real edges are lit unevenly, and evenly lit ones
+   read as ink.
+
+   So the ring becomes a gradient — bright at the corner
+   facing the light, almost nothing along the sides that run
+   edge-on to it, and a second weaker catch at the far corner
+   where the light has come through the pane and out again.
+
+   Painting a gradient in a border needs the border box filled
+   and the padding box punched out of it, which is what the
+   two masks do: one covers the whole element, one covers only
+   the inside, and compositing them apart leaves the rim. It
+   is the only way to get a gradient into a border without a
+   second element to draw it on.
+
+   Only under glass. Flat keeps its honest hairline, which is
+   what a solid pane should have. */
+[data-surface="glass"] .lab::before,
+[data-surface="glass"] .gcard::before,
+[data-surface="glass"] .cmd::before,
+[data-surface="glass"] .gpane::before,
+[data-surface="glass"] .gnav::before,
+[data-surface="glass"] .gdock::before {
+  border-color: transparent;
+  background:
+    linear-gradient(
+      142deg,
+      rgba(255, 255, 255, var(--g-edge-hi, 0)) 0%,
+      rgba(255, 255, 255, var(--g-edge-lo, 0)) 26%,
+      rgba(255, 255, 255, var(--g-edge-lo, 0)) 62%,
+      rgba(255, 255, 255, var(--g-edge-far, 0)) 100%
+    ) border-box;
+  -webkit-mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) padding-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;}
+
+/* ── thickness ───────────────────────────────────────────────
+   Three marks, and between them they are the difference
+   between a pane and a wash.
+
+   The lit line along the top is where light enters the edge of
+   a real sheet. The ring is the sheet's own thickness seen
+   from straight on. The shadow underneath says the pane is
+   ABOVE the page rather than painted onto it — which is the
+   one thing a backdrop-filter alone can never say, because a
+   filter has no depth.
+
+   All three ride on --glass and are gone at zero, where the
+   fallbacks take over and the surface is flat. */
+[data-surface="glass"] .lab,
+[data-surface="glass"] .gcard,
+[data-surface="glass"] .cmd,
+[data-surface="glass"] .gpane,
+[data-surface="glass"] .gnav,
+[data-surface="glass"] .gdock {
+  box-shadow: var(--g-shadow,
+    /* the top face, catching light through the thickness of
+       the pane — inside the rim, not on it */
+    inset 0 1px 0 rgba(255, 255, 255, var(--g-spec, 0)),
+    /* And what it casts on the page below — wide and soft
+       rather than tight and close. It is a different claim
+       about how far the pane floats, and the softer one is
+       what reads as a sheet resting above the page instead of
+       a card stuck to it. */
+    0 10px 40px rgba(var(--shadow-rgb), var(--g-lift, 0)));}
+
+[data-surface="flat"] .lab,
+[data-surface="flat"] .gcard,
+[data-surface="flat"] .cmd,
+[data-surface="flat"] .gnav,
+[data-surface="flat"] .gdock {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;}
+
+/* ════ the kit ══════════════════════════════════════════════
+   Four components with no card chrome. Prefixes bar-, fan-,
+   step-, say-. Each lays itself out for what it is rather
+   than wearing a title in one corner and a chip in the other. */
+
+/* ── 1 · canvas toolbar ──────────────────────────────────── */
+/* One stage for every horizontal bar. The wall scales a
+   component by its longest side, so a bar that reserves room
+   for a flyout measures larger than a bare one and gets shrunk
+   further — which is why the toolbar's glyphs came out smaller
+   than the icon bar's despite both being 38px slots.
+
+   Same stage, same measurement, same glyph size on the page.
+   150 is the floor: the bar sits centred, and the palette
+   needs 74px above that centre line to clear the top. */
+.bar-well {
+  position: relative;
+  width: 264px; height: 150px;
+  display: flex; align-items: center; justify-content: center;}
+
+/* the toolbar's own well paints a ground; here the ground has
+   to be whatever is behind it */
+.gtry-over .bar-well { background: transparent; width: auto; height: auto; }
+
+/* ── a flat rim, for comparison ──────────────────────────────
+   Reverts the graded rim to one colour all the way round —
+   which is what almost every published glass snippet does,
+   Apple's own included. It is here so the two can be judged
+   against each other on the same ground rather than taken on
+   trust, and it applies only inside a test board. */
+.gtry[data-rim="flat"] .lab::before,
+.gtry[data-rim="flat"] .gcard::before,
+.gtry[data-rim="flat"] .cmd::before,
+.gtry[data-rim="flat"] .gpane::before,
+.gtry[data-rim="flat"] .gnav::before,
+.gtry[data-rim="flat"] .gdock::before {
+  border-color: var(--try-edge, transparent);
+  background: none;
+  -webkit-mask: none;
+  mask: none;}
+
+/* ------------------------------------------------------------------
+   Label input — from Bencho (bencho.dev), MIT licensed:
+   bencho.dev/licence. The contact form's fields
+   (components/ui/label-input.tsx).
+   ------------------------------------------------------------------ */
+
+/* ── Bencho's tokens, mapped onto this site ──────────────────
+   --ink and --ink-3 are this site's own, the white and the grey
+   every other piece of type here is set in. As with the icon bar,
+   Bencho's are whole colours and this site's are three bare
+   channels, and a token cannot be redefined in terms of itself
+   (that is a cycle, and the browser drops it) — so the rules
+   below read them as rgb(var(--ink)) and rgb(var(--ink-3)).
+
+   --ink-rgb is the same white again. The rules built rgba() from
+   it; this site's channels are space separated, which rgba()
+   will not take, so those read rgb(var(--ink) / a) instead.
+
+   --fill-on is Bencho's ink for a field sitting on a filled
+   surface. These fields have no fill — they are only their
+   outline — so it is left unset and every use falls back to
+   the ink, which is what it is written to do.
+
+   --font-ui and --ink-4 have no counterpart here, so they are
+   set below on the field's own root and go no further. */
+.lbi {
+  /* the site's one sans, which every UI line on it is set in */
+  --font-ui: var(--font-sans), system-ui, sans-serif;
+  /* a step under --ink-3: what the label is at rest, while it is
+     still standing in for a placeholder */
+  --ink-4: rgb(var(--ink) / 0.5);
+}
+
+/* ══ Label input ═══════════════════════════════════════════
+   lab/LabelInput.tsx. Positioned at the root for the canvas
+   halo — see the note on .gen. */
+.lbi {
+  position: relative;
+  font-family: var(--font-ui);
+  display: grid;
+  place-items: center;
+  /* room above the field for the lifted label */
+  padding-top: 10px;}
+
+/* no fill: the field is only its outline */
+.lbi-box {
+  position: relative;
+  /* the width of its column — the outline is redrawn to it */
+  width: 100%;
+  background: transparent;
+  cursor: text;}
+
+/* ── the outline ────────────────────────────────────────────
+   Always whole. At rest a hairline of grey; focused, the ink
+   at a hair heavier; left filled, a grey a step darker than
+   rest. The gap across the top is the only part that moves. */
+.lbi-ring {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;}
+
+.lbi-ring path {
+  fill: none;
+  stroke: rgb(var(--ink) / 0.18);
+  stroke-width: 1;
+  stroke-linecap: butt;
+  transition: stroke 240ms ease, stroke-width 240ms ease;}
+
+.lbi[data-focus="true"] .lbi-ring path {
+  stroke: rgb(var(--ink));
+  stroke-width: 1.5;}
+
+.lbi[data-filled="true"]:not([data-focus="true"]) .lbi-ring path {
+  stroke: rgb(var(--ink) / 0.3);}
+
+/* the gap: whole at rest, parting from its middle when the
+   label lifts. The dash is longer than the path so offset 0
+   is the whole line and -1 is none of it. */
+.lbi-gap {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 0;
+  transition: stroke 240ms ease, stroke-width 240ms ease,
+    stroke-dashoffset 320ms cubic-bezier(0.22, 1, 0.36, 1);}
+
+.lbi[data-up="true"] .lbi-gap { stroke-dashoffset: -1; }
+
+/* ── the label ──────────────────────────────────────────────
+   Its placeholder self in the middle of the field, and its
+   lifted self centred on the top edge — the second is the
+   first moved up by half the field and scaled from its left.
+
+   16px rather than Bencho's 15, here and on the field: a phone
+   zooms the whole page into any field set smaller than that the
+   moment it is focused. */
+.lbi-label {
+  position: absolute;
+  left: var(--lbi-x);
+  top: 50%;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  white-space: pre;
+  color: var(--ink-4);
+  transform-origin: left center;
+  transform: translateY(-50%);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), color 200ms ease;
+  cursor: text;
+  -webkit-user-select: none;
+  user-select: none;}
+
+/* A taller field keeps its label on the first line rather than in
+   the middle of the box: 26px is half the one-line height, so the
+   lift below lands it on the top edge exactly as it does there. */
+.lbi[data-multiline="true"] .lbi-label { top: 26px; }
+
+.lbi[data-up="true"] .lbi-label {
+  transform: translateY(-50%) translateY(-26px) scale(0.78);
+  color: rgb(var(--ink-3));}
+
+.lbi[data-focus="true"] .lbi-label { color: var(--fill-on, rgb(var(--ink))); }
+
+/* A field a send found wanting: its label says what it lacks, and that and
+   the outline are in the full ink — the page has no colour to warn in — at
+   rest as well as in use, until it is put right. */
+.lbi[data-error="true"]:not([data-focus="true"]) .lbi-ring path { stroke: rgb(var(--ink)); }
+
+.lbi[data-error="true"] .lbi-label { color: rgb(var(--ink)); }
+
+/* The source ran a hop along the label's letters here as it lifted.
+   It is left out on purpose — the lift is the movement, and nothing
+   on these fields wobbles. */
+
+.lbi-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0 0 0 var(--lbi-x);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+  color: var(--fill-on, rgb(var(--ink)));
+  outline: none;}
+
+/* the message: a box of lines rather than one, starting under
+   where the label lifts to */
+textarea.lbi-field {
+  padding: 16px var(--lbi-x) 12px;
+  line-height: 1.5;
+  resize: none;}
+
+/* A browser's autofill sets a value without anyone typing, so the
+   label lifts for it here rather than waiting on state, and the
+   browser's own tint is held off so the field stays an outline. */
+.lbi:has(.lbi-field:-webkit-autofill) .lbi-label {
+  transform: translateY(-50%) translateY(-26px) scale(0.78);
+  color: rgb(var(--ink-3));}
+
+.lbi:has(.lbi-field:-webkit-autofill) .lbi-gap { stroke-dashoffset: -1; }
+
+.lbi-field:-webkit-autofill {
+  -webkit-text-fill-color: rgb(var(--ink));
+  transition: background-color 600000s 0s, color 600000s 0s;}
+
+/* the reveal: the text passes through a soft blur rather than
+   snapping between dots and letters. Two names so a second
+   press restarts it. */
+.lbi-field[data-flip="1"] { animation: lbi-flip-a 260ms ease-out; }
+
+.lbi-field[data-flip="0"] { animation: lbi-flip-b 260ms ease-out; }
+
+.lbi-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin-top: -15px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-4);
+  cursor: pointer;
+  transition: color 160ms ease, scale 130ms cubic-bezier(0.3, 0.9, 0.4, 1);}
+
+.lbi-eye:hover { color: var(--fill-on, rgb(var(--ink))); }
+
+.lbi-eye:active { scale: 0.9; }
+
+/* the two icons in one place, trading places */
+.lbi-eye svg {
+  grid-area: 1 / 1;
+  transition: opacity 200ms ease, scale 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease;}
+
+.lbi-eye svg:last-child { opacity: 0; scale: 0.7; filter: blur(2px); }
+
+.lbi-eye[data-show="true"] svg:first-child { opacity: 0; scale: 0.7; filter: blur(2px); }
+
+.lbi-eye[data-show="true"] svg:last-child { opacity: 1; scale: 1; filter: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lbi-ring path,
+    .lbi-gap,
+    .lbi-label { transition-duration: 1ms; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lbi-field { animation: none; }
+}
+
+@keyframes lbi-flip-a { from { filter: blur(3px); opacity: 0.5; } }
+
+@keyframes lbi-flip-b { from { filter: blur(3px); opacity: 0.5; } }
+
+/* ------------------------------------------------------------------
+   Doodle sheet — components/shared/DoodleArea.tsx
+   ------------------------------------------------------------------ */
+
+/* The sign pen is the dock's nib (NIB in DoodleArea.tsx) at 26px, black
+   with a white rim so it reads on either theme, its point on the hotspot.
+   The eraser shows its reach — a ring the size of what it takes out
+   (ERASE_R, 14px). */
+.doodle-sheet[data-tool="sign"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 24 24'%3E%3Cpath transform='rotate(45 12 12)' fill-rule='evenodd' fill='black' stroke='white' stroke-width='2' stroke-linejoin='round' paint-order='stroke' d='M8.8 1.5h6.4a.8.8 0 0 1 .8.8v1.9a.8.8 0 0 1-.8.8H8.8a.8.8 0 0 1-.8-.8V2.3a.8.8 0 0 1 .8-.8ZM8 6.4h8v3.1c0 4-2.5 8.5-4 13-1.5-4.5-4-9-4-13ZM13.5 11.4a1.5 1.5 0 1 1-3 0 1.5 1.5 0 1 1 3 0ZM11.45 12.9h1.1V20h-1.1Z'/%3E%3C/svg%3E")
+      5 21,
+    pointer;
+}
+
+.doodle-sheet[data-tool="erase"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Ccircle cx='15' cy='15' r='14' fill='none' stroke='white' stroke-width='1.5'/%3E%3Ccircle cx='15' cy='15' r='12.5' fill='none' stroke='black' stroke-opacity='0.6' stroke-width='1'/%3E%3C/svg%3E")
+      15 15,
+    cell;
 }
 
 /* ------------------------------------------------------------------

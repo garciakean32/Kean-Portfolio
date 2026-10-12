@@ -10,7 +10,7 @@ import DotGrid from "@/components/motion/DotGrid";
  */
 export default function Intro() {
     return (
-        <section className="bg-gradient-to-b from-paper to-paper-3">
+        <section className="bg-paper">
             <div className="h-[15rem] border-y border-rule md:h-[20rem]">
                 <DotGrid />
             </div>

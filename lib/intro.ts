@@ -1,6 +1,7 @@
 "use client";
 
 import { getLenis } from "@/lib/lenis";
+import { ScrollTrigger } from "@/lib/motion";
 
 /**
  * The cinematic open.
@@ -59,6 +60,17 @@ export function revealChrome() {
  * Hands the page back: chrome in, scroll and pointers live. Safe to call more
  * than once and from anywhere, which is the point — every path out of the
  * intro, including the ones where it never ran, ends here.
+ *
+ * And re-measures on the way out. Everything scroll-linked on this page was
+ * set up while the intro still held it, and the page's height can still be
+ * settling as images and fonts arrive. Nothing re-reads any of that on its
+ * own: ScrollTrigger refreshes on `load` and on
+ * resize, and whether `load` lands before or after the intro finishes is a
+ * race with however long the hero's artwork takes to arrive. Losing that race
+ * leaves every start and end on the page measured against a document that no
+ * longer exists, which is the progress hairline filling early and the section
+ * reveals firing at the wrong place. This is the one moment that is always
+ * after the open and always before the reader can scroll.
  */
 export function endIntro() {
     const root = document.documentElement;
@@ -66,4 +78,5 @@ export function endIntro() {
 
     root.dataset.intro = "off";
     getLenis()?.start();
+    ScrollTrigger.refresh();
 }

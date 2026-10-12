@@ -1,7 +1,7 @@
 export const personal = {
     name: "Kean Valgere E. Garcia",
     role: "Full-Stack Web Developer",
-    bio: "I develop websites around a brand, product, or business concept, from simple brochure sites to more comprehensive platforms built to improve user experience and support business goals — and what I enjoy most is watching a site slowly take shape.",
+    bio: "I develop websites for a brand, product, or business concept, from simple brochure sites to more comprehensive platforms built to improve user experience and support business goals — and what I enjoy most is watching a site slowly take shape.",
     email: "garcia.kean32@gmail.com",
     location: "Cagayan de Oro City, PH",
     timezone: "UTC+8",
@@ -14,7 +14,8 @@ export const personal = {
 
 /* ------------------------------------------------------------------
    Sections — the whole site is one page, so the "routes" are anchors.
-   Used by the navbar, the rail and the footer.
+   Used by the section menu and the footer's index. The footer itself is
+   not one of them: it is the end of the page, not a place to jump to.
    ------------------------------------------------------------------ */
 
 export type Section = {
@@ -27,97 +28,75 @@ export type Section = {
 export const sections: Section[] = [
     { id: "top", label: "Home" },
     { id: "about", label: "About" },
-    { id: "work", label: "Work" },
-    { id: "services", label: "Services" },
+    { id: "experience", label: "Experience" },
+    { id: "video", label: "Video" },
     { id: "contact", label: "Contact" },
 ];
 
 /* ------------------------------------------------------------------
-   What I build — one line each.
+   Video introduction — a placeholder until it is recorded.
+
+   To add it: put the file in `public/videos/` and set `src` to its path,
+   e.g. "/videos/kean-intro.mp4". `poster` is optional — a still shown
+   before it plays. While `src` is empty the section shows a "coming soon"
+   frame instead of a player.
    ------------------------------------------------------------------ */
 
-export const offerings = [
-    { title: "Business websites", line: "Found, understood, easy to reach." },
-    { title: "Web applications", line: "An idea you can open in a browser." },
-    { title: "Backend & APIs", line: "Accounts, data, payments, email." },
-    { title: "Dashboards", line: "See what is happening, then act on it." },
-    { title: "Site rebuilds", line: "Same business, current decade." },
-    { title: "Maintenance", line: "Faster, steadier, easier to change." },
-];
-
-export const process = [
-    {
-        title: "Talk it through",
-        line: "What it does, who it is for, and what has to be true for it to count as done.",
-        image: "/images/lantern1.jpg",
-    },
-    {
-        title: "Map the build",
-        line: "Screens, data and scope — including what is deliberately not in this round.",
-        image: "/images/gray umbrella.jpg",
-    },
-    {
-        title: "Build in the open",
-        line: "A live link early, and it keeps changing. Progress you can click through.",
-        image: "/images/gray lantern.jpg",
-    },
-    {
-        title: "Launch and hand over",
-        line: "Deployed, tested on real devices, and handed over with the code and the accounts.",
-        image: "/images/bonsai.jpg",
-    },
-];
+export const introVideo = {
+    src: "",
+    poster: "",
+};
 
 /* ------------------------------------------------------------------
-   About — the shelf
-   ------------------------------------------------------------------ */
+   Experience — the story in order: school, degree, internship, personal
+   projects, freelance. `label` is the connective, shown on the card.
 
-export const skills = [
-    {
-        category: "Frontend",
-        items: ["React", "Next.js", "TypeScript", "Tailwind CSS", "GSAP", "Base UI"],
-    },
-    {
-        category: "Backend",
-        items: ["Node.js", "Express", "PostgreSQL", "Supabase", "REST APIs", "Resend"],
-    },
-    {
-        category: "Tools",
-        items: ["Git", "GitHub", "VS Code", "Claude Code", "Vercel", "Render"],
-    },
-];
+   `timeline` is when, on the card and when it is opened, and `story` is
+   the paragraph an opened card reads out — the short version of each stop
+   told in full, with what I actually did there taken from the resume
+   (public/Kean Valgere E. Garcia_Resume.pdf). Keep the two telling the same
+   story.
 
-/* ------------------------------------------------------------------
-   Experience — the story in order: school, degree, internship, freelance.
-   `label` is the connective rather than a year, so the sequence reads
-   without claiming dates.
+   `image` is the photo on that card — a path under `public/`. Portrait
+   crops best (the card is 4:5, cropped about the centre). Left empty, the
+   card shows a plain dark placeholder.
    ------------------------------------------------------------------ */
 
 export const experience = [
     {
         label: "Studied",
         title: "IT at USTP",
-        line: "Studied at the University of Science and Technology of Southern Philippines, where I wrote my first real lines of code.",
+        timeline: "2021 – 2026",
+        story: "I studied Information Technology at the University of Science and Technology of Southern Philippines, and it is where I wrote my first real lines of code. Somewhere between the coursework and the projects, building for the web stopped being a subject I had to take and became the thing I wanted to do.",
+        image: "/images/gray branch.jpg",
     },
     {
         label: "Graduated",
         title: "A degree, and a direction",
-        line: "I left with an Information Technology degree and a much clearer idea of what I actually wanted to build.",
+        timeline: "June 2026",
+        story: "I graduated with a Bachelor of Information Technology — and with a much clearer idea of what I actually wanted to build: websites and web apps that work on every screen, make sense to the people using them, and hold up behind the scenes.",
+        image: "/images/gray fuji.jpg",
     },
     {
         label: "Interned",
         title: "MeldCX Philippines",
-        line: "Company tasks and real deadlines — my first look at how software gets built outside of school.",
+        timeline: "Feb 2026 – May 2026",
+        story: "My internship at MeldCX Philippines was my first look at how software gets built outside of school — company tasks, real deadlines, and a team to build with. I migrated a React project from Create React App to Vite, updating its build configuration and workflows, collaborated with the developers through Git and GitHub, and took on tasks across the frontend and the backend, debugging included.",
+        image: "/images/gray lantern 1.jpg",
     },
     {
         label: "Personal",
         title: "Personal projects",
-        line: "Ideas I built end to end, from database through to design, on my own time.",
+        timeline: "May 2026 – present",
+        story: "On my own time I build ideas end to end, from the database through to the design. So far that has meant landing pages and dashboards that work across mobile, tablet and desktop; admin authentication, business workflows and the infrastructure to deploy them; an AI chatbot; and third-party APIs such as Google sign-in.",
+        image: "/images/gray lantern 2.jpg",
     },
     {
         label: "Freelancing",
         title: "Freelance work",
-        line: "Features, fixes and a redesign on another developer's codebase.",
+        timeline: "Aug 2026 – present",
+        story: "Freelance work on another developer's codebase — adding features, fixing what was broken, and carrying out a redesign. It means learning a project I did not start, working within the way it is already built, and shipping changes that fit right in.",
+        image: "/images/gray umbrella.jpg",
     },
 ];
 
@@ -134,43 +113,7 @@ export const heroList = [
 ];
 
 /* ------------------------------------------------------------------
-   Projects
-   ------------------------------------------------------------------ */
-
-export const projects = [
-    {
-        id: 1,
-        title: "K4 Threads",
-        summary: "An online clothing store, built end to end — browsing through to checkout.",
-        liveUrl: "https://k4threads.vercel.app",
-        image: "/images/K4 Threads project.webp",
-        type: "Personal project",
-        status: {
-            label: "Not ready yet",
-            reason:
-                "Checkout is not live. Taking real payments means registering the payment method under a business, and I do not have those business credentials yet — everything up to the payment step works.",
-        },
-    },
-    {
-        id: 2,
-        title: "AskBrain",
-        summary: "Build a chatbot, feed it your own knowledge, share it by link, QR or embed.",
-        liveUrl: "https://askbrain-user.vercel.app",
-        image: "/images/askbrain project.webp",
-        type: "Personal project",
-        status: {
-            label: "Not ready yet",
-            reason:
-                "The free trial works, so you can build a brain and try it end to end. Paying after it runs out does not: the payment method needs business credentials I do not have yet.",
-        },
-    },
-];
-
-export const projectsNote =
-    "Both sites run the AskBrain chatbot in the bottom-right corner.";
-
-/* ------------------------------------------------------------------
-   Derived stats
+   About — the facts under the bio
    ------------------------------------------------------------------ */
 
 const getCodingYears = () => {
@@ -184,8 +127,10 @@ const getCodingYears = () => {
     return years < 1 ? "1" : `${years}+`;
 };
 
-export const facts = [
-    { value: getCodingYears(), label: "Years coding" },
-    { value: "2", label: "Live products" },
-    { value: personal.timezone, label: "Timezone" },
+/* What the line under the about bio cycles through, in this order. */
+export const aboutFacts = [
+    "Philippines",
+    `${personal.timezone} timezone`,
+    `${getCodingYears()} years of coding`,
+    "Web Developer",
 ];

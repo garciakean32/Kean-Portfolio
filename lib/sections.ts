@@ -9,18 +9,13 @@ import { ScrollTrigger } from "@/lib/motion";
 const ACTIVE_LINE = 0.35;
 
 /** How long a jump owns the scroll, in ms — the travel plus a little slack. */
-const JUMP_MS = 1500;
+export const JUMP_MS = 1500;
 
 /**
- * A few pixels past a section's top edge, and the reason is the seams.
- *
- * `RevealUnder`'s window ends exactly where the region it uncovers begins, so
- * landing on that layout position lands on the last frame of the seam — the
- * knife edge where the region is only just finished being displaced. Anything
- * that resolves the scroll a pixel short of it arrives with the section still
- * drifting and its heading pushed off the top of the screen. Overshooting by a
- * hair costs nothing visible and puts the arrival unambiguously past every
- * seam boundary.
+ * A few pixels past a section's top edge. Anything that resolves the scroll
+ * a pixel short of it can leave the previous section counted as current;
+ * overshooting by a hair costs nothing visible and puts the arrival
+ * unambiguously inside the section aimed at.
  */
 const SETTLE = 4;
 
@@ -37,12 +32,11 @@ export const isJumping = () => Date.now() < jumpUntil;
  * An element's position in the document, measured through layout rather than
  * off `getBoundingClientRect`.
  *
- * The page seams move whole regions with `transform` — a section can be up to
- * half a viewport away from where it belongs for the length of a seam, and a
- * rect reads that displacement as the truth. `offsetTop` does not: a transform
- * makes an element a containing block, but it does not make it an
- * `offsetParent` (only positioning does), so walking the chain returns the
- * settled layout position whatever the seam is currently doing with it.
+ * Scroll-linked animation moves things with `transform`, and a rect reads
+ * that displacement as the truth. `offsetTop` does not: a transform makes an
+ * element a containing block, but it does not make it an `offsetParent`
+ * (only positioning does), so walking the chain returns the settled layout
+ * position whatever an animation is currently doing with it.
  */
 function documentTop(el: HTMLElement) {
     let y = 0;
@@ -72,11 +66,8 @@ const prefersReduced = () =>
  * and if it is taller the top of it is what the reader gets; a section that
  * nominates nothing is its own landing block and behaves exactly as before.
  *
- * The result is never allowed above the section's own top edge. Every seam on
- * this page finishes at that line — `RevealUnder` and `SlideOver` both spend
- * their drift by it — so a centring that reached back past it would land the
- * reader mid-transition, with the section still displaced from where it is
- * about to settle.
+ * The result is never allowed above the section's own top edge, so a
+ * centring can never land the reader back in the section before it.
  */
 function landingFor(section: HTMLElement) {
     const floor = documentTop(section) + SETTLE;
@@ -145,12 +136,11 @@ export function scrollToSection(id: string) {
  * crossed the line.
  *
  * The positions themselves are measured once and kept. `documentTop` walks
- * the offsetParent chain and that is a layout read: doing five of them plus a
+ * the offsetParent chain and that is a layout read: doing one per section plus a
  * `scrollHeight` on every scroll event is a forced reflow per frame — Lenis
  * fires one event per frame — for an answer that only changes when the
  * document is re-laid out. So the measuring happens on resize and on every
- * ScrollTrigger refresh, which is exactly when it can have changed (the
- * sideways tracks size their own scroll budget from JS during one), and the
+ * ScrollTrigger refresh, which is exactly when it can have changed, and the
  * scroll itself only compares numbers.
  *
  * The comparing is rAF-throttled on top of that, so a burst of scroll events

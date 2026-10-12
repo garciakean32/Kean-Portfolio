@@ -1,36 +1,93 @@
 "use client";
 
-import { useState } from "react";
-import { MaskLine } from "@/components/motion/Text";
+import { useRef, useState } from "react";
+import { RevealText } from "@/components/motion/Reveal";
+import Sketch from "@/components/shared/Sketch";
+import { ThreadLines, useThread } from "@/components/shared/Thread";
+import { loopArrow, turn } from "@/components/shared/doodles";
+import { LabelInput } from "@/components/ui/label-input";
 import { personal } from "@/lib/data";
-import { fadeUp, gsap, riseMasks, useGsap } from "@/lib/motion";
+import { dropLine, type Pt2 } from "@/lib/hand";
+import { fadeUp, gsap, motionEnabled, useGsap } from "@/lib/motion";
 
 type Status = "idle" | "sending" | "sent" | "error";
+type Field = "name" | "email" | "message";
 
-const fields = [
-    { name: "name", label: "Your name", type: "text" },
-    { name: "email", label: "Email", type: "email" },
-] as const;
+/* The server's own test for an address — see app/api/contact. */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/* A paper plane off the send button: a trail of dashes from under it,
+   throwing one loop on the way, and the plane at the end of it, nose along
+   the way it is going. */
+const PLANE: Pt2[][] = (() => {
+    const [trail] = loopArrow([0, 0], [168, 52]);
+    const DASH = 9;
+    const GAP = 7;
+    const dashes: Pt2[][] = [];
+    let cur: Pt2[] = [trail[0]];
+    let on = true;
+    let left = DASH;
+    for (let i = 1; i < trail.length; i++) {
+        let [ax, ay] = trail[i - 1];
+        const [bx, by] = trail[i];
+        let seg = Math.hypot(bx - ax, by - ay);
+        while (seg > left) {
+            const k = left / seg;
+            const at: Pt2 = [ax + (bx - ax) * k, ay + (by - ay) * k];
+            if (on) dashes.push([...cur, at]);
+            else cur = [at];
+            on = !on;
+            [ax, ay] = at;
+            seg -= left;
+            left = on ? DASH : GAP;
+        }
+        left -= seg;
+        if (on) cur.push([bx, by]);
+    }
+    if (on && cur.length > 1) dashes.push(cur);
+
+    const end = trail[trail.length - 1];
+    const before = trail[trail.length - 4];
+    const deg = (Math.atan2(end[1] - before[1], end[0] - before[0]) * 180) / Math.PI;
+    const plane = (pts: Pt2[]) => pts.map(([x, y]) => turn([end[0] + 6 + x, end[1] + y], end, deg));
+    return [
+        ...dashes,
+        // its outline — wing tip, nose, tail, fold — and the fold to the nose
+        plane([[0, -22], [60, 0], [60, 0], [10, 18], [10, 18], [16, 2], [16, 2], [0, -22]]),
+        plane([[16, 2], [60, 0]]),
+    ];
+})();
+
+/* What each field says, in its own label, when a send finds it wanting. */
+function problems(form: Record<Field, string>): Record<Field, string> {
+    return {
+        name: form.name.trim() ? "" : "Your name is still empty",
+        email: !form.email.trim()
+            ? "Your email is still empty"
+            : EMAIL.test(form.email.trim())
+              ? ""
+              : "That email doesn't look right",
+        message: form.message.trim() ? "" : "Your message is still empty",
+    };
+}
 
 /**
  * The close and the form in one place, since there is only one page and no
  * reason to ask twice.
  *
- * This is `SlideOver`'s incoming region: it climbs over the light region
- * rather than being uncovered by it, so it travels a viewport at ordinary
- * scroll speed and its own position is an honest reference. Everything here is
- * choreographed across that climb — the margins draw inward on the mark first,
- * then the statement, then the form — so nothing resolves before there is
- * anything to see it resolve against.
+ * Everything here is choreographed across the section's arrival — the mark
+ * first, then the statement, then the form — so nothing resolves before
+ * there is anything to see it resolve against. The line saying where a
+ * message goes waits for the statement's last word, so the column reads in
+ * from the top down.
  *
- * There is one column, centred. It used to be two — the form on the right and
- * the address, the location and the local time down the left — and the left
- * one was a directory of things this page had already said: the address is in
- * the about section's contact line, and so are the place and the timezone.
- * What it had that the page did not is the standing offer and the fact that
- * the form goes to a real inbox, and both of those are a line rather than a
- * column. So the form is the section, set on the centre line of the page, and
- * those two lines sit above and below it.
+ * A send with a field left empty, or an address that will not do, does not
+ * go: each such field says what it is missing in its own label — see
+ * `problems` — and the first of them takes the focus.
+ *
+ * Two columns from `lg`: what to say on the left — the heading, the standing
+ * offer, and where the message lands — and the form to say it in on the
+ * right. Below `lg` they stack, the statement centred over the form.
  *
  * The form fades in as one block rather than field by field: "Send another"
  * swaps the form out for a confirmation and back, and a per-field reveal would
@@ -40,30 +97,15 @@ const fields = [
 export default function Contact() {
     const [form, setForm] = useState({ name: "", email: "", message: "" });
     const [status, setStatus] = useState<Status>("idle");
+    /* whether a send has been tried, and so whether fields say what they lack */
+    const [checked, setChecked] = useState(false);
+    const wrong = checked ? problems(form) : null;
+    const where = useRef<HTMLDivElement>(null);
+    const content = useRef<HTMLDivElement>(null);
+
 
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
-
-        gsap.fromTo(
-            q(".js-converge-l"),
-            { xPercent: -60, opacity: 0 },
-            {
-                xPercent: 0,
-                opacity: 1,
-                ease: "none",
-                scrollTrigger: { trigger: el, start: "top 80%", end: "top 25%", scrub: 0.7 },
-            }
-        );
-        gsap.fromTo(
-            q(".js-converge-r"),
-            { xPercent: 60, opacity: 0 },
-            {
-                xPercent: 0,
-                opacity: 1,
-                ease: "none",
-                scrollTrigger: { trigger: el, start: "top 80%", end: "top 25%", scrub: 0.7 },
-            }
-        );
 
         gsap.fromTo(
             q(".js-mark"),
@@ -78,17 +120,40 @@ export default function Contact() {
             }
         );
 
-        riseMasks(q(".js-title .js-mask-inner"), { trigger: el, start: "top 55%", stagger: 0.09 });
         fadeUp(q(".js-soft"), { trigger: el, start: "top 40%", stagger: 0.12 });
     });
 
-    const update = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-        setForm({ ...form, [e.target.name]: e.target.value });
+    // The thread's last stretch: in from the top edge in the middle, where
+    // it left the video section, and down to just short of the content.
+    const thread = useThread(scope, (box, at) => {
+        if (!content.current) return [];
+        const mid = box.width / 2;
+        return [dropLine(mid, -2, mid + 4, at(content.current).top - 24, 0.04)];
+    });
 
-    const submit = async (e: React.FormEvent) => {
+    const set = (key: keyof typeof form) => (value: string) =>
+        setForm((current) => ({ ...current, [key]: value }));
+
+    // Where it goes, in the way the words above it came: rising out of a
+    // blur, once they have all landed.
+    const showWhere = () => {
+        const el = where.current;
+        if (!el || !motionEnabled()) return;
+        gsap.fromTo(
+            el,
+            { opacity: 0, y: 12, filter: "blur(6px)" },
+            { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.72, ease: "power3.out" }
+        );
+    };
+
+    const submit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!form.name || !form.email || !form.message) {
-            setStatus("error");
+        const found = problems(form);
+        const first = (Object.keys(found) as Field[]).find((key) => found[key]);
+        if (first) {
+            setChecked(true);
+            setStatus("idle");
+            (e.currentTarget.elements.namedItem(first) as HTMLElement | null)?.focus();
             return;
         }
 
@@ -101,6 +166,7 @@ export default function Contact() {
             });
             if (!res.ok) throw new Error("Request failed");
             setForm({ name: "", email: "", message: "" });
+            setChecked(false);
             setStatus("sent");
         } catch {
             setStatus("error");
@@ -111,73 +177,84 @@ export default function Contact() {
         <section
             id="contact"
             ref={scope}
-            // The top padding is a pause, and it is measured against the one
-            // the about section closes on — the ground under "That is the
-            // person. Below is the proof." is 43svh, and this is the same
-            // fall of black on the other side of the page. Two dark rooms of
-            // the same depth, one on the way out of the work and one on the
-            // way in to the close.
-            //
-            // It is not what a jump to this section lands on any more: the
-            // form nominates itself for that with `data-land` below, so the
-            // arrival is centred on the thing a reader came here to use and
-            // this ground is left to be scrolled through.
-            className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-paper to-paper-3 pb-24 pt-[43svh] md:pb-32"
+            // A screen of its own, the columns centred in it like every
+            // section above. A jump here does not land on the section's top
+            // edge either way: the content nominates itself with `data-land`
+            // below, so the arrival is centred on the thing a reader came here
+            // to use.
+            className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-paper py-20 md:py-28"
         >
-            {/* What a jump to this section is actually aimed at. The ground
-                above is a pause to scroll through, not a thing to land on —
-                see `landingFor` in lib/sections.ts. */}
-            <div data-land className="shell mx-auto max-w-shell">
-                <div className="flex items-center justify-between gap-6">
-                    <span
-                        aria-hidden="true"
-                        className="js-converge-l h-px flex-1 origin-left bg-rule-strong"
-                    />
-                    <span className="js-mark shrink-0 font-mono text-label uppercase tracking-[0.3em] text-ink-3">
+            {/* What a jump to this section is actually aimed at — see
+                `landingFor` in lib/sections.ts. */}
+            <div
+                ref={content}
+                data-land
+                className="shell mx-auto grid w-full max-w-shell gap-12 lg:grid-cols-12 lg:items-center lg:gap-x-12"
+            >
+                {/* Left — what to say, and where it goes. Seven columns,
+                    because the title is set at the same size as every other
+                    section's and "Tell me what you" needs the room to stay on
+                    one line. */}
+                <div className="text-center lg:col-span-7 lg:text-left">
+                    <span className="js-mark inline-block font-mono text-label uppercase tracking-[0.3em] text-ink-3 lg:origin-left">
                         Contact
                     </span>
-                    <span
-                        aria-hidden="true"
-                        className="js-converge-r h-px flex-1 origin-right bg-rule-strong"
-                    />
-                </div>
 
-                {/* The three margins down this column carry a short-screen step as
-                    well as a width one. A centred form is a taller shape than
-                    the two columns this replaced, and on a 720-tall laptop that
-                    difference is the send button: it is the last thing in the
-                    section and the first thing to go under the fold. */}
-                <h2 className="js-title mt-10 text-center font-display text-d3 font-bold tracking-[-0.035em] text-ink [@media(max-height:800px)]:!mt-6 md:mt-12">
-                    <MaskLine>Have something</MaskLine>
-                    <MaskLine className="font-serif font-normal italic text-ink-2">
-                        you want built?
-                    </MaskLine>
-                </h2>
+                    <h2 className="mt-8 font-display text-d4 font-bold tracking-[-0.035em] text-ink md:mt-12">
+                        <RevealText
+                            text="Tell me what you"
+                            innerClassName="justify-center lg:justify-start"
+                        />
+                        <RevealText
+                            text="have in mind."
+                            delay={0.18}
+                            className="text-ink-3"
+                            innerClassName="justify-center lg:justify-start"
+                        />
+                    </h2>
 
-                {/* The standing offer, on the centre line with the heading
-                    rather than off in a column of its own. */}
-                <div
-                    data-anim="fade"
-                    className="js-soft mt-6 flex flex-col items-center gap-4 text-center [@media(max-height:800px)]:!mt-4 md:mt-8"
-                >
-                    <p className="flex items-center gap-3 font-mono text-label uppercase text-ink-3">
-                        <span aria-hidden="true" className="h-1.5 w-1.5 bg-ink" />
-                        Available for work
+                    <p className="mx-auto mt-6 max-w-measure text-copy text-ink-2 md:mt-8 lg:mx-0">
+                        <RevealText
+                            text="Have a website, a web app, or an idea that needs building? Tell me what it is, who it is for, roughly when you need it, and how much your budget is. Or just say hello. Every message lands straight in my inbox."
+                            delay={0.3}
+                            stagger={0.012}
+                            distance={12}
+                            innerClassName="justify-center lg:justify-start"
+                            onDone={showWhere}
+                        />
                     </p>
+
+                    <div
+                        ref={where}
+                        data-anim="fade"
+                        className="mt-6 flex flex-col items-center gap-4 md:mt-8 lg:items-start"
+                    >
+                        {/* Where it lands. One line, and the address is still
+                            a link for anyone who would rather write it
+                            themselves. */}
+                        <p className="font-mono text-meta text-ink-3">
+                            Sends straight to{" "}
+                            <a
+                                href={`mailto:${personal.email}`}
+                                // `break-words`: the address is a single
+                                // unbroken token and this line is narrow on a
+                                // phone.
+                                className="link-rule tap break-words text-ink-2"
+                            >
+                                {personal.email}
+                            </a>
+                        </p>
+                    </div>
                 </div>
 
-                {/* The form, on the page's own centre line. `max-w-2xl` is
-                    what keeps a centred field from running the full width of
-                    the shell, which is a long way to drag an eye back. */}
+                {/* Right — the form. Stacked under the statement below `lg`,
+                    and kept to a readable width there. */}
                 <div
                     data-anim="fade"
-                    className="js-soft relative mx-auto mt-10 w-full max-w-2xl [@media(max-height:800px)]:!mt-6 md:mt-12"
+                    className="js-soft relative mx-auto w-full max-w-2xl lg:col-span-5 lg:col-start-8 lg:max-w-none"
                 >
                     {status === "sent" ? (
-                        <div
-                            className="confirm-rise border-t border-rule pt-10"
-                            role="status"
-                        >
+                        <div className="confirm-rise" role="status">
                             <span className="confirm-stamp inline-block">
                                 <svg
                                     aria-hidden="true"
@@ -199,7 +276,7 @@ export default function Contact() {
                                 Message sent.
                             </h3>
                             <p className="mt-5 max-w-measure text-body text-ink-2">
-                                It landed in my inbox. I usually reply within a day or two.
+                                It landed in my inbox.
                             </p>
                             <button
                                 type="button"
@@ -210,48 +287,38 @@ export default function Contact() {
                             </button>
                         </div>
                     ) : (
-                        <form onSubmit={submit} noValidate className="grid gap-6">
-                            {fields.map((field) => (
-                                <div key={field.name}>
-                                    <label
-                                        htmlFor={field.name}
-                                        className="block font-mono text-label uppercase text-ink-3"
-                                    >
-                                        {field.label}
-                                    </label>
-                                    <input
-                                        id={field.name}
-                                        name={field.name}
-                                        type={field.type}
-                                        value={form[field.name]}
-                                        onChange={update}
-                                        autoComplete={field.name === "email" ? "email" : "name"}
-                                        required
-                                        className="field mt-2.5 text-lead"
-                                    />
-                                </div>
-                            ))}
+                        <form onSubmit={submit} noValidate className="grid gap-4 md:gap-5">
+                            <LabelInput
+                                label="Your name"
+                                name="name"
+                                value={form.name}
+                                onChange={set("name")}
+                                autoComplete="name"
+                                required
+                                error={wrong?.name}
+                            />
+                            <LabelInput
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={form.email}
+                                onChange={set("email")}
+                                autoComplete="email"
+                                required
+                                error={wrong?.email}
+                            />
+                            <LabelInput
+                                label="What would you like to say?"
+                                name="message"
+                                multiline
+                                height={152}
+                                value={form.message}
+                                onChange={set("message")}
+                                required
+                                error={wrong?.message}
+                            />
 
-                            <div>
-                                <label
-                                    htmlFor="message"
-                                    className="block font-mono text-label uppercase text-ink-3"
-                                >
-                                    What are you trying to build?
-                                </label>
-                                <textarea
-                                    id="message"
-                                    name="message"
-                                    value={form.message}
-                                    onChange={update}
-                                    rows={4}
-                                    required
-                                    placeholder="What it is, who it is for, and roughly when you need it."
-                                    className="field mt-2.5 resize-none text-lead placeholder:text-sm"
-                                />
-                            </div>
-
-                            <div className="flex flex-wrap items-center justify-center gap-6">
+                            <div className="relative mt-2 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
                                 <button
                                     type="submit"
                                     disabled={status === "sending"}
@@ -263,32 +330,29 @@ export default function Contact() {
                                     </span>
                                 </button>
 
+                                {/* Only a send that went out and failed — what
+                                    a field lacks, the field says itself. */}
                                 <p aria-live="polite" className="font-mono text-meta text-ink-3">
-                                    {status === "error" &&
-                                        "Fill in every field, then try again."}
+                                    {status === "error" && "It didn't send. Try again, or email me directly."}
                                 </p>
-                            </div>
 
-                            {/* Where it lands. One line, because it is the
-                                only thing the address column was really
-                                for — and the address is still a link for
-                                anyone who would rather write it himself. */}
-                            <p className="text-center font-mono text-meta text-ink-3">
-                                Sends straight to{" "}
-                                <a
-                                    href={`mailto:${personal.email}`}
-                                    // `break-words`: the address is a
-                                    // single unbroken token and this line
-                                    // is narrow on a phone.
-                                    className="link-rule tap break-words text-ink-2"
-                                >
-                                    {personal.email}
-                                </a>
-                            </p>
+                                {/* Off it goes: the plane, out into the room
+                                    under the form — the section's doodles are
+                                    kept to its lower half. */}
+                                <Sketch
+                                    lines={PLANE}
+                                    weight={1.6}
+                                    duration={2.2}
+                                    wander={0.3}
+                                    className="pointer-events-none absolute left-1/2 top-full mt-2 w-28 md:mt-4 md:w-44 lg:left-28 lg:w-56"
+                                />
+                            </div>
                         </form>
                     )}
                 </div>
             </div>
+
+            <ThreadLines thread={thread} />
         </section>
     );
 }

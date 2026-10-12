@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Rule + label. The one structural device repeated across sections.
+ * The small label that opens a section. The one structural device repeated
+ * across sections.
  *
  * There is no index any more. Numbering the sections only ever told the reader
  * something the order had already told them.
@@ -20,9 +21,8 @@ export default function SectionMark({
     className?: string;
 }) {
     return (
-        <Tag className={cn("flex items-center gap-4", className)}>
-            <span aria-hidden="true" className="h-px w-10 bg-rule-strong" />
-            <span className="font-mono text-label uppercase text-ink-3">{label}</span>
+        <Tag className={cn("font-mono text-label uppercase text-ink-3", className)}>
+            {label}
         </Tag>
     );
 }

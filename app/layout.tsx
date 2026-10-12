@@ -1,27 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/shared/Providers";
 import SmoothScroll from "@/components/shared/SmoothScroll";
 import ScrollDock from "@/components/shared/ScrollDock";
 import ReloadNotice from "@/components/shared/ReloadNotice";
 import Footer from "@/components/shared/Footer";
+import DoodleArea from "@/components/shared/DoodleArea";
 import { personal } from "@/lib/data";
 
 const inter = Inter({
     subsets: ["latin"],
     weight: ["400", "500", "600", "700", "800"],
     variable: "--font-sans",
-    display: "swap",
-});
-
-const sourceSerif = Source_Serif_4({
-    subsets: ["latin"],
-    // 400 only, upright and italic: nothing on the site sets the serif at any
-    // other weight, and every weight listed here is a font file that ships.
-    weight: ["400"],
-    style: ["normal", "italic"],
-    variable: "--font-serif",
     display: "swap",
 });
 
@@ -36,16 +27,23 @@ const jetbrainsMono = JetBrains_Mono({
    markup is never left hidden when JS is unavailable or motion is unwanted.
 
    It also decides, once per real page load, whether the hero gets its
-   cinematic open — see lib/intro.ts. A fresh landing at the top of the page
-   earns it; arriving at an anchor deeper down does not, and neither does
-   asking for reduced motion. The attribute has to be here rather than in a
-   component so the scroll dock is already faded out on the first frame. */
-const MOTION_GATE = `(function(){var d=document.documentElement;try{var m=window.matchMedia('(prefers-reduced-motion: reduce)');var s=function(){d.dataset.motion=m.matches?'off':'on'};s();m.addEventListener?m.addEventListener('change',s):m.addListener(s)}catch(e){d.dataset.motion='off'}d.dataset.intro=d.dataset.motion==='on'&&!location.hash?'pending':'off';})();`;
+   cinematic open — see lib/intro.ts. A fresh landing earns it, and so does
+   every refresh: a reload always starts again from the hero, locked until
+   it has introduced itself. Arriving on a shared link to a section deeper
+   down does not, and neither does asking for reduced motion.
+
+   A refresh drops any `#section` from the address first. Nothing on the site
+   writes one — the section links scroll without touching the URL — so one
+   is only there from a copied link or a modifier-click, and left in place
+   it would quietly skip the open on every reload after. The attribute has
+   to be here rather than in a component so the section menu is already
+   faded out on the first frame. */
+const MOTION_GATE = `(function(){var d=document.documentElement;try{var m=window.matchMedia('(prefers-reduced-motion: reduce)');var s=function(){d.dataset.motion=m.matches?'off':'on'};s();m.addEventListener?m.addEventListener('change',s):m.addListener(s)}catch(e){d.dataset.motion='off'}try{var n=performance.getEntriesByType('navigation')[0];if(n&&n.type==='reload'&&location.hash)history.replaceState(history.state,'',location.pathname+location.search)}catch(e){}d.dataset.intro=d.dataset.motion==='on'&&!location.hash?'pending':'off';})();`;
 
 const TITLE = "Kean Garcia | Portfolio";
 
 const DESCRIPTION =
-    "Full-stack web developer building modern, responsive websites and web applications for businesses and clients. Based in Philippines.";
+    "Kean Valgere E. Garcia — full-stack web developer from Cagayan de Oro, Philippines. Who I am, how I got here, and how to reach me.";
 
 export const metadata: Metadata = {
     metadataBase: new URL(personal.siteUrl),
@@ -63,8 +61,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: TITLE,
-        description:
-            "Websites and web applications, built end to end. Based in Philippines.",
+        description: DESCRIPTION,
         url: "/",
         siteName: personal.name,
         type: "website",
@@ -73,8 +70,7 @@ export const metadata: Metadata = {
     twitter: {
         card: "summary",
         title: TITLE,
-        description:
-            "Websites and web applications, built end to end. Based in Philippines.",
+        description: DESCRIPTION,
     },
 };
 
@@ -107,7 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html
             lang="en"
             suppressHydrationWarning
-            className={`dark ${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable}`}
+            className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
         >
             <head>
                 <script dangerouslySetInnerHTML={{ __html: MOTION_GATE }} />
@@ -127,8 +123,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </a>
                     <ScrollDock />
                     <ReloadNotice />
-                    <main id="main">{children}</main>
-                    <Footer />
+                    {/* The whole page, hero to footer, is one sheet the
+                        reader can doodle on — see DoodleArea. */}
+                    <DoodleArea>
+                        <main id="main">{children}</main>
+                        <Footer />
+                    </DoodleArea>
                     <div className="grain" aria-hidden="true" />
                     <div
                         className="intro-curtain js-intro-curtain"
