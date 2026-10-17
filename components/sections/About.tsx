@@ -3,13 +3,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import SectionMark from "@/components/shared/SectionMark";
 import { RevealText } from "@/components/motion/Reveal";
-import { Portrait, driftPortraits } from "@/components/shared/Portrait";
+import { Portrait, driftPortraits, masthead } from "@/components/shared/Portrait";
 import { ThreadLines, type Thread } from "@/components/shared/Thread";
 import { TextMorph } from "@/components/ui/text-morph";
 import ExperienceDialog from "@/components/sections/ExperienceDialog";
 import { aboutFacts, personal } from "@/lib/data";
 import { bowLine, dropLine, handLine, sineInOut, type Pt2 } from "@/lib/hand";
 import { fadeUp, gsap, motionEnabled, useGsap } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 /** The poster voice: uppercase display, set tight and heavy. */
 const POSTER =
@@ -61,28 +62,31 @@ export default function About() {
     return (
         <section id="about" ref={scope} className="relative overflow-hidden bg-paper">
             <div className={SCREEN}>
-                <div className="js-head shell mx-auto w-full max-w-shell">
+                <div className={cn("js-head shell mx-auto w-full max-w-shell", masthead.column)}>
                     <SectionMark as="h2" label="About" className="js-mark" />
 
-                    <div
-                        ref={head}
-                        className="mt-8 grid gap-10 md:mt-16 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-x-12"
-                    >
-                        <div className="lg:col-span-7">
+                    <div ref={head} className={masthead.grid}>
+                        <div className={cn(masthead.text, "lg:col-span-7")}>
                             {/* One line at a time, each a beat after the
                                 last, so the name reads down the page. */}
-                            <h3 className={POSTER}>
-                                <RevealText text="Hello, I'm" />
-                                <RevealText text="Kean Valgere" delay={0.18} />
-                                <RevealText text="Garcia" delay={0.36} className="text-ink-3" />
+                            <h3 className={cn(POSTER, masthead.title)}>
+                                <RevealText text="Hello, I'm" innerClassName={masthead.centred} />
+                                <RevealText text="Kean Valgere" delay={0.18} innerClassName={masthead.centred} />
+                                <RevealText
+                                    text="Garcia"
+                                    delay={0.36}
+                                    className="text-ink-3"
+                                    innerClassName={masthead.centred}
+                                />
                             </h3>
 
-                            <p className="mt-6 max-w-measure text-copy text-ink-2 md:mt-10">
+                            <p className={cn(masthead.copy, "lg:mt-10")}>
                                 <RevealText
                                     text={personal.bio}
                                     delay={0.4}
                                     stagger={0.012}
                                     distance={12}
+                                    innerClassName={masthead.centred}
                                 />
                             </p>
                         </div>
@@ -103,13 +107,19 @@ export default function About() {
                 for screen readers, since the morph itself is decoration.
 
                 The same size as the section titles, so the screen reads as
-                one of them. "1+ years of coding" is the longest, 8.3x its
+                one of them — except on a phone, a step under, so the ring
+                round them can keep the desktop's wide shape inside the
+                screen's width. "1+ years of coding" is the longest, 8.3x its
                 own size wide, and fits the column at every width. The type
                 is set on the line rather than on the morph so
                 `min-h` can reserve it before the morph has measured itself —
-                otherwise the screen jumps on hydration. */}
-            <div className="js-facts shell relative mx-auto flex min-h-[100svh] w-full max-w-shell items-center justify-center">
-                <p ref={facts} className="js-facts-in relative z-10 min-h-[1.1em] text-center font-display text-d4 font-bold leading-[1.02] tracking-[-0.035em] text-ink">
+                otherwise the screen jumps on hydration.
+
+                Most of a screen below `lg` rather than all of one: the ring
+                is wider than it is tall there too, and a whole upright
+                screen round it was mostly empty. */}
+            <div className="js-facts shell relative mx-auto flex min-h-[70svh] w-full max-w-shell items-center justify-center lg:min-h-[100svh]">
+                <p ref={facts} className="js-facts-in relative z-10 min-h-[1.1em] text-center font-display text-[clamp(1.5rem,7.4vw,1.75rem)] font-bold leading-[1.02] tracking-[-0.035em] text-ink sm:text-d4">
                     <TextMorph words={aboutFacts} interval={1100} morphDuration={560} />
                     <span className="sr-only">{aboutFacts.join(", ")}</span>
                 </p>
@@ -140,8 +150,9 @@ export default function About() {
  * rather than a band. Never smaller than it needs to be to stay clear of the
  * words, either — it is sized against the widest of the facts, measured in
  * the line's own font, not whichever one is showing, so the line never
- * crosses them as they change. On a phone it is held inside the width of the
- * screen and runs tall instead.
+ * crosses them as they change. On a phone or an upright tablet it is held
+ * inside the width of the screen and keeps the same shape, shorter, rather
+ * than running tall.
  *
  * And it is drawn the way a hand draws one. The two passes are not one
  * ellipse traced twice: each is its own, centred a little differently, a
@@ -187,14 +198,16 @@ function useFactsLoop(
 
             // 36% of the screen's height up and down from the centre, and
             // 1.35x that across — held inside the screen, with room for the
-            // passes to wander — and never so small that the words' box
-            // reaches past 62% of the way to the line, which leaves room for
-            // the passes to wander inwards too.
+            // passes to wander, and kept that shape when it is: shorter,
+            // not taller — and never so small that the words' box reaches
+            // past 62% of the way to the line, which leaves room for the
+            // passes to wander inwards too.
             const halfW = widest / 2;
             const halfH = size * 0.55;
             const room = Math.min(cx, o.width - cx) - 8;
             let ry = Math.max(h.height * 0.36, halfH * 2.6);
             const rx = Math.min(Math.max(ry * 1.35, halfW / 0.8), room / 1.09);
+            ry = Math.min(ry, rx / 1.35);
             ry = Math.max(ry, halfH / Math.sqrt(Math.max(0.62 - (halfW / rx) ** 2, 0.04)));
 
             // A point on the ring, `t` of the way through both passes. Each
@@ -330,30 +343,33 @@ export function Experience() {
     return (
         <section id="experience" ref={scope} className="relative overflow-hidden bg-paper">
             <div className={SCREEN}>
-                <div className="js-story shell mx-auto w-full max-w-shell">
+                <div className={cn("js-story shell mx-auto w-full max-w-shell", masthead.column)}>
                     <SectionMark as="h2" label="Experience" className="js-story-mark" />
 
-                    <div
-                        ref={head}
-                        className="mt-8 grid gap-10 md:mt-16 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-x-12"
-                    >
+                    <div ref={head} className={masthead.grid}>
                         <Portrait
                             src="/images/kean grad.jpg"
                             alt={`${personal.name} at his college graduation`}
                             className="lg:col-span-4"
                         />
 
-                        <div className="lg:col-span-7 lg:col-start-6">
-                            <h3 className={POSTER}>
-                                <RevealText text="My" />
-                                <RevealText text="Experience" delay={0.18} className="text-ink-3" />
+                        <div className={cn(masthead.text, "lg:col-span-7 lg:col-start-6")}>
+                            <h3 className={cn(POSTER, masthead.title)}>
+                                <RevealText text="My" innerClassName={masthead.centred} />
+                                <RevealText
+                                    text="Experience"
+                                    delay={0.18}
+                                    className="text-ink-3"
+                                    innerClassName={masthead.centred}
+                                />
                             </h3>
-                            <p className="mt-6 max-w-measure text-copy text-ink-2 md:mt-8">
+                            <p className={cn(masthead.copy, "lg:mt-8")}>
                                 <RevealText
                                     text="Every step that brought me here, from university to the work I do now: a degree in Information Technology, an internship at MeldCX Philippines, the personal projects I build on my own time, and the freelance work I take on today. Open them all with the button below."
                                     delay={0.3}
                                     stagger={0.012}
                                     distance={12}
+                                    innerClassName={masthead.centred}
                                 />
                             </p>
                         </div>
@@ -362,8 +378,9 @@ export function Experience() {
             </div>
 
             {/* The button, on a screen of its own — and, while a mouse is on
-                it, five arrows at it from round the screen; see `CallArrows`. */}
-            <div ref={cta} className="js-story-cta relative flex min-h-[100svh] items-center justify-center">
+                it, five arrows at it from round the screen; see `CallArrows`.
+                Most of a screen below `lg`, where it is the button alone. */}
+            <div ref={cta} className="js-story-cta relative flex min-h-[65svh] items-center justify-center lg:min-h-[100svh]">
                 {calls && (
                     <CallArrows
                         art={calls}

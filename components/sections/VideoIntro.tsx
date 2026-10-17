@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Portrait, driftPortraits } from "@/components/shared/Portrait";
+import { Portrait, driftPortraits, masthead } from "@/components/shared/Portrait";
 import SectionMark from "@/components/shared/SectionMark";
 import Sketch from "@/components/shared/Sketch";
 import { ThreadLines, useThread } from "@/components/shared/Thread";
@@ -54,25 +54,32 @@ export default function VideoIntro() {
     return (
         <section id="video" ref={scope} className="relative overflow-hidden bg-paper">
             <div className="flex min-h-[100svh] flex-col justify-center py-20 md:py-28">
-                <div ref={head} className="shell mx-auto w-full max-w-shell">
+                <div ref={head} className={cn("shell mx-auto w-full max-w-shell", masthead.column)}>
                     <SectionMark as="h2" label="Video introduction" className="js-mark" />
 
                     {/* The about section's masthead, said again: the words
                         on the left, the photograph in its frame on the right
-                        — stacked on a phone, the words first. */}
-                    <div className="mt-8 grid gap-10 md:mt-16 md:gap-12 lg:grid-cols-12 lg:items-center lg:gap-x-12">
-                        <div className="lg:col-span-7">
-                            <p className="font-display text-d4 font-bold tracking-[-0.035em] text-ink">
-                                <RevealText text="In my own" />
-                                <RevealText text="words." delay={0.18} className="text-ink-3" />
+                        — stacked below `lg` as every masthead is, the title,
+                        the photograph, then the words. */}
+                    <div className={masthead.grid}>
+                        <div className={cn(masthead.text, "lg:col-span-7")}>
+                            <p className={cn("font-display text-d4 font-bold tracking-[-0.035em] text-ink", masthead.title)}>
+                                <RevealText text="In my own" innerClassName={masthead.centred} />
+                                <RevealText
+                                    text="words."
+                                    delay={0.18}
+                                    className="text-ink-3"
+                                    innerClassName={masthead.centred}
+                                />
                             </p>
 
-                            <p className="mt-6 max-w-measure text-copy text-ink-2 md:mt-8">
+                            <p className={cn(masthead.copy, "lg:mt-8")}>
                                 <RevealText
                                     text="A short hello, in my own words — who I am, what I enjoy building, and what I am like to work with. It is the quickest way to get a feel for the person behind this page, and the next best thing to sitting down for a conversation."
                                     delay={0.3}
                                     stagger={0.012}
                                     distance={12}
+                                    innerClassName={masthead.centred}
                                 />
                             </p>
                         </div>
@@ -86,8 +93,9 @@ export default function VideoIntro() {
                 </div>
             </div>
 
-            {/* The frame, on a screen of its own. */}
-            <div className="flex min-h-[100svh] items-center py-20 md:py-28">
+            {/* The frame, on a screen of its own — most of one below `lg`,
+                where the frame is no taller than its width allows. */}
+            <div className="flex min-h-[70svh] items-center py-20 md:py-28 lg:min-h-[100svh]">
                 <div className="shell mx-auto w-full max-w-shell">
                     {/* Centred on the page rather than the column, which
                         leaves room on the right for the dock: the thread runs
@@ -147,8 +155,9 @@ const SCRIBBLE: Pt2[][] = [fit(squiggle(), 50, 5, 100, 10)];
  * page round it and staying put while it swings: recording, over its top
  * left corner; the clock at zero, over its top right; and the clapperboard
  * by its foot on the left. On a phone, with no room beside the frame, the
- * clock and the clapperboard go under it instead. Each draws itself in as
- * it comes into view.
+ * clock and the clapperboard go under it instead — and on a tablet, where
+ * the frame is the column's full width, the clapperboard does. Each draws
+ * itself in as it comes into view.
  */
 function FilmSet() {
     return (
@@ -185,7 +194,7 @@ function FilmSet() {
                 weight={2.6}
                 duration={1.4}
                 wander={0.5}
-                className="absolute left-1 top-full mt-4 w-10 md:bottom-0 md:left-auto md:right-full md:top-auto md:mr-6 md:mt-0 md:w-16"
+                className="absolute left-1 top-full mt-4 w-10 md:mt-5 md:w-14 lg:bottom-0 lg:left-auto lg:right-full lg:top-auto lg:mr-6 lg:mt-0 lg:w-16"
             />
         </RevealBlock>
     );
