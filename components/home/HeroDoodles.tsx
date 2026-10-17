@@ -2,12 +2,10 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import {
-    BOLT,
     CROWN,
     CROWN_BAND,
     HEART,
     SPARKLE,
-    STAR,
     fit,
     loopArrow,
     paintStrokes,
@@ -165,7 +163,6 @@ function measure(frame: HTMLElement): Layout | null {
     const avail = frame.querySelector('[data-glitch="offer"]');
     const mark = frame.querySelector('[data-glitch="mark"]');
     const list = frame.querySelector('[data-glitch="jp"]');
-    const role = frame.querySelector(".js-role");
 
     return {
         w: frame.offsetWidth,
@@ -181,7 +178,6 @@ function measure(frame: HTMLElement): Layout | null {
             avail: avail ? local(avail) : undefined,
             mark: mark ? local(mark) : undefined,
             list: list ? local(list) : undefined,
-            role: role ? local(role) : undefined,
         },
     };
 }
@@ -273,6 +269,9 @@ function layout(L: Layout): Art {
        be too, so each has a floor it is not drawn under — and there are a
        few more of them, in the room a phone has above the name. */
     const phone = W < 640;
+    /* Below `lg` — a phone or a tablet — the poster is narrower and the
+       doodles round it are kept fewer, so no corner of it gets crowded. */
+    const compact = W < 1024;
     const floor = (v: number, min: number) => Math.max(v, phone ? min : 0);
 
     // When they start, and how long each takes: all at once, the small
@@ -325,6 +324,7 @@ function layout(L: Layout): Art {
     // frame has the height; otherwise down onto it from above, from either
     // side and from higher or lower, or in at it from its left.
     const avail = L.named.avail;
+    let pointed = false;
     if (avail && avail.right > avail.left) {
         const aw = avail.right - avail.left;
         const acx = (avail.left + avail.right) / 2;
@@ -343,7 +343,7 @@ function layout(L: Layout): Art {
                 arrow([acx + aw * x, onTop[1] - H * k], onTop, true),
             ])
         );
-        place("arrow", 0, 1.3, [
+        pointed = !!place("arrow", 0, 1.3, [
             onTop[1] - (L.base + gap) > 90 ? arrow([ncx - nw * 0.05, L.base + gap + m * 0.06], onTop) : null,
             ...fromAbove,
             arrow([avail.left - aw * 1.1, acy - aw * 0.45], onLeft),
@@ -358,15 +358,23 @@ function layout(L: Layout): Art {
         smooth: 0.2,
     });
     const haloRide = doodles.find((d) => d.key === "halo")?.ride ?? "name";
-    place("sparkle-a", 0, 0.7, [
+    // Off the halo's far side first — or, on a phone, where it is the only
+    // sparkle, its near side, between the halo and the crown.
+    const beside = [
         halo ? sparkle(halo.left - s * 1.3, halo.top - s * 0.2, haloRide, -8) : null,
         halo ? sparkle(halo.right + s * 1.3, halo.top - s * 0.3, haloRide, 6) : null,
+    ];
+    place("sparkle-a", 0, 0.7, [
+        ...(phone ? beside.reverse() : beside),
         L.named.mark ? sparkle(L.named.mark.right + s * 1.6, L.named.mark.bottom + s * 2, "page") : null,
     ]);
-    place("sparkle-b", 0, 0.7, [
-        crown ? sparkle(crown.left - s * 1.3, crown.top + s * 0.3, "name", 10) : null,
-        crown ? sparkle(crown.right + s * 1.3, crown.top, "name", -6) : null,
-    ]);
+    // A phone keeps one sparkle, between the halo and the crown.
+    if (!phone) {
+        place("sparkle-b", 0, 0.7, [
+            crown ? sparkle(crown.left - s * 1.3, crown.top + s * 0.3, "name", 10) : null,
+            crown ? sparkle(crown.right + s * 1.3, crown.top, "name", -6) : null,
+        ]);
+    }
 
     // Three lines of shine off a corner of the name.
     const shine = (ox: number, oy: number, dir: 1 | -1): Candidate => {
@@ -385,10 +393,12 @@ function layout(L: Layout): Art {
             smooth: 0.15,
         };
     };
-    place("shine", 0, 0.7, [
-        shine(L.n.right + gap, L.capTop + m * 0.02, 1),
-        shine(L.k.left - gap, L.capTop + m * 0.02, -1),
-    ]);
+    if (!phone) {
+        place("shine", 0, 0.7, [
+            shine(L.n.right + gap, L.capTop + m * 0.02, 1),
+            shine(L.k.left - gap, L.capTop + m * 0.02, -1),
+        ]);
+    }
 
     const squigH = Math.min(22, floor(Math.max(8, m * 0.07), 11));
     const squiggly = (box: Box, bw: number): Candidate => {
@@ -400,15 +410,20 @@ function layout(L: Layout): Art {
     };
     const squig = place("squiggle", 0, 1, [squiggly(L.k, kw), squiggly(L.n, nw)]);
 
-    const sp = Math.min(60, floor(Math.max(26, m * 0.2), 38));
-    place("spiral", 0, 1, [
-        squig ? { strokes: [fit(spiral(), squig.left + sp * 0.7, squig.bottom + gap + sp / 2, sp, sp)], ride: "name" } : null,
-        { strokes: [fit(spiral(), L.k.left - gap - sp / 2, (L.capTop + L.base) / 2, sp, sp)], ride: "name" },
-        { strokes: [fit(spiral(), L.n.right + gap + sp / 2, (L.capTop + L.base) / 2, sp, sp)], ride: "name" },
-    ]);
+    // Not on a phone or a tablet, where it stacked up under the K with the
+    // squiggle and the halo already there.
+    if (!compact) {
+        const sp = Math.min(60, floor(Math.max(26, m * 0.2), 38));
+        place("spiral", 0, 1, [
+            squig ? { strokes: [fit(spiral(), squig.left + sp * 0.7, squig.bottom + gap + sp / 2, sp, sp)], ride: "name" } : null,
+            { strokes: [fit(spiral(), L.k.left - gap - sp / 2, (L.capTop + L.base) / 2, sp, sp)], ride: "name" },
+            { strokes: [fit(spiral(), L.n.right + gap + sp / 2, (L.capTop + L.base) / 2, sp, sp)], ride: "name" },
+        ]);
+    }
 
-    // Beside the list of what I make, or over it — and on a phone, where
-    // the list is not shown, beside the figure's head.
+    // Beside the list of what I make, or over it, or else beside the
+    // figure's head. A phone does not show the list, and leaves the heart
+    // off with it.
     const list = L.named.list;
     const hs = s * 1.2;
     const heart = (cx: number, cy: number, ride: Ride): Candidate => ({
@@ -419,48 +434,23 @@ function layout(L: Layout): Art {
     const img = L.img;
     const iw = img ? img.right - img.left : 0;
     const ih = img ? img.bottom - img.top : 0;
-    place("heart", 0, 0.7, [
-        list && list.right > list.left ? heart(list.right + s * 1.6, list.top + (list.bottom - list.top) * 0.4, "page") : null,
-        list && list.right > list.left ? heart(list.left + s * 0.8, list.top - s * 1.3, "page") : null,
-        img ? heart(img.left + iw * 0.2, img.top + ih * 0.3, "head") : null,
-        img ? heart(img.left + iw * 0.14, img.top + ih * 0.22, "head") : null,
-    ]);
+    if (!phone) {
+        place("heart", 0, 0.7, [
+            list && list.right > list.left ? heart(list.right + s * 1.6, list.top + (list.bottom - list.top) * 0.4, "page") : null,
+            list && list.right > list.left ? heart(list.left + s * 0.8, list.top - s * 1.3, "page") : null,
+            img ? heart(img.left + iw * 0.2, img.top + ih * 0.3, "head") : null,
+            img ? heart(img.left + iw * 0.14, img.top + ih * 0.22, "head") : null,
+        ]);
+    }
 
-    // A phone's extra few, in the band between the top line of type and the
-    // name: a line under what I do, a star and a bolt — each wherever it
-    // first fits.
+    // A phone's own few, down both sides of the figure, in what room its
+    // outline leaves there: one squiggle on each side, staggered — the left
+    // high, the right low — and, where the arrow above found no way to the
+    // offer, a short one at it from the left. Each is tried at its own height
+    // first and then a little above and below it, centred in the strip
+    // between the figure and the edge, and goes where the figure goes as the
+    // hero scrolls away.
     if (phone) {
-        const role = L.named.role;
-        if (role) {
-            const rw = role.right - role.left;
-            place("underline", 0, 1, [
-                {
-                    strokes: [fit(squiggle(), (role.left + role.right) / 2, role.bottom + gap + 4, rw * 0.72, 8, 1)],
-                    ride: "page",
-                },
-            ]);
-        }
-        const bandTop = role ? role.bottom : 40;
-        const band = (k: number) => bandTop + (L.capTop - bandTop) * k;
-        const spots: Pt2[] = [
-            [W * 0.5, band(0.45)],
-            [W * 0.34, band(0.4)],
-            [W * 0.66, band(0.4)],
-            [W * 0.42, band(0.62)],
-            [W * 0.58, band(0.62)],
-            [W * 0.24, band(0.58)],
-            [W * 0.76, band(0.58)],
-            [W * 0.5, band(0.28)],
-        ];
-        const at = (make: (x: number, y: number) => Candidate) => spots.map(([x, y]) => make(x, y));
-        place("star", 0, 0.7, at((x, y) => ({ strokes: [fit(STAR, x, y, 32, 32, -8)], ride: "page", smooth: 0.25 })));
-        place("bolt", 0, 1, at((x, y) => ({ strokes: [fit(BOLT, x, y, 24, 38, 10)], ride: "page", smooth: 0.2 })));
-
-        // And down both sides of the figure, in what room its outline
-        // leaves there: a squiggle and an arrow at it on each side, the two
-        // sides staggered, each tried at its own height first and then a little
-        // above and below it, centred in the strip between the figure and the
-        // edge. They go where the figure goes as the hero scrolls away.
         const top = L.base + gap;
         const bottom = H - 16;
         const down = (dir: -1 | 1, k: number, h: number, make: (x: number, y: number) => Candidate) =>
@@ -474,27 +464,31 @@ function layout(L: Layout): Art {
             strokes: [fit(squiggle(), x, y, 64, 11, 90)],
             ride: "head",
         });
-        // A short arrow at the figure, from whichever side it is on.
-        const nudge = (toward: 1 | -1) => (x: number, y: number): Candidate => {
-            const end: Pt2 = [x + 13 * toward, y + 6];
-            const barb = (deg: number): Pt2 => turn([end[0] - 9 * toward, end[1] - 1], end, deg);
-            return {
-                strokes: [
-                    [
-                        [x - 13 * toward, y - 13],
-                        [x - 1 * toward, y + 2],
-                        end,
-                    ],
-                    [barb(-38), end, end, barb(34)],
-                ],
-                ride: "head",
-                smooth: 0.2,
-            };
-        };
         place("left-line", 0, 1, down(-1, 0.25, 64, tall));
-        place("left-nudge", 0, 1, down(-1, 0.62, 26, nudge(1)));
-        place("right-nudge", 0, 1, down(1, 0.3, 26, nudge(-1)));
         place("right-line", 0, 1, down(1, 0.62, 64, tall));
+
+        // A short arrow in at the offer from the left — at its own height,
+        // or only a little off it, so it reads as pointing at it.
+        if (!pointed && avail && avail.right > avail.left) {
+            const nudge = (x: number, y: number): Candidate => {
+                const end: Pt2 = [x + 13, y + 6];
+                const barb = (deg: number): Pt2 => turn([end[0] - 9, end[1] - 1], end, deg);
+                return {
+                    strokes: [
+                        [
+                            [x - 13, y - 13],
+                            [x - 1, y + 2],
+                            end,
+                        ],
+                        [barb(-38), end, end, barb(34)],
+                    ],
+                    ride: "page",
+                    smooth: 0.2,
+                };
+            };
+            const k = ((avail.top + avail.bottom) / 2 - top) / (bottom - top);
+            place("nudge", 0, 1, down(-1, k, 26, nudge).slice(0, 3));
+        }
     }
 
     return { w: W, h: H, ink, doodles };

@@ -112,37 +112,6 @@ export function spiral(): Pt2[] {
     return pts;
 }
 
-/* A five-pointed star, its points sharp, in one stroke. */
-export const STAR: Pt2[] = (() => {
-    const pts: Pt2[] = [];
-    for (let i = 0; i <= 10; i++) {
-        const a = -Math.PI / 2 + (i * Math.PI) / 5;
-        const r = i % 2 ? 0.2 : 0.5;
-        const p: Pt2 = [0.5 + r * Math.cos(a), 0.52 + r * Math.sin(a)];
-        pts.push(p, p);
-    }
-    return pts.slice(0, -1);
-})();
-
-/* A bolt of lightning, its outline in one stroke. */
-export const BOLT: Pt2[] = [
-    [0.62, 0],
-    [0.62, 0],
-    [0.12, 0.56],
-    [0.12, 0.56],
-    [0.47, 0.56],
-    [0.47, 0.56],
-    [0.3, 1],
-    [0.3, 1],
-    [0.9, 0.4],
-    [0.9, 0.4],
-    [0.55, 0.4],
-    [0.55, 0.4],
-    [0.78, 0],
-    [0.78, 0],
-    [0.62, 0],
-];
-
 /* A heart, in one stroke from its point round both lobes and back. */
 export const HEART: Pt2[] = [
     [0.5, 1],
