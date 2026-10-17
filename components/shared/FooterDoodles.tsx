@@ -52,8 +52,11 @@ function layout(box: HTMLElement, word: HTMLElement): Art | null {
     const fw = first.right - first.left;
     const lw = last.right - last.left;
     // On a phone the word is small, and doodles sized off it would be too:
-    // each has a floor there it is not drawn under.
-    const floor = (v: number, min: number) => Math.max(v, W < 640 ? min : 0);
+    // each has a floor there it is not drawn under — and there are fewer of
+    // them, the halo, the crown and the squiggle, so the strip over the word
+    // is not crowded.
+    const phone = W < 640;
+    const floor = (v: number, min: number) => Math.max(v, phone ? min : 0);
     const s = Math.min(30, floor(Math.max(14, m * 0.12), 18));
 
     // Each doodle's strokes, with when it starts and how long it takes: all
@@ -73,7 +76,7 @@ function layout(box: HTMLElement, word: HTMLElement): Art | null {
     const hcx = (first.left + first.right) / 2;
     const hcy = capTop - gap - hw * 0.15;
     add("halo", [fit(ring(1.15, 3.6), hcx, hcy, hw, hw * 0.3, -9)], 0.15, 1.45);
-    add("sparkle-a", [fit(SPARKLE, hcx - hw * 0.5 - s * 1.1, hcy - s * 0.4, s, s * 1.15, -8)], 0, 0.7, 0.2);
+    if (!phone) add("sparkle-a", [fit(SPARKLE, hcx - hw * 0.5 - s * 1.1, hcy - s * 0.4, s, s * 1.15, -8)], 0, 0.7, 0.2);
 
     // A crown on the last, a sparkle off its far side, and shine off its
     // top corner.
@@ -91,23 +94,25 @@ function layout(box: HTMLElement, word: HTMLElement): Art | null {
         1.6,
         0.35
     );
-    add("sparkle-b", [fit(SPARKLE, ccx + cw * 0.5 + s * 1.2, ccy - ch * 0.3, s, s * 1.15, 6)], 0, 0.7, 0.2);
-    const len = Math.min(36, floor(Math.max(12, m * 0.14), 18));
-    const ox = last.right + gap * 0.6;
-    const oy = capTop + m * 0.04;
-    add(
-        "shine",
-        [-58, -22, 14].map((deg) => {
-            const a = (deg * Math.PI) / 180;
-            return [
-                [ox + Math.cos(a) * len * 0.2, oy + Math.sin(a) * len * 0.2],
-                [ox + Math.cos(a) * len, oy + Math.sin(a) * len],
-            ] as Pt2[];
-        }),
-        0,
-        0.7,
-        0.15
-    );
+    if (!phone) {
+        add("sparkle-b", [fit(SPARKLE, ccx + cw * 0.5 + s * 1.2, ccy - ch * 0.3, s, s * 1.15, 6)], 0, 0.7, 0.2);
+        const len = Math.min(36, floor(Math.max(12, m * 0.14), 18));
+        const ox = last.right + gap * 0.6;
+        const oy = capTop + m * 0.04;
+        add(
+            "shine",
+            [-58, -22, 14].map((deg) => {
+                const a = (deg * Math.PI) / 180;
+                return [
+                    [ox + Math.cos(a) * len * 0.2, oy + Math.sin(a) * len * 0.2],
+                    [ox + Math.cos(a) * len, oy + Math.sin(a) * len],
+                ] as Pt2[];
+            }),
+            0,
+            0.7,
+            0.15
+        );
+    }
 
     // A squiggle over the word, a little left of its middle.
     const sw = floor(Math.max(m * 0.9, 60), 78);

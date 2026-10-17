@@ -9,8 +9,9 @@ export default function Footer() {
         <footer className="border-t border-rule bg-paper-2">
             <div className="shell mx-auto w-full max-w-shell pb-10 pt-12 md:pb-14 md:pt-16">
                 {/* The standing offer on the left, the index against the right
-                    edge. */}
-                <div className="grid gap-10 md:grid-cols-[1fr_auto] md:items-start md:gap-12">
+                    edge — stacked and centred on a phone, as every section
+                    above is there. */}
+                <div className="grid gap-10 text-center md:grid-cols-[1fr_auto] md:items-start md:gap-12 md:text-left">
                     <div>
                         <p className="font-display text-d1 font-semibold tracking-[-0.025em] text-ink">
                             Available for work.
@@ -43,7 +44,7 @@ export default function Footer() {
                     </nav>
                 </div>
 
-                <div className="mt-10 flex flex-col gap-3 border-t border-rule pt-5 font-mono text-meta uppercase tracking-[0.12em] text-ink-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mt-10 flex flex-col items-center gap-3 border-t border-rule pt-5 text-center font-mono text-meta uppercase tracking-[0.12em] text-ink-3 sm:flex-row sm:justify-between sm:text-left">
                     <span>
                         © {personal.name}
                         <VisitorCount />
