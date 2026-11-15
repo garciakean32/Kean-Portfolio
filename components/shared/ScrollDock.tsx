@@ -161,12 +161,17 @@ export default function ScrollDock() {
                 system gesture area, and a bar sitting flush in it is one the
                 thumb cannot reliably hit — the swipe wins. `env()` is 0 on
                 every screen that has no such inset, so this is the same 12px
-                gap everywhere else. */}
+                gap everywhere else.
+
+                On a phone it runs the width of the screen instead, inside
+                the doodle dock's 1rem margins, its icons spread evenly from
+                end to end. */}
             <div
                 data-chrome
-                className="fixed bottom-0 left-1/2 z-40 -translate-x-1/2 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+                className="fixed inset-x-4 bottom-0 z-40 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:left-1/2 sm:right-auto sm:-translate-x-1/2 lg:hidden"
             >
                 <IconBar
+                    className="max-sm:[&>.gnav]:flex max-sm:[&>.gnav]:justify-between"
                     items={ITEMS}
                     active={current}
                     onSelect={go}
