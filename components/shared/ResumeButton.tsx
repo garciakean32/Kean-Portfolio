@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { X } from "lucide-react";
 import { personal } from "@/lib/data";
+import { getLenis } from "@/lib/lenis";
 import { cn } from "@/lib/utils";
 
 /** How long the exit animation is given before the dialog is dropped anyway. */
 const EXIT_FALLBACK = 400;
+
+/* The PDF in the browser's own viewer, fitted to the frame's width and
+   without the viewer's toolbar — the dialog has its own download. */
+const PREVIEW = `${encodeURI(personal.resumeUrl)}#toolbar=0&navpanes=0&view=FitH`;
+
+/* Whether the browser can show a PDF inline at all — most phones cannot,
+   and hand the file off to be downloaded instead. Assumed so on the server. */
+const canPreview = () => navigator.pdfViewerEnabled !== false;
+/* Nothing to subscribe to — the browser does not change under a page. */
+const still = () => () => {};
 
 function DocumentIcon({ className }: { className?: string }) {
     return (
@@ -27,8 +39,10 @@ function DocumentIcon({ className }: { className?: string }) {
 }
 
 /**
- * Downloading is a decision, not a side effect of a stray click — so the
- * button asks first and the visitor confirms or backs out.
+ * Not everyone wants the file — so the button opens the resume itself, in
+ * a dialog, to be read there; downloading it is the dialog's to offer, with
+ * Cancel and its X to back out. Where the browser cannot show a PDF inline,
+ * the frame offers it in a new tab instead.
  *
  * The dialog leaves as deliberately as it arrives, which is the only reason
  * there is a third state: `closing` keeps it mounted while its exit animation
@@ -47,6 +61,7 @@ export default function ResumeButton({
     const opener = useRef<HTMLButtonElement>(null);
     const confirm = useRef<HTMLAnchorElement>(null);
     const panel = useRef<HTMLDivElement>(null);
+    const inline = useSyncExternalStore(still, canPreview, () => true);
 
     const open = phase !== "closed";
     const close = () => setPhase((current) => (current === "open" ? "closing" : current));
@@ -61,7 +76,9 @@ export default function ResumeButton({
         if (!open) return;
         const trigger = opener.current;
         const previous = document.body.style.overflow;
+        const lenis = getLenis();
         document.body.style.overflow = "hidden";
+        lenis?.stop();
         confirm.current?.focus();
 
         const onKey = (e: KeyboardEvent) => {
@@ -70,6 +87,7 @@ export default function ResumeButton({
         window.addEventListener("keydown", onKey);
         return () => {
             document.body.style.overflow = previous;
+            lenis?.start();
             window.removeEventListener("keydown", onKey);
             trigger?.focus();
         };
@@ -117,27 +135,61 @@ export default function ResumeButton({
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="resume-dialog-title"
-                        aria-describedby="resume-dialog-body"
-                        className="dialog-panel relative w-full max-w-md rounded-lg border border-rule bg-paper-2 p-7 shadow-xl md:p-8"
+                        className="dialog-panel relative flex h-full max-h-[56rem] w-full max-w-3xl flex-col rounded-lg border border-rule bg-paper-2 shadow-xl"
                     >
-                        <p className="font-mono text-label uppercase text-ink-3">
-                            Download
-                        </p>
-                        <h2
-                            id="resume-dialog-title"
-                            className="mt-3 font-display text-d1 font-bold tracking-[-0.02em] text-ink"
-                        >
-                            Save my resume?
-                        </h2>
-                        <p
-                            id="resume-dialog-body"
-                            className="mt-3 text-body text-ink-2"
-                        >
-                            A PDF of {personal.name}&apos;s resume will be saved to your
-                            device.
-                        </p>
+                        <div className="flex items-start justify-between gap-4 p-5 md:px-7 md:pt-6">
+                            <div>
+                                <p className="font-mono text-label uppercase text-ink-3">Resume</p>
+                                <h2
+                                    id="resume-dialog-title"
+                                    className="mt-2 font-display text-d1 font-bold tracking-[-0.02em] text-ink"
+                                >
+                                    {personal.name}
+                                </h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={close}
+                                aria-label="Close"
+                                className="-mr-2 -mt-1 grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink-2 transition-colors duration-300 hover:bg-ink/10 hover:text-ink"
+                            >
+                                <X size={20} strokeWidth={1.8} aria-hidden="true" />
+                            </button>
+                        </div>
 
-                        <div className="mt-8 flex flex-wrap items-center gap-3">
+                        <div className="mx-5 min-h-0 flex-1 overflow-hidden rounded border border-rule bg-paper-3 md:mx-7">
+                            {inline ? (
+                                <iframe
+                                    src={PREVIEW}
+                                    title={`${personal.name}'s resume`}
+                                    className="h-full w-full bg-white"
+                                />
+                            ) : (
+                                <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
+                                    <DocumentIcon className="h-8 w-8 text-ink-3" />
+                                    <p className="max-w-xs text-body text-ink-2">
+                                        This browser can&apos;t show the PDF here.
+                                    </p>
+                                    <a
+                                        href={personal.resumeUrl}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="link-rule font-mono text-label uppercase text-ink"
+                                    >
+                                        Open it in a new tab
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-end gap-3 p-5 md:px-7 md:pb-6">
+                            <button
+                                type="button"
+                                onClick={close}
+                                className="rounded border border-rule-strong px-6 py-3 font-mono text-label uppercase text-ink-2 transition-colors duration-300 hover:border-ink hover:text-ink"
+                            >
+                                Cancel
+                            </button>
                             <a
                                 ref={confirm}
                                 href={personal.resumeUrl}
@@ -148,13 +200,6 @@ export default function ResumeButton({
                                 Download
                                 <DocumentIcon />
                             </a>
-                            <button
-                                type="button"
-                                onClick={close}
-                                className="rounded border border-rule-strong px-6 py-3 font-mono text-label uppercase text-ink-2 transition-colors duration-300 hover:border-ink hover:text-ink"
-                            >
-                                Cancel
-                            </button>
                         </div>
                     </div>
                 </div>
