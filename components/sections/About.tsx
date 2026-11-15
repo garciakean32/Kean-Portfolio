@@ -2,6 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import SectionMark from "@/components/shared/SectionMark";
+import Sketch from "@/components/shared/Sketch";
+import { loopArrow } from "@/components/shared/doodles";
 import { RevealText } from "@/components/motion/Reveal";
 import { Portrait, driftPortraits, masthead } from "@/components/shared/Portrait";
 import { ThreadLines, type Thread } from "@/components/shared/Thread";
@@ -22,6 +24,10 @@ const POSTER =
  * rather than already crowding in from below.
  */
 const SCREEN = "flex min-h-[100svh] flex-col justify-center py-20 md:py-28";
+
+/* The button's hint: an arrow thrown down and to the left from the word,
+   onto the button's top — the video frame's "Pull me", said again. */
+const CLICK_HINT = loopArrow([56, 0], [0, 30]);
 
 /**
  * Who is building it, and how he got here — two sections in the same
@@ -318,6 +324,8 @@ export function Experience() {
     const calls = useCallArrows(cta, target);
     const [pointing, setPointing] = useState(false);
     const [held, setHeld] = useState(false);
+    // whether the page has been opened yet this visit — the hint goes once it has
+    const [opened, setOpened] = useState(false);
     const ink = useRef({ p: 0 });
     const settle = useRef<(() => void) | null>(null);
 
@@ -390,6 +398,19 @@ export function Experience() {
                     />
                 )}
                 <div className="js-story-cta-in relative">
+                    {/* Click me, for a visitor who would not think to — out
+                        of the way while the arrows point, and gone for the
+                        rest of the visit once the page has been opened. */}
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            "pointer-events-none absolute bottom-[calc(100%+0.375rem)] left-[calc(100%-4.5rem)] flex items-start gap-1 transition-opacity duration-500 md:left-[calc(100%-2.5rem)]",
+                            (pointing || held || opened) && "opacity-0"
+                        )}
+                    >
+                        <Sketch lines={CLICK_HINT} weight={1.6} duration={0.7} wander={0.3} className="w-9 md:w-11" />
+                        <span className="-mt-1.5 whitespace-nowrap font-mono text-label uppercase text-ink-3">Click me</span>
+                    </span>
                     {/* A mouse only, and only where the arrows are shown. */}
                     <div
                         ref={target}
@@ -400,7 +421,13 @@ export function Experience() {
                         }}
                         onPointerLeave={() => setPointing(false)}
                     >
-                        <ExperienceDialog beforeOpen={holdArrows} onClosed={() => setHeld(false)} />
+                        <ExperienceDialog
+                            beforeOpen={() => {
+                                setOpened(true);
+                                return holdArrows();
+                            }}
+                            onClosed={() => setHeld(false)}
+                        />
                     </div>
                 </div>
             </div>
