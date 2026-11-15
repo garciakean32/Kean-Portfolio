@@ -118,19 +118,20 @@ const still = () => () => {};
  * happens with a pen in hand, picked up from the dock: with none, the sheet
  * lets every click and every swipe through to the page as normal; with one,
  * it takes them — which on a phone means the page holds still under the
- * finger until the pen is put down again. Folding the dock does not put it
- * down; the dock's core wears a dot while one is still in hand.
+ * finger until the pen is put down again. Folding the dock sets the pen
+ * aside, so the page is the page again; opening it hands the same pen back.
  *
  * Two pens: the sign pen's nib and the eraser. With a keyboard: D for the
- * dock, S for the sign pen, E for the eraser, C to clear, Esc to put it all
- * away, and the usual undo and redo.
+ * dock, S for the sign pen, E for the eraser, C to clear, Esc to fold the
+ * dock, and the usual undo and redo.
  */
 export default function DoodleArea({ children }: { children: React.ReactNode }) {
     const area = useRef<HTMLDivElement>(null);
     /* the dock, open or folded */
     const [on, setOn] = useState(false);
-    /* the pen in hand, if any */
+    /* the pen picked, if any — only in hand while the dock is open */
     const [tool, setTool] = useState<Tool | null>(null);
+    const held = on ? tool : null;
 
     const [ink, setInk] = useState<Ink>([]);
     const [past, setPast] = useState<Ink[]>([]);
@@ -190,13 +191,8 @@ export default function DoodleArea({ children }: { children: React.ReactNode }) 
         raf.current = requestAnimationFrame(step);
     };
 
-    /* folding the dock leaves the pen where it is */
+    /* folding the dock sets the pen aside; opening it picks it back up */
     const toggle = () => setOn((o) => !o);
-    /* everything away: the pen down and the dock folded */
-    const putAway = () => {
-        setOn(false);
-        setTool(null);
-    };
     /* a pen picked up a second time is put down */
     const pick = (next: Tool) => setTool((t) => (t === next ? null : next));
 
@@ -240,7 +236,7 @@ ${json}`);
             if (mod || e.altKey) return;
 
             if (key === "d") toggle();
-            else if (key === "escape" && (on || tool)) putAway();
+            else if (key === "escape" && on) setOn(false);
             else if (key === "s" && on) pick("sign");
             else if (key === "e" && on) pick("erase");
             else if (key === "c" && on) clear();
@@ -260,7 +256,7 @@ ${json}`);
     };
 
     const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (!tool || rewinding) return;
+        if (!held || rewinding) return;
         if (e.pointerType === "mouse" && e.button !== 0) return;
         // No text selection, and no scrolling, starting from a stroke.
         e.preventDefault();
@@ -274,7 +270,7 @@ ${json}`);
         const p = local(e);
         const w = (THIN + THICK) / 2;
         last.current = { ...p, t: performance.now(), w };
-        if (tool === "erase") setInk((all) => erase(all, p, p));
+        if (held === "erase") setInk((all) => erase(all, p, p));
         else setInk((all) => [...all, [{ ...p, w }]]);
     };
 
@@ -283,7 +279,7 @@ ${json}`);
         const raw = local(e);
         const l = last.current;
 
-        if (tool === "erase") {
+        if (held === "erase") {
             last.current = { ...l, x: raw.x, y: raw.y };
             setInk((all) => erase(all, l, raw));
             return;
@@ -338,14 +334,14 @@ ${json}`);
                 it is out of reach of a doodle; only the intro's curtains and
                 the dialogs that open over the page are above it. */}
             <div
-                data-tool={tool ?? undefined}
+                data-tool={held ?? undefined}
                 onPointerDown={onDown}
                 onPointerMove={onMove}
                 onPointerUp={onUp}
                 onPointerCancel={onUp}
                 className={cn(
                     "doodle-sheet absolute inset-0 z-[44]",
-                    tool ? "pointer-events-auto touch-none select-none" : "pointer-events-none"
+                    held ? "pointer-events-auto touch-none select-none" : "pointer-events-none"
                 )}
             />
             <svg
@@ -361,7 +357,7 @@ ${json}`);
 
             <DoodleDock
                 on={on}
-                tool={tool}
+                tool={held}
                 canUndo={past.length > 0 && !rewinding}
                 canRedo={future.length > 0 && !rewinding}
                 canClear={total > 0 && !rewinding}
@@ -405,8 +401,17 @@ function Nib({ size = 24, ...props }: LucideProps) {
 
 /* The options, nearest the core first. Each is dealt out to the left of the
    core in turn — the Radial menu's `stagger`, along a row instead of round an
-   arc — one button's width plus a hair apart. */
-const STEP = ["-translate-x-[3rem]", "-translate-x-[6rem]", "-translate-x-[9rem]", "-translate-x-[12rem]", "-translate-x-[15rem]"];
+   arc — one button's width plus a hair apart. On a phone the row spans the
+   top of the screen instead: the six buttons spread evenly between the
+   dock's 1rem margins, so the gaps between them match and the row sits
+   square on the screen. */
+const STEP = [
+    "-translate-x-[calc((100vw_-_4.75rem)/5)] sm:-translate-x-[3rem]",
+    "-translate-x-[calc((100vw_-_4.75rem)*2/5)] sm:-translate-x-[6rem]",
+    "-translate-x-[calc((100vw_-_4.75rem)*3/5)] sm:-translate-x-[9rem]",
+    "-translate-x-[calc((100vw_-_4.75rem)*4/5)] sm:-translate-x-[12rem]",
+    "-translate-x-[calc(100vw_-_4.75rem)] sm:-translate-x-[15rem]",
+];
 const DELAY = ["[transition-delay:0ms]", "[transition-delay:28ms]", "[transition-delay:56ms]", "[transition-delay:84ms]", "[transition-delay:112ms]"];
 
 /* A click or tap leaves no focus behind, so a shortcut pressed after it does
@@ -426,8 +431,8 @@ const TIP =
  * The doodle dock: one button, the size of the tools it holds. Pressed, the
  * scribble on it turns into an X, with a little give, and the tools deal out
  * from it in a row; pressed again, they fold back, the drawing left where it
- * is — and the pen too, if one is in hand, which the core then wears as a
- * dot. A pen in hand is a solid disc in the row; one put down is glass.
+ * is and the pen set aside until the dock is opened again. A pen in hand is
+ * a solid disc in the row; one put down is glass.
  *
  * Top right on a desktop, and on a phone too, where the hero's top row is
  * set low enough to clear it. On a tablet it sits low on the right, where a
@@ -552,9 +557,7 @@ function DoodleDock({
                     type="button"
                     onClick={press(onToggle)}
                     aria-expanded={on}
-                    aria-label={
-                        on ? "Close doodle tools" : tool ? "Open doodle tools (a pen is still in hand)" : "Open doodle tools"
-                    }
+                    aria-label={on ? "Close doodle tools" : "Open doodle tools"}
                     className="group absolute inset-0 z-10 grid place-items-center rounded-full bg-ink text-on-ink transition-transform duration-[380ms] ease-[cubic-bezier(0.24,1.34,0.38,1)] active:scale-90"
                 >
                     <svg
@@ -570,15 +573,6 @@ function DoodleDock({
                     >
                         <path ref={shape} d={SCRIBBLE} />
                     </svg>
-                    {/* A pen still in hand with the dock folded: a dot on the
-                        core's rim, cut out of it by a ring of the page. */}
-                    <span
-                        aria-hidden="true"
-                        className={cn(
-                            "absolute right-0 top-0 h-3 w-3 rounded-full bg-ink ring-2 ring-paper transition-[scale,opacity] duration-300 ease-[cubic-bezier(0.24,1.34,0.38,1)]",
-                            !on && tool ? "scale-100 opacity-100" : "scale-0 opacity-0"
-                        )}
-                    />
                     <i className={TIP}>{on ? "Close" : "Doodle"} · D</i>
                 </button>
             </div>
