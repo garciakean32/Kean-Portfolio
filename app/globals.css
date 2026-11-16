@@ -637,6 +637,16 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   isolation: isolate;
   color: rgb(var(--ink));}
 
+/* Below lg the bars sit over a page that is always moving under a finger,
+   and re-blurring it every frame is the costliest thing on a phone. The pane
+   is near-opaque anyway, so it goes solid instead. */
+@media (max-width: 1023.98px) {
+  .gpane, .gnav, .gdock {
+    background: rgb(var(--paper) / 0.96);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;}
+}
+
 .gpane::before, .gnav::before, .gdock::before {
   content: "";
   position: absolute;

@@ -222,6 +222,8 @@ export const KineticTextReveal = forwardRef<
         x: 0,
         y: 0,
         filter: "blur(0px)",
+        // A settled word drops its filter, so it stops being a layer of its own.
+        transitionEnd: { filter: "none" },
         transition: shouldReduceMotion
           ? { duration: 0.01 }
           : {
@@ -266,7 +268,7 @@ export const KineticTextReveal = forwardRef<
                 initial="hidden"
                 animate={visible ? "visible" : "hidden"}
                 className={cn(
-                  "inline-block will-change-transform",
+                  "inline-block",
                   segmentClassName,
                 )}
                 onAnimationComplete={

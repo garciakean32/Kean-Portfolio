@@ -320,12 +320,17 @@ export default function HangingFrame({
             const dy = window.scrollY - last;
             last = window.scrollY;
             const r = el.getBoundingClientRect();
-            if (moving && r.bottom > 0 && r.top < window.innerHeight) {
+            const onScreen = r.bottom > 0 && r.top < window.innerHeight;
+            if (moving && onScreen) {
                 // the page lurches and the frame, hanging, lags behind it
                 s.current.vy += clamp(dy * KNOCK, -MAX_KNOCK, MAX_KNOCK);
                 wake.current();
             }
-            paint();
+            // Off screen there is nothing to see, unless the pen still has
+            // thread to draw on the way past.
+            const w = world.current;
+            const pen = window.innerHeight * PEN - r.top;
+            if (onScreen || (w && pen > reach.current && reach.current < w.below.y)) paint();
         };
 
         paint();

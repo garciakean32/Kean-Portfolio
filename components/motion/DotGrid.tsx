@@ -98,6 +98,9 @@ export default function DotGrid({ className }: { className?: string }) {
             const rows = Math.floor(height / GAP);
             const originX = (width - cols * GAP) / 2 + GAP / 2;
             const originY = (height - rows * GAP) / 2 + GAP / 2;
+            // One colour for the field; each dot only changes its alpha,
+            // which is far cheaper than parsing a new colour string per dot.
+            ctx.fillStyle = `rgb(${rgb})`;
 
             for (let row = 0; row <= rows; row++) {
                 for (let col = 0; col <= cols; col++) {
@@ -135,10 +138,11 @@ export default function DotGrid({ className }: { className?: string }) {
 
                     ctx.beginPath();
                     ctx.arc(drawX, drawY, radius, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${rgb},${Math.min(alpha, 1)})`;
+                    ctx.globalAlpha = Math.min(alpha, 1);
                     ctx.fill();
                 }
             }
+            ctx.globalAlpha = 1;
         };
 
         resize();
@@ -160,12 +164,15 @@ export default function DotGrid({ className }: { className?: string }) {
             };
         }
 
-        let visible = true;
         let rafId = 0;
+        // With no cursor to answer (a phone), the wave alone is slow enough
+        // that every other frame reads the same — and halves the cost.
+        const touch = window.matchMedia("(hover: none)").matches;
+        let skip = false;
 
         const frame = (now: number) => {
             rafId = requestAnimationFrame(frame);
-            if (!visible) return;
+            if (touch && (skip = !skip)) return;
 
             cursor.x += (cursor.targetX - cursor.x) * TRACK;
             cursor.y += (cursor.targetY - cursor.y) * TRACK;
@@ -173,8 +180,6 @@ export default function DotGrid({ className }: { className?: string }) {
 
             draw(now);
         };
-
-        rafId = requestAnimationFrame(frame);
 
         const onMove = (event: PointerEvent) => {
             const rect = canvas.getBoundingClientRect();
@@ -207,8 +212,11 @@ export default function DotGrid({ className }: { className?: string }) {
 
         const stopDprWatch = onDprChange(resize);
 
+        // The loop only runs while the field is on screen.
         const intersectionObserver = new IntersectionObserver((entries) => {
-            for (const entry of entries) visible = entry.isIntersecting;
+            const visible = entries[entries.length - 1]?.isIntersecting;
+            cancelAnimationFrame(rafId);
+            rafId = visible ? requestAnimationFrame(frame) : 0;
         });
         intersectionObserver.observe(canvas);
 

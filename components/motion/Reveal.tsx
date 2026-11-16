@@ -129,7 +129,7 @@ export function RevealBlock({
         <motion.div
             className={className}
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, filter: BLUR }}
-            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none" } }}
             viewport={{ once: true, margin: IN_VIEW }}
             transition={reduced ? { duration: 0.01 } : { duration: DURATION, ease: EASE }}
         >

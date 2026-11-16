@@ -99,10 +99,17 @@ function useDrawOnScroll(svg: React.RefObject<SVGSVGElement | null>, thread: Thr
             return { el: p, len, at, need, until, end: prev.y };
         });
 
-        const paint = () => {
+        // Past this the whole thread is drawn, and scrolling has nothing left to do.
+        const full = Math.max(...tracks.map((t) => Math.max(t.need[t.need.length - 1], t.end, t.need[0] + 1)));
+
+        const paint = (force?: unknown) => {
+            if (force !== true && reach.current >= full) return;
             // the pen, in the svg's own pixels — or wherever it has been
-            // that is further down
-            const pen = Math.max(reach.current, window.innerHeight * PEN - el.getBoundingClientRect().top);
+            // that is further down. Ink never undraws, so a pen that has not
+            // got further than before changes nothing.
+            const at = window.innerHeight * PEN - el.getBoundingClientRect().top;
+            if (force !== true && at <= reach.current) return;
+            const pen = Math.max(reach.current, at);
             reach.current = pen;
             for (const t of tracks) {
                 if (t.until !== undefined) {
@@ -134,12 +141,13 @@ function useDrawOnScroll(svg: React.RefObject<SVGSVGElement | null>, thread: Thr
             }
         };
 
-        paint();
+        const repaint = () => paint(true);
+        repaint();
         window.addEventListener("scroll", paint, { passive: true });
-        window.addEventListener("resize", paint);
+        window.addEventListener("resize", repaint);
         return () => {
             window.removeEventListener("scroll", paint);
-            window.removeEventListener("resize", paint);
+            window.removeEventListener("resize", repaint);
         };
     }, [svg, thread]);
 }
