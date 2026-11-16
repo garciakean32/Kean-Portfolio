@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import { personal } from "@/lib/data";
+import { useBackToClose } from "@/lib/history";
 import { getLenis } from "@/lib/lenis";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,9 @@ export default function ResumeButton({
 
     const open = phase !== "closed";
     const close = () => setPhase((current) => (current === "open" ? "closing" : current));
+
+    // The phone's back button is Cancel, not a way off the site.
+    useBackToClose(phase === "open", close);
 
     useEffect(() => {
         if (phase !== "closing") return;

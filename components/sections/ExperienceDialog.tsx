@@ -10,6 +10,7 @@ import type {
 } from "@/components/ui/liquid-glass-carousel";
 import { TextMorph } from "@/components/ui/text-morph";
 import { experience } from "@/lib/data";
+import { useBackToClose } from "@/lib/history";
 import { getLenis } from "@/lib/lenis";
 import { gsap, motionEnabled, useIsomorphicLayoutEffect } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -188,6 +189,8 @@ export default function ExperienceDialog({
     const control = useRef<LiquidGlassCarouselHandle | null>(null);
     const drawing = useRef<Promise<void> | null>(null);
     const wasShown = useRef(false);
+    /* back pressed while the white was still spreading — closed once it lands */
+    const backed = useRef(false);
 
     const [phase, setPhase] = useState<Phase>("closed");
     const [items, setItems] = useState<LiquidGlassCarouselItem[] | null>(null);
@@ -222,6 +225,12 @@ export default function ExperienceDialog({
     };
     const closeDialog = () => setPhase((p) => (p === "open" ? "closing" : p));
     const closeCard = () => control.current?.closeFocus();
+
+    // The phone's back button is the X, not a way off the site.
+    useBackToClose(phase === "opening" || phase === "open", () => {
+        if (phase === "opening") backed.current = true;
+        else closeDialog();
+    });
 
     // The spread, both ways, from wherever the button is on screen.
     useIsomorphicLayoutEffect(() => {
@@ -315,6 +324,10 @@ export default function ExperienceDialog({
         if (phase === "open") {
             closeButton.current?.focus();
             wasShown.current = true;
+            if (backed.current) {
+                backed.current = false;
+                closeDialog();
+            }
         } else if (phase === "closed" && wasShown.current) {
             wasShown.current = false;
             trigger.current?.focus({ preventScroll: true });
