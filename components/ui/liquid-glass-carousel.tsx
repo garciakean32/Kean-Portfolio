@@ -24,12 +24,20 @@ export interface LiquidGlassCarouselItem {
   aspect?: number;
 }
 
+export interface LiquidGlassCarouselLeave {
+  delay: number;
+  duration: number;
+  ease: string;
+}
+
 export interface LiquidGlassCarouselProps {
   items?: LiquidGlassCarouselItem[];
   /** Target panel height in CSS pixels. Scaled down when the container is shorter. */
   panelHeight?: number;
   /** The most of the container's height a panel may take, 0..1. */
   panelRatio?: number;
+  /** The most of the container's width a panel may take, 0..1 — none by default. */
+  panelWidthRatio?: number;
   gap?: number;
   background?: string;
   /** Play the rise-and-grow intro. Ignored when the user prefers reduced motion. */
@@ -40,6 +48,10 @@ export interface LiquidGlassCarouselProps {
   ringColor?: string;
   /** How much a focused panel grows, 1 being not at all. */
   centerScale?: number;
+  /** Seconds the other panels wait before returning when a focus closes. */
+  returnDelay?: number;
+  /** How the other panels go when one is focused: after how long, over how long, and on what ease. */
+  leave?: LiquidGlassCarouselLeave;
   /** Show the active item's title above the row. */
   showTitle?: boolean;
   /** Show the built-in close button while a panel is focused. */
@@ -54,6 +66,8 @@ export interface LiquidGlassCarouselProps {
   style?: CSSProperties;
   onActiveChange?: (index: number) => void;
   onFocusChange?: (focused: boolean) => void;
+  /** Told false when the intro starts and true once it is over and the row takes input. */
+  onEntryChange?: (done: boolean) => void;
 }
 
 const PORTRAIT_ASPECT = 3 / 4;
@@ -104,6 +118,12 @@ const LENS = {
   vignette: 0,
   vignetteSize: 0.3,
   samples: 16,
+};
+
+const DEFAULT_LEAVE: LiquidGlassCarouselLeave = {
+  delay: 0,
+  duration: 0.7,
+  ease: "power4.out",
 };
 
 const FOCUS = {
@@ -312,7 +332,11 @@ const LENS_FX_KEYS = [
 const REPEATS = 4;
 const CLICK_SLOP = 6;
 const TOUCH_CLICK_SLOP = 12;
+/* A release this long after the last move is a stop, not a flick. */
 const FLICK_IDLE_MS = 90;
+/* The stretch of a drag a release's speed is read over. */
+const FLICK_WINDOW_MS = 100;
+const FRAME_MS = 1000 / 60;
 
 function at<T>(list: readonly T[], index: number): T {
   const item = list[index];
@@ -347,6 +371,8 @@ type Source = {
 
 export type LiquidGlassCarouselHandle = {
   closeFocus: () => void;
+  /** With a panel focused, focus its neighbour instead, at once — for a parent covering the row. */
+  shift: (direction: number) => void;
   next: () => void;
   previous: () => void;
   destroy: () => void;
@@ -379,10 +405,13 @@ function createCarousel(
     items: LiquidGlassCarouselItem[];
     panelHeight: number;
     panelRatio: number;
+    panelWidthRatio: number;
     gap: number;
     background: string;
     ringColor: string;
     centerScale: number;
+    returnDelay: () => number;
+    leave: () => LiquidGlassCarouselLeave;
     entry: boolean;
     onActiveChange: (index: number) => void;
     onFocusChange: (open: boolean) => void;
@@ -396,18 +425,38 @@ function createCarousel(
 
   let W = Math.max(1, mount.clientWidth);
   let H = Math.max(1, mount.clientHeight);
-  const panelHFor = () =>
+  /* The tallest the panels may be for the height alone, and then for the
+     width too — the widest panel held to `panelWidthRatio` of it. */
+  const widest = Math.max(...items.map((img) => img.aspect || PORTRAIT_ASPECT));
+  const panelHForHeight = () =>
     Math.max(120, Math.min(options.panelHeight, Math.round(H * options.panelRatio)));
+  const panelHFor = () =>
+    Math.max(
+      120,
+      Math.min(panelHForHeight(), Math.round((W * options.panelWidthRatio) / widest)),
+    );
   let PANEL_H = panelHFor();
   const GAP = options.gap;
-  const EASE = reduced ? 0.28 : 0.09;
-  const SNAP_EASE = reduced ? 0.22 : 0.05;
-  const WHEEL = 1.4;
-  const DRAG = 1.6;
+  /* How much of the way to where it is headed the row covers each 60th of a
+     second: held close to the pointer while dragging; a quick settle onto
+     the next card for a wheel tick, a key or a click; and a longer glide
+     after a flick, which sets off at the speed it was let go at — see
+     `onPointerUp`. */
+  const DRAG_EASE = reduced ? 1 : 0.35;
+  const STEP_EASE = reduced ? 0.3 : 0.12;
+  const GLIDE_EASE = reduced ? 0.3 : 0.07;
+  /* A mouse drag carries the row a little further than the pointer; a
+     finger carries it exactly as far. */
+  const DRAG = 1.2;
   const TOUCH_DRAG = 1;
-  const TOUCH_EASE = 0.22;
-  const FRICTION = 0.865;
-  const SNAP_IDLE_MS = 120;
+  /* Wheel: the scroll, in pixels, that makes a card's step; the quiet that
+     ends a trackpad swipe and its coasting; and how many cards ahead of the
+     row steps may queue up. */
+  const WHEEL_STEP = 30;
+  const WHEEL_GAP_MS = 160;
+  const MAX_AHEAD = 3;
+  /* A release faster than this, in pixels a millisecond, moves at least a card. */
+  const FLICK_MIN = 0.25;
   const SHRINK_MAX = 60;
   const SHRINK_ATTACK = 0.25;
   const SHRINK_DECAY = 0.06;
@@ -551,12 +600,10 @@ function createCarousel(
   let scroll = centerForIndex(0);
   let target = scroll;
   let userInteracted = false;
-  let velocity = 0;
+  let glide = false;
   let prevScroll = 0;
   let scrollEnergy = 0;
   let pendingFocus: { srcIndex: number } | null = null;
-  let lastInput = performance.now();
-  let snapped = false;
 
   const rt = new THREE.WebGLRenderTarget(W * dpr, H * dpr);
   const lensScene = new THREE.Scene();
@@ -605,6 +652,18 @@ function createCarousel(
   });
   const lensQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), lensMat);
   lensScene.add(lensQuad);
+
+  /* The lens is sized in heights of the row, as the panels are — so the two
+     keep to each other, its rim passing just clear of the middle panel and
+     across the outer corners of the ones beside it. Where the width holds
+     the panels smaller than the height would (`panelWidthRatio`), the lens
+     shrinks by the same amount, so it still sits the same way round them. */
+  function fitLens() {
+    const k = PANEL_H / panelHForHeight();
+    lensUniforms.uSizeX.value = LENS.sizeX * k;
+    lensUniforms.uSizeY.value = LENS.sizeY * k;
+  }
+  fitLens();
 
   const focusState = {
     active: false,
@@ -791,8 +850,10 @@ function createCarousel(
   let dragPointerId: number | null = null;
   let dragLastX = 0;
   let dragDist = 0;
-  let dragVel = 0;
   let dragMoveT = 0;
+  let dragFrom = 0;
+  /* where the drag has taken the row lately, for the speed it is let go at */
+  let dragTrail: { t: number; at: number }[] = [];
   let suppressClick = false;
   let dragPointerType = "mouse";
   let lastPointerX = Number.NaN;
@@ -872,14 +933,69 @@ function createCarousel(
     return focusState.active || entryActive || entrySettled;
   }
 
+  /* One card on from wherever the row is headed — so steps taken quickly
+     queue up rather than being lost — but never more than `MAX_AHEAD` ahead
+     of where it actually is. */
+  function advance(direction: number) {
+    userInteracted = true;
+    pendingFocus = null;
+    glide = false;
+    const here = nearestIndex(scroll);
+    const next = nearestIndex(target) + direction;
+    target = centerForIndex(
+      Math.max(here - MAX_AHEAD, Math.min(here + MAX_AHEAD, next)),
+    );
+  }
+
+  /* The wheel moves a card at a time. A mouse's notch is a step of its own;
+     a trackpad's swipe — a run of small pushes and then its coasting — is
+     one step, however long it runs, until it goes quiet, turns round, or is
+     pushed again harder than it was coasting. */
+  let wheelAcc = 0;
+  let wheelLast = 0;
+  let wheelPrev = 0;
+  let wheelPeak = 0;
+  let wheelDir = 0;
+  let wheelHeld = false;
+
   function onWheel(e: WheelEvent) {
     e.preventDefault();
     if (inputLocked()) return;
-    userInteracted = true;
-    pendingFocus = null;
-    target += (e.deltaY || e.deltaX) * WHEEL;
-    lastInput = performance.now();
-    snapped = false;
+    const raw =
+      Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    const d = raw * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? W : 1);
+    const size = Math.abs(d);
+    if (!size) return;
+    const now = performance.now();
+    const fresh =
+      now - wheelLast > WHEEL_GAP_MS ||
+      Math.sign(d) !== wheelDir ||
+      (size >= WHEEL_STEP && size === wheelPrev) ||
+      (wheelPrev < wheelPeak * 0.6 && size > wheelPrev * 1.5 + 4);
+    wheelLast = now;
+    wheelPrev = size;
+    if (fresh) {
+      wheelAcc = 0;
+      wheelPeak = 0;
+      wheelHeld = false;
+    }
+    wheelPeak = Math.max(wheelPeak, size);
+    wheelDir = Math.sign(d);
+    if (wheelHeld) return;
+    wheelAcc += d;
+    if (Math.abs(wheelAcc) < WHEEL_STEP) return;
+    wheelHeld = true;
+    advance(Math.sign(wheelAcc));
+  }
+
+  /* How fast the drag was carrying the row as it was let go, in pixels a
+     millisecond: over its last moments, or nothing if it had stopped. */
+  function releaseSpeed() {
+    const now = performance.now();
+    if (now - dragMoveT > FLICK_IDLE_MS) return 0;
+    const first = dragTrail.find((s) => now - s.t <= FLICK_WINDOW_MS);
+    if (!first || now - first.t < 8) return 0;
+    return (target - first.at) / (now - first.t);
   }
 
   function onPointerDown(e: PointerEvent) {
@@ -900,14 +1016,15 @@ function createCarousel(
     lastPointerX = p.x;
     lastPointerY = p.y;
     dragDist = 0;
-    dragVel = 0;
     dragMoveT = performance.now();
     setView(false);
-    velocity = 0;
+    // Caught where it is, mid-glide or not.
+    target = scroll;
+    glide = false;
+    dragFrom = nearestIndex(scroll);
+    dragTrail = [{ t: dragMoveT, at: target }];
     pendingFocus = null;
     userInteracted = true;
-    snapped = false;
-    lastInput = dragMoveT;
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -918,10 +1035,11 @@ function createCarousel(
       dragLastX = p.x;
       dragDist += Math.abs(dx);
       target -= dx * sens;
-      dragVel = dragVel * 0.6 + -dx * sens * 0.4;
       dragMoveT = performance.now();
-      lastInput = dragMoveT;
-      snapped = false;
+      dragTrail.push({ t: dragMoveT, at: target });
+      while (dragTrail.length > 2 && dragMoveT - at(dragTrail, 1).t > FLICK_WINDOW_MS) {
+        dragTrail.shift();
+      }
     }
     lastPointerX = p.x;
     lastPointerY = p.y;
@@ -949,11 +1067,18 @@ function createCarousel(
       }
       dragPointerId = null;
     }
-    velocity =
-      performance.now() - dragMoveT > FLICK_IDLE_MS ? 0 : dragVel;
-    dragVel = 0;
-    lastInput = performance.now();
-    snapped = false;
+    // Let go, it settles on a card: where it was, or — thrown — where it
+    // would coast to. The glide that takes it there sets off at the speed it
+    // was thrown at (the follow covers `GLIDE_EASE` of the way a frame, so a
+    // card that far off is that fast), and a quick flick that would not
+    // reach the next card moves one anyway.
+    const speed = releaseSpeed();
+    const thrown = Math.abs(speed) > FLICK_MIN;
+    let to = nearestIndex(target + (speed * FRAME_MS) / GLIDE_EASE);
+    if (thrown && to === dragFrom) to += Math.sign(speed);
+    target = centerForIndex(to);
+    glide = thrown;
+    dragTrail = [];
     suppressClick =
       dragDist >
       (dragPointerType === "mouse" ? CLICK_SLOP : TOUCH_CLICK_SLOP);
@@ -988,9 +1113,8 @@ function createCarousel(
       return;
     }
     userInteracted = true;
-    velocity = 0;
+    glide = false;
     target = centerForIndex(nearestIndex(scroll + hit.centerX));
-    snapped = true;
     pendingFocus = { srcIndex: hit.srcIndex };
     setView(false);
   }
@@ -1041,11 +1165,12 @@ function createCarousel(
       },
       0,
     );
+    const leave = options.leave();
     ranked.forEach((o) => {
       tl.to(
         drop,
-        { [o.idx]: 1, duration: FOCUS.cardDuration, ease: FOCUS.cardEase },
-        o.rank * FOCUS.stagger,
+        { [o.idx]: 1, duration: leave.duration, ease: leave.ease },
+        leave.delay + o.rank * FOCUS.stagger,
       );
     });
     focusState.anim = tl;
@@ -1056,6 +1181,7 @@ function createCarousel(
   function closeFocus() {
     if (!focusState.active) return;
     if (focusState.anim) focusState.anim.kill();
+    startLoop();
 
     const focusX = lastCenterX[focusState.poolIdx] || 0;
     const others = pool
@@ -1071,10 +1197,16 @@ function createCarousel(
       prevDist = o.dist;
       return { idx: o.idx, rank };
     });
+    // Anything put down that is not on screen now comes straight back up —
+    // left down, it would turn up later as a gap in the row.
+    for (let k = 0; k < drop.length; k++) {
+      if (lastCenterX[k] === undefined) drop[k] = 0;
+    }
 
     options.onFocusChange(false);
     const scaleProxy = { v: focusScale };
     const tl = gsap.timeline({
+      delay: reduced ? 0 : options.returnDelay(),
       onComplete: () => {
         focusState.active = false;
         focusState.srcIndex = -1;
@@ -1112,6 +1244,41 @@ function createCarousel(
     focusState.anim = tl;
   }
 
+  /* Swaps the focus to a neighbour without any of it showing: the row jumps
+     to centre the neighbour, which is focused in the old one's place, and
+     everything else is put down out of sight — so closing from there brings
+     the row back up round the new card as it would have round the old. */
+  function shift(direction: number) {
+    if (!focusState.active) return;
+    focusState.anim?.progress(1).kill();
+    focusState.anim = null;
+    focusState.lensFx = 0;
+    glide = false;
+    target = centerForIndex(nearestIndex(target) + direction);
+    scroll = target;
+    holdFocusAtCentre();
+  }
+
+  /* Whichever panel is now in the middle is the focused one, and everything
+     else is put down out of sight — after a swap, or a resize that has
+     brought a different copy of the same panel to the middle. */
+  function holdFocusAtCentre() {
+    layout();
+    const now = centeredPanel;
+    if (!now) return;
+    focusState.srcIndex = now.srcIndex;
+    focusState.poolIdx = now.poolIdx;
+    focusScale = options.centerScale;
+    for (let k = 0; k < drop.length; k++) drop[k] = k === now.poolIdx ? 0 : 1;
+    // Said here rather than left to the loop, which is resting while a
+    // focused panel holds still — see `tick`.
+    const ci = centerIndex(scroll);
+    if (ci !== lastCenter) {
+      lastCenter = ci;
+      options.onActiveChange(ci);
+    }
+  }
+
   function playEntry() {
     if (!entryOn) {
       options.onEntryDone(true);
@@ -1126,8 +1293,7 @@ function createCarousel(
     focusState.lensFx = 0;
     target = centerForIndex(nearestIndex(scroll));
     scroll = target;
-    velocity = 0;
-    snapped = true;
+    glide = false;
     layout();
     const visible: number[] = [];
     for (let k = 0; k < lastCenterX.length; k++) {
@@ -1202,13 +1368,8 @@ function createCarousel(
   }
 
   function step(direction: number) {
-    if (inputLocked()) return;
-    userInteracted = true;
-    velocity = 0;
-    pendingFocus = null;
-    target = centerForIndex(nearestIndex(scroll) + direction);
-    snapped = true;
-    lastInput = performance.now();
+    if (inputLocked() || dragging) return;
+    advance(direction);
   }
 
   el.addEventListener("wheel", onWheel, { passive: false });
@@ -1223,33 +1384,29 @@ function createCarousel(
   let raf = 0;
   let running = true;
   let visible = true;
+  let lastFrame = 0;
+  let skipFrame = false;
 
-  function tick() {
+  function tick(now: number) {
     if (!running) return;
     if (!visible || document.hidden) {
       raf = 0;
       return;
     }
-    if (!dragging) {
-      target += velocity;
-      velocity *= FRICTION;
-      if (Math.abs(velocity) < 0.05) velocity = 0;
-      if (
-        !snapped &&
-        !focusState.active &&
-        performance.now() - lastInput > SNAP_IDLE_MS
-      ) {
-        target = centerForIndex(nearestIndex(scroll));
-        snapped = true;
-      }
+    // A focused panel that has finished arriving holds still, and a parent
+    // may well have covered the row with it: there is nothing to draw until
+    // it is let go — `closeFocus` starts the loop again.
+    if (focusState.active && !(focusState.anim && focusState.anim.progress() < 1)) {
+      raf = 0;
+      return;
     }
-    const follow =
-      dragging && dragPointerType !== "mouse"
-        ? TOUCH_EASE
-        : snapped && !pendingFocus
-          ? SNAP_EASE
-          : EASE;
-    scroll += (target - scroll) * follow;
+    // The follow is per 60th of a second, so the row moves the same on a
+    // 120Hz screen as on a 60Hz one.
+    const frames = lastFrame ? Math.min(4, (now - lastFrame) / FRAME_MS) : 1;
+    lastFrame = now;
+    const follow = dragging ? DRAG_EASE : glide ? GLIDE_EASE : STEP_EASE;
+    scroll += (target - scroll) * (1 - Math.pow(1 - follow, frames));
+    if (glide && Math.abs(target - scroll) < 0.5) glide = false;
 
     const ci = centerIndex(scroll);
     if (ci !== lastCenter) {
@@ -1276,6 +1433,24 @@ function createCarousel(
       }
     }
 
+    // At rest — nothing moving, nothing on its way — the only change from
+    // frame to frame is the ring's slow shimmer, which reads the same drawn
+    // every other frame: the two full-screen passes below are the costliest
+    // thing on the page, so they are halved.
+    const resting =
+      !dragging &&
+      !glide &&
+      !pendingFocus &&
+      !entryActive &&
+      !entrySettled &&
+      !focusState.active &&
+      Math.abs(target - scroll) < 0.05 &&
+      scrollEnergy < 0.001;
+    if (resting && (skipFrame = !skipFrame)) {
+      raf = requestAnimationFrame(tick);
+      return;
+    }
+
     lensUniforms.uCenter.value.set(LENS.posX, LENS.posY);
     lensUniforms.uAspect.value = W / H;
     lensUniforms.uTime.value = performance.now() * 0.001;
@@ -1296,6 +1471,7 @@ function createCarousel(
 
   function startLoop() {
     if (!running || raf) return;
+    lastFrame = 0;
     raf = requestAnimationFrame(tick);
   }
 
@@ -1303,11 +1479,21 @@ function createCarousel(
   if (entryOn) playEntry();
   else options.onEntryDone(true);
 
+  /* The row is kept in pixels, and every panel's width changes with the
+     container's — so on a resize the row is put back on the same card it was
+     on (or headed for), centred for the new size, rather than left at an old
+     pixel position that now falls between two. A focused panel stays the one
+     in the middle. */
   function onResize() {
+    const at = nearestIndex(target);
     W = Math.max(1, mount.clientWidth);
     H = Math.max(1, mount.clientHeight);
     PANEL_H = panelHFor();
     recomputeTotal();
+    glide = false;
+    scroll = target = centerForIndex(userInteracted ? at : 0);
+    const settledFocus = focusState.active && !(focusState.anim && focusState.anim.progress() < 1);
+    if (settledFocus) holdFocusAtCentre();
     renderer.setSize(W, H);
     camera.left = -W / 2;
     camera.right = W / 2;
@@ -1318,10 +1504,7 @@ function createCarousel(
     renderer.setPixelRatio(ratio);
     rt.setSize(W * ratio, H * ratio);
     lensUniforms.uRes.value.set(W * ratio, H * ratio);
-    if (!userInteracted) {
-      scroll = centerForIndex(0);
-      target = scroll;
-    }
+    fitLens();
   }
 
   const resizeObserver = new ResizeObserver(onResize);
@@ -1373,6 +1556,7 @@ function createCarousel(
 
   return {
     closeFocus,
+    shift,
     next: () => step(1),
     previous: () => step(-1),
     destroy,
@@ -1388,11 +1572,14 @@ export function LiquidGlassCarousel({
   items = liquidGlassCarouselDefaultItems,
   panelHeight = 450,
   panelRatio = 0.52,
+  panelWidthRatio = Infinity,
   gap = 12,
   background = "#ffffff",
   foreground = "#111111",
   ringColor = LENS.blueColor,
   centerScale = FOCUS.centerScale,
+  returnDelay = 0,
+  leave = DEFAULT_LEAVE,
   showTitle = true,
   showClose = true,
   showCursor = true,
@@ -1403,6 +1590,7 @@ export function LiquidGlassCarousel({
   style,
   onActiveChange,
   onFocusChange,
+  onEntryChange,
 }: LiquidGlassCarouselProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -1419,9 +1607,15 @@ export function LiquidGlassCarousel({
   const current = items[active] ?? items[0];
   const onActiveChangeRef = useRef(onActiveChange);
   const onFocusChangeRef = useRef(onFocusChange);
+  const onEntryChangeRef = useRef(onEntryChange);
+  const returnDelayRef = useRef(returnDelay);
+  const leaveRef = useRef(leave);
   useEffect(() => {
+    leaveRef.current = leave;
     onActiveChangeRef.current = onActiveChange;
     onFocusChangeRef.current = onFocusChange;
+    onEntryChangeRef.current = onEntryChange;
+    returnDelayRef.current = returnDelay;
   });
 
   useEffect(() => {
@@ -1432,10 +1626,13 @@ export function LiquidGlassCarousel({
       items,
       panelHeight,
       panelRatio,
+      panelWidthRatio,
       gap,
       background,
       ringColor,
       centerScale,
+      returnDelay: () => returnDelayRef.current,
+      leave: () => leaveRef.current,
       entry,
       onActiveChange: (index) => {
         setActive(index);
@@ -1445,7 +1642,10 @@ export function LiquidGlassCarousel({
         setFocused(open);
         onFocusChangeRef.current?.(open);
       },
-      onEntryDone: setEntryDone,
+      onEntryDone: (done) => {
+        setEntryDone(done);
+        onEntryChangeRef.current?.(done);
+      },
     });
     if (!engine) {
       setFailed(true);
@@ -1458,7 +1658,7 @@ export function LiquidGlassCarousel({
       engineRef.current = null;
       if (controlRef) controlRef.current = null;
     };
-  }, [items, panelHeight, panelRatio, gap, background, ringColor, centerScale, entry, controlRef]);
+  }, [items, panelHeight, panelRatio, panelWidthRatio, gap, background, ringColor, centerScale, entry, controlRef]);
 
   useEffect(() => {
     const title = titleRef.current;
