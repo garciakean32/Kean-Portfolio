@@ -39,6 +39,18 @@ export function motionEnabled() {
 }
 
 /**
+ * Whether something opaque — the experience page — is over the whole page,
+ * so the page's own drawing loops can rest under it. Set with `setCovered`.
+ */
+export function pageCovered() {
+    return document.documentElement.dataset.covered !== undefined;
+}
+export function setCovered(on: boolean) {
+    if (on) document.documentElement.dataset.covered = "";
+    else delete document.documentElement.dataset.covered;
+}
+
+/**
  * Scoped GSAP setup. Everything created inside `setup` is reverted on unmount,
  * which also kills its ScrollTriggers — necessary because route changes swap
  * out whole page trees.

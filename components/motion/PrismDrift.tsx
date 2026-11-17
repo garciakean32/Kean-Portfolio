@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { motionEnabled, onDprChange } from "@/lib/motion";
+import { motionEnabled, onDprChange, pageCovered } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
@@ -403,7 +403,7 @@ export default function PrismDrift({
 
             // off-screen: keep pushing both schedules out so the portrait is
             // never mid-glitch the moment it scrolls back into frame
-            if (!state.visible) {
+            if (!state.visible || pageCovered()) {
                 state.nextAt = now + rand(live.minDelay, live.maxDelay) * 1000;
                 state.megaNextAt = now + rand(15, 25) * 1000;
                 return;

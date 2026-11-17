@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motionEnabled, onDprChange } from "@/lib/motion";
+import { motionEnabled, onDprChange, pageCovered } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
@@ -172,6 +172,8 @@ export default function DotGrid({ className }: { className?: string }) {
 
         const frame = (now: number) => {
             rafId = requestAnimationFrame(frame);
+            // Nothing to draw for while a page is over this one.
+            if (pageCovered()) return;
             if (touch && (skip = !skip)) return;
 
             cursor.x += (cursor.targetX - cursor.x) * TRACK;
