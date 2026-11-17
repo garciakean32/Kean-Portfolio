@@ -324,21 +324,25 @@ export function Experience() {
     const calls = useCallArrows(cta, target);
     const [pointing, setPointing] = useState(false);
     const [held, setHeld] = useState(false);
-    // whether the page has been opened yet this visit — the hint goes once it has
-    const [opened, setOpened] = useState(false);
     const ink = useRef({ p: 0 });
     const settle = useRef<(() => void) | null>(null);
 
-    // Pressed while they are showing, the arrows stay pointing at the button
-    // — whatever the pointer does, the page opening over them included —
-    // until the page it opens is closed again. Pressed before they are all
-    // in, they finish first and the page waits for them, the button saying
-    // so. All in already, or never started, and it opens straight away.
+    // Pressed, the arrows stay pointing at the button — whatever the pointer
+    // does, the page opening over them included — until the page it opens
+    // is closed again. Not all in yet — never started, as on a touch screen,
+    // included — they finish first and the page waits for them, the button
+    // saying so. On a phone there are none, and it opens straight away.
+    // Arrows gone from under a page waiting on them — the window narrowed to
+    // a phone's — and it stops waiting.
+    useEffect(() => {
+        if (calls) return;
+        settle.current?.();
+        settle.current = null;
+    }, [calls]);
     const holdArrows = () => {
-        const p = ink.current.p;
-        if (p <= 0) return;
+        if (!calls) return;
         setHeld(true);
-        if (p >= 1) return;
+        if (ink.current.p >= 1) return;
         return new Promise<void>((resolve) => {
             settle.current = resolve;
         });
@@ -373,7 +377,7 @@ export function Experience() {
                             </h3>
                             <p className={cn(masthead.copy, "lg:mt-8")}>
                                 <RevealText
-                                    text="Every step that brought me here, from university to the work I do now: a degree in Information Technology, an internship at MeldCX Philippines, the personal projects I build on my own time, and the freelance work I take on today. Open them all with the button below."
+                                    text="Every step that brought me here, from university to the work I do now — the places that taught me, the things I made along the way, and what each one added to how I build. Open them all with the button below."
                                     delay={0.3}
                                     stagger={0.012}
                                     distance={12}
@@ -386,8 +390,9 @@ export function Experience() {
             </div>
 
             {/* The button, on a screen of its own — and, while a mouse is on
-                it, five arrows at it from round the screen; see `CallArrows`.
-                Most of a screen below `lg`, where it is the button alone. */}
+                it or once it is pressed, five arrows at it from round the
+                screen; see `CallArrows`. Most of a screen below `lg`, and
+                no arrows on a phone. */}
             <div ref={cta} className="js-story-cta relative flex min-h-[65svh] items-center justify-center lg:min-h-[100svh]">
                 {calls && (
                     <CallArrows
@@ -399,33 +404,28 @@ export function Experience() {
                 )}
                 <div className="js-story-cta-in relative">
                     {/* Click me, for a visitor who would not think to — out
-                        of the way while the arrows point, and gone for the
-                        rest of the visit once the page has been opened. */}
+                        of the way while the arrows point, and back once
+                        they have gone. */}
                     <span
                         aria-hidden="true"
                         className={cn(
                             "pointer-events-none absolute bottom-[calc(100%+0.375rem)] left-[calc(100%-4.5rem)] flex items-start gap-1 transition-opacity duration-500 md:left-[calc(100%-2.5rem)]",
-                            (pointing || held || opened) && "opacity-0"
+                            pointing || held ? "opacity-0" : "delay-700"
                         )}
                     >
                         <Sketch lines={CLICK_HINT} weight={1.6} duration={0.7} wander={0.3} className="w-9 md:w-11" />
                         <span className="-mt-1.5 whitespace-nowrap font-mono text-label uppercase text-ink-3">Click me</span>
                     </span>
-                    {/* A mouse only, and only where the arrows are shown. */}
+                    {/* Hover is a mouse's; a touch draws them on the press. */}
                     <div
                         ref={target}
                         onPointerEnter={(e) => {
-                            if (e.pointerType === "mouse" && window.matchMedia("(min-width: 768px)").matches) {
-                                setPointing(true);
-                            }
+                            if (e.pointerType === "mouse") setPointing(true);
                         }}
                         onPointerLeave={() => setPointing(false)}
                     >
                         <ExperienceDialog
-                            beforeOpen={() => {
-                                setOpened(true);
-                                return holdArrows();
-                            }}
+                            beforeOpen={holdArrows}
                             onClosed={() => setHeld(false)}
                         />
                     </div>
@@ -527,6 +527,10 @@ const CALLS: {
     { from: [-0.04, 0.78], via: [[0.18, 0.88], [0.27, 0.72]], tip: [-1, 0, -36, 34], come: [-80, 50], width: 2.6, at: 2 },
 ];
 
+/* Below this width — a phone — there are no calls: the button is the
+   screen's one thing there, with only its "Click me". */
+const NARROW = 640;
+
 /* The pen's pause lifting from a shaft to its head, in pixels of line it
    could have drawn instead. */
 const LIFT_HEAD = 60;
@@ -563,11 +567,16 @@ function useCallArrows(
             const b = end.getBoundingClientRect();
             const cx = b.left - o.left + b.width / 2;
             const cy = b.top - o.top + b.height / 2;
+            if (o.width < NARROW) {
+                setArt(null);
+                return;
+            }
 
             const strokes = CALLS.flatMap((call, i) => {
                 const [sx, sy, dx, dy] = call.tip;
                 const tip: Pt2 = [cx + (sx * b.width) / 2 + dx, cy + (sy * b.height) / 2 + dy];
-                const come: Pt2 = [tip[0] + call.come[0], tip[1] + call.come[1]];
+                const back = call.come;
+                const come: Pt2 = [tip[0] + back[0], tip[1] + back[1]];
                 const pts: Pt2[] = [
                     [call.from[0] * o.width, call.from[1] * o.height],
                     ...call.via.map(([x, y]): Pt2 => [x * o.width, y * o.height]),
@@ -578,22 +587,22 @@ function useCallArrows(
 
                 // An open head, one stroke barb to tip to barb, lined up with
                 // the way the shaft arrives — not quite even, as a hand's is.
-                const l = Math.hypot(call.come[0], call.come[1]);
-                const ux = call.come[0] / l;
-                const uy = call.come[1] / l;
+                const l = Math.hypot(back[0], back[1]);
+                const ux = back[0] / l;
+                const uy = back[1] / l;
                 const barb = (turn: number, size: number): Pt2 => [
                     tip[0] + (ux * Math.cos(turn) - uy * Math.sin(turn)) * size,
                     tip[1] + (ux * Math.sin(turn) + uy * Math.cos(turn)) * size,
                 ];
                 const a = barb(0.52, 21 + (i % 3));
                 const c = barb(-0.44, 17 + (i % 2) * 2);
-                const head = {
-                    d: `M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${tip[0].toFixed(1)} ${tip[1].toFixed(1)} L${c[0].toFixed(1)} ${c[1].toFixed(1)}`,
-                    len: Math.hypot(a[0] - tip[0], a[1] - tip[1]) + Math.hypot(c[0] - tip[0], c[1] - tip[1]),
-                };
                 return [
                     { d: shaft.d, len: shaft.len, width: call.width },
-                    { ...head, width: call.width },
+                    {
+                        d: `M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${tip[0].toFixed(1)} ${tip[1].toFixed(1)} L${c[0].toFixed(1)} ${c[1].toFixed(1)}`,
+                        len: Math.hypot(a[0] - tip[0], a[1] - tip[1]) + Math.hypot(c[0] - tip[0], c[1] - tip[1]),
+                        width: call.width,
+                    },
                 ];
             });
 
@@ -701,7 +710,7 @@ function CallArrows({
             stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="pointer-events-none absolute left-0 top-0 hidden text-ink opacity-85 md:block"
+            className="pointer-events-none absolute left-0 top-0 text-ink opacity-85"
         >
             {art.strokes.map((s, i) => (
                 <path

@@ -173,8 +173,8 @@ export default function HangingFrame({
     const lower = useRef<SVGPathElement>(null);
     const world = useRef<World | null>(null);
     const [size, setSize] = useState<{ w: number; h: number } | null>(null);
-    // whether it has been pulled yet this visit — the hint goes once it has
-    const [pulled, setPulled] = useState(false);
+    // whether a hand is on it — the hint steps aside while one is
+    const [holding, setHolding] = useState(false);
 
     // the frame: how far it is off its rest and how fast it is going, its
     // tilt, and the hand on it if there is one
@@ -351,7 +351,7 @@ export default function HangingFrame({
         e.currentTarget.setPointerCapture(e.pointerId);
         const f = s.current;
         f.hand = { px: e.clientX, py: e.clientY, ox: f.x, oy: f.y, t: performance.now() };
-        setPulled(true);
+        setHolding(true);
         wake.current();
     };
     const pull = (e: React.PointerEvent<HTMLSpanElement>) => {
@@ -378,6 +378,7 @@ export default function HangingFrame({
         const f = s.current;
         if (!f.hand) return;
         f.hand = null;
+        setHolding(false);
         const v = Math.hypot(f.vx, f.vy);
         if (v > THROW) {
             f.vx *= THROW / v;
@@ -413,13 +414,14 @@ export default function HangingFrame({
                 <div ref={body} className="relative">
                     <RevealBlock className="relative">
                         {/* Pull me: an arrow at the tape and a word by it,
-                            for a visitor who would not think to try — gone
-                            once they have, for the rest of the visit. */}
+                            for a visitor who would not think to try — out of
+                            the way while the frame is in hand, and back once
+                            it has been let go and has had a moment to swing. */}
                         <span
                             aria-hidden="true"
                             className={cn(
                                 "pointer-events-none absolute bottom-[calc(100%-0.1rem)] left-[calc(50%+3.9rem)] hidden items-start gap-1 transition-opacity duration-500 motion-safe:flex md:left-[calc(50%+4.9rem)]",
-                                pulled && "opacity-0"
+                                holding ? "opacity-0" : "delay-1000"
                             )}
                         >
                             <Sketch lines={HINT} weight={1.6} duration={0.7} wander={0.3} className="w-9 md:w-11" />
