@@ -4,7 +4,6 @@ import "./globals.css";
 import Providers from "@/components/shared/Providers";
 import SmoothScroll from "@/components/shared/SmoothScroll";
 import ScrollDock from "@/components/shared/ScrollDock";
-import ReloadNotice from "@/components/shared/ReloadNotice";
 import Footer from "@/components/shared/Footer";
 import DoodleArea from "@/components/shared/DoodleArea";
 import { personal } from "@/lib/data";
@@ -122,7 +121,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         Skip to content
                     </a>
                     <ScrollDock />
-                    <ReloadNotice />
                     {/* The whole page, hero to footer, is one sheet the
                         reader can doodle on — see DoodleArea. */}
                     <DoodleArea>
