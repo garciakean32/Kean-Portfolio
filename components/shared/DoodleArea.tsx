@@ -10,6 +10,7 @@
 
 import { memo, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Eraser, Redo2, Trash2, Undo2, type LucideProps } from "lucide-react";
+import ResumeButton from "@/components/shared/ResumeButton";
 import { gsap, motionEnabled } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -434,11 +435,11 @@ const TIP =
  * is and the pen set aside until the dock is opened again. A pen in hand is
  * a solid disc in the row; one put down is glass.
  *
- * Top right on a desktop, and on a phone too, where the hero's top row is
- * set low enough to clear it. On a tablet it sits low on the right, where a
- * thumb already is — up in the corner it would cover the hero's corner type
- * — and high enough to clear both the section bar and the hero's bottom
- * row, whose last line sits in that same corner there.
+ * Top right on every screen; below `lg` the hero's top row is set low
+ * enough to clear it.
+ *
+ * The resume sits just left of it, the same glass — and steps aside while
+ * the dock is open, the tools dealing out over where it was.
  */
 function DoodleDock({
     on,
@@ -508,8 +509,17 @@ function DoodleDock({
         <div
             data-chrome
             data-surface="glass"
-            className="doodle-dock fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-[45] sm:bottom-[calc(max(0.75rem,env(safe-area-inset-bottom))+8.5rem)] sm:top-auto lg:bottom-auto lg:right-6 lg:top-6"
+            className="doodle-dock fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-[45] flex items-center gap-2 lg:right-6 lg:top-6"
         >
+            <div
+                inert={on}
+                className={cn(
+                    "transition-[opacity,scale] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    on && "pointer-events-none scale-90 opacity-0"
+                )}
+            >
+                <ResumeButton />
+            </div>
             <div role="toolbar" aria-label="Doodle" className="relative h-11 w-11">
                 {options.map((o, i) => (
                     <button

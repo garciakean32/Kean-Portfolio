@@ -387,11 +387,12 @@ export default function Hero() {
                 z-20: stays in front of the portrait, which only needs to sit
                 over the name below.
 
-                4.5rem down on a phone, where the doodle dock sits in the top
-                right corner: clear of it, so "Philippines" is never under it.
-                The name below is lifted by as much again — see
-                `hero-name-band` in globals.css — so it stays where it was. */}
-            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-start gap-3 pt-[4.5rem] sm:max-w-none sm:px-[var(--frame)] sm:pt-[var(--frame)] md:gap-6">
+                4.5rem down on a phone and a tablet, where the doodle dock and
+                the resume sit in the top right corner: clear of them, so
+                "Philippines" is never under them. The name below is lifted by
+                as much again — see `hero-name-band` in globals.css — so it
+                stays where it was. */}
+            <div className="shell relative z-20 mx-auto grid w-full max-w-shell grid-cols-[1fr_auto_1fr] items-start gap-3 pt-[4.5rem] sm:max-w-none sm:px-[var(--frame)] md:gap-6 lg:pt-[var(--frame)]">
                 {/* The half-turn lives on this wrapper rather than on the
                     line itself, for the same reason the wordmark's resting
                     offset does — see the note further down. The line is one of

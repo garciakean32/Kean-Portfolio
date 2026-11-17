@@ -405,6 +405,14 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   }
 }
 
+/* And an upright tablet's, 2.5rem further down for the same reason — from its
+   own 2rem frame to the phone's 4.5rem. */
+@media (max-aspect-ratio: 4 / 5) and (min-width: 640px) and (max-width: 1023.98px) {
+  .hero-name-band {
+    padding-top: calc(12svh - 2.5rem);
+  }
+}
+
 /* Ink wipe.
 
    Nothing in the hero is faded in — every part of it is drawn, from the foot of

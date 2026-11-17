@@ -1,5 +1,4 @@
 import { personal, sections } from "@/lib/data";
-import ResumeButton from "./ResumeButton";
 import SectionLink from "./SectionLink";
 import VisitorCount from "./VisitorCount";
 import FooterDoodles from "./FooterDoodles";
@@ -22,9 +21,6 @@ export default function Footer() {
                         >
                             {personal.email}
                         </a>
-                        <div className="mt-6">
-                            <ResumeButton />
-                        </div>
                     </div>
 
                     <nav aria-label="Footer" className="md:justify-self-end">
