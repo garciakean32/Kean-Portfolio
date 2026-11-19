@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import HeroDoodles, { type HeroDoodlesHandle } from "@/components/home/HeroDoodles";
-import PrismDrift, { type PrismDriftHandle } from "@/components/motion/PrismDrift";
+import PrismDrift, { type PrismDriftBurst, type PrismDriftHandle } from "@/components/motion/PrismDrift";
 import SectionLink from "@/components/shared/SectionLink";
 import { heroList } from "@/lib/data";
 import { claimIntro, endIntro, revealChrome } from "@/lib/intro";
@@ -12,12 +12,11 @@ import { EASE, gsap, motionEnabled, useGsap } from "@/lib/motion";
     portrait's own split, and driven off the same kind of rolled intensity
     rather than a fixed offset.
 
-    Ash one side, near-black the other, not magenta and cyan: the tear is a
-    wet double of the word, the way ink lifts and smears off a page, and there
-    is no colour anywhere on this site to tear into. Keep in step with `ASH`
-    and `SMOKE` in PrismDrift, which give the portrait the same two edges. */
+    Red to the left and blue to the right, as the glass the portrait is seen
+    through splits its colours — see PrismDrift: the words tear through the
+    same glass, not as a broken signal. */
 const fringe = (px: number) =>
-    `${px}px 0 rgba(198,205,216,0.8), ${-px}px 0 rgba(6,6,8,0.9)`;
+    `${-px}px 0 rgba(255,64,64,0.85), ${px}px 0 rgba(40,140,255,0.85)`;
 
 /** The fixed split the glitch hits carry — on the portrait as it cuts in, and
     on every line already standing when it does. */
@@ -28,8 +27,14 @@ const FRINGE = fringe(3);
     these hits are what the portrait itself arrives on — it is not wiped in with
     the rest, it cuts in mid-tear. */
 const HITS = 2;
-const HIT_GAP = 0.19;
-const HIT_HOLD = 0.09;
+const HIT_GAP = 0.13;
+const HIT_HOLD = 0.06;
+
+/** Once the poster is up, how far each of the burst's lines is knocked its
+    own random way when the portrait glitches, in pixels — and further on the
+    rare jolt. Half as far up and down as across. */
+const JOLT = 4;
+const JOLT_BIG = 10;
 
 /** What the name reads as mid-glitch — same two halves, different letters. */
 const NAME = ["KE", "AN"] as const;
@@ -75,6 +80,8 @@ const CURTAIN_DURATION = HITS * HIT_GAP + HIT_HOLD + 0.3;
 export default function Hero() {
     const prism = useRef<PrismDriftHandle>(null);
     const doodles = useRef<HeroDoodlesHandle>(null);
+    /* what the portrait's own bursts knock about, once the poster is up */
+    const jolting = useRef<((burst: PrismDriftBurst) => void) | null>(null);
 
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
@@ -108,7 +115,7 @@ export default function Hero() {
 
         // Everything already on screen when the portrait cuts in — it takes
         // the same hits the portrait does. `js-steady` opts an element out:
-        // it still arrives with the frame, it just never tears with it.
+        // it arrives with the page's other buttons, and never tears.
         const struck = [
             ...q(".js-role"),
             ...q(".js-vertical"),
@@ -127,13 +134,14 @@ export default function Hero() {
                 part.textContent = text[i];
             });
 
-        /* One hit: the portrait teleports, the split blows out, and every
-           line already on screen tears with it — the navbar's logo, links,
-           resume button and menu icon included, once the bar itself is up.
-           No easing anywhere — each of these is on for a frame or two and
-           then gone. The name reads as "KYRA" for the same span: set once,
-           on the first hit, so it holds through the recovery in between
-           rather than flickering back and forth with every strike. */
+        /* One hit: the portrait teleports, the glass it is seen through
+           ripples and splits it, and every line already on screen tears with
+           it, each its own way, through the same glass. No easing anywhere —
+           each of these is on for a frame or two and then gone, and nothing
+           ever fades: glass bends and splits, it does not thin. The name
+           reads as "KYRA" for the same span: set once, on the first hit, so
+           it holds through the recovery in between rather than flickering
+           back and forth with every strike. */
         const strike = (first: boolean) => {
             prism.current?.burst({ multiplier: rand(5, 9), distance: rand(30, 58) });
             gsap.set(portrait, {
@@ -143,21 +151,36 @@ export default function Hero() {
                 scale: rand(0.96, 1.06),
             });
             gsap.set(struck, {
-                x: rand(-22, 22),
-                skewX: rand(-10, 10),
-                opacity: rand(0.25, 1),
+                x: () => rand(-22, 22),
+                skewX: () => rand(-10, 10),
                 textShadow: FRINGE,
             });
             if (first) setName(GLITCHED_NAME);
         };
 
-        /* The gap between hits. The portrait all but disappears again for
-           every one of them except the last, which is where it stays — and
-           where the name reads as itself again, for good. */
+        /* The gap between hits: everything back where it was — and, on the
+           last, the name reading as itself again, for good. */
         const recover = (last: boolean) => {
-            gsap.set(portrait, { opacity: last ? 1 : 0.12, x: 0, y: 0, scale: 1 });
-            gsap.set(struck, { x: 0, skewX: 0, opacity: 1, textShadow: "none" });
+            gsap.set(portrait, { x: 0, y: 0, scale: 1 });
+            gsap.set(struck, { x: 0, skewX: 0, clearProps: "textShadow" });
             if (last) setName(NAME);
+        };
+
+        /* Once the poster is up, every burst of the portrait's own glitches
+           what is round it too: each line, and the doodles, knocked a little
+           its own random way — the words split through the same glass — for
+           the burst's split second, then straight back; the rare jolt knocks
+           them further. The way on to the next section never moves. */
+        const jolted = [...struck, ...q(".js-doodles")];
+        let unjolt: gsap.core.Tween | null = null;
+        const jolt = ({ duration, big }: PrismDriftBurst) => {
+            const reach = big ? JOLT_BIG : JOLT;
+            unjolt?.kill();
+            gsap.set(jolted, { x: () => rand(-reach, reach), y: () => rand(-reach, reach) / 2 });
+            gsap.set(struck, { textShadow: fringe(big ? 3 : 2) });
+            unjolt = gsap.delayedCall(duration / 1000, () =>
+                gsap.set(jolted, { x: 0, y: 0, clearProps: "textShadow" })
+            );
         };
 
         const tl = gsap.timeline({
@@ -169,6 +192,7 @@ export default function Hero() {
             onComplete: () => {
                 gsap.set(dolly, { willChange: "auto" });
                 endIntro();
+                jolting.current = jolt;
             },
         });
 
@@ -190,7 +214,8 @@ export default function Hero() {
             so the thing arrives foot to head rather than fading in whole.
             `.ink-wipe` in globals.css is that mask and `--ink-wipe` is the head
             of it. Everything in the poster arrives this way except the
-            portrait, which cuts in on the glitch.
+            portrait, which cuts in on the glitch, and the way on to the next
+            section, which comes in with the page's other buttons.
 
             The class is put on here rather than carried in the markup, and
             taken off again on the frame the stroke finishes: a mask is a
@@ -230,10 +255,9 @@ export default function Hero() {
             );
         };
 
-        // 1 — the dolly, under everything else and running the whole length of
-        // the intro: the frame comes forward while the rest of the poster is
-        // still being laid down on it, so the two read as one move rather than
-        // a move and then a reveal.
+        // 1 — the dolly, under everything else: the frame comes forward while
+        // the rest of the poster is still being laid down on it, so the two
+        // read as one move rather than a move and then a reveal.
         tl.set(dolly, { transformOrigin: "50% 50%", willChange: "transform" }, 0).fromTo(
             dolly,
             { scale: DOLLY_FROM },
@@ -249,18 +273,23 @@ export default function Hero() {
         // empty and the figure is torn into it at the end.
         draw([wordmark], STEP * 4, WIPE * 1.3);
         draw([...q(".js-role"), ...q(".js-vertical")], STEP * 8, WIPE);
-        draw(q(".js-body"), STEP * 9, WIPE);
+        draw(q(".js-body:not(.js-steady)"), STEP * 9, WIPE);
         tl.call(() => doodles.current?.draw(), undefined, DOODLES_AT);
 
         // 3 — the room is whole by now, and it is struck twice on the way into
         // its last tenth of a second of travel — which is where the figure
-        // lands: the first hit cuts it in, the second is what it settles on. The curtains pull clear over the
-        // same span rather than on their own timer, so the room they open up is
-        // exactly the room the arrival needs — and the navbar lets itself in on
-        // this instant too, rather than waiting for the sequence to finish. See
-        // `revealChrome`.
+        // lands: the first hit cuts it in, the second is what it settles on.
+        // The curtains pull clear over the same span rather than on their own
+        // timer, so the room they open up is exactly the room the arrival
+        // needs — and the navbar lets itself in on this instant too, rather
+        // than waiting for the sequence to finish. See `revealChrome`.
         tl.addLabel("glitch", GLITCH_AT);
         tl.call(revealChrome, undefined, "glitch");
+        // The way on to the next section is a button, not a word: it comes in
+        // with the page's other buttons — the doodle dock and the rest of the
+        // chrome — as they fade in on this instant, the same way and over the
+        // same span. See `[data-chrome]` in globals.css.
+        tl.fromTo(q(".js-steady"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.6, ease: "expo.out" }, "glitch");
         if (curtainTop && curtainBottom) {
             tl.to(curtainTop, { yPercent: -100, duration: CURTAIN_DURATION, ease: EASE.out }, "glitch")
                 .to(curtainBottom, { yPercent: 100, duration: CURTAIN_DURATION, ease: EASE.out }, "<");
@@ -275,7 +304,7 @@ export default function Hero() {
         tl.call(
             () => {
                 gsap.set(portrait, { opacity: 1, clearProps: "transform" });
-                gsap.set(struck, { x: 0, skewX: 0, opacity: 1, textShadow: "none" });
+                gsap.set(struck, { x: 0, skewX: 0, clearProps: "textShadow" });
             },
             undefined,
             `glitch+=${HITS * HIT_GAP}`
@@ -289,6 +318,12 @@ export default function Hero() {
             })
             .to(q(".js-wordmark"), { yPercent: -12, ease: "none" }, 0)
             .to(q(".js-portrait"), { yPercent: 6, ease: "none" }, 0);
+
+        // Torn down with the rest: no more jolts, and none left waiting.
+        return () => {
+            jolting.current = null;
+            unjolt?.kill();
+        };
     });
 
     /* The page must never be left locked — not when motion is off and the
@@ -482,6 +517,7 @@ export default function Hero() {
                     priority
                     sizes="100vw"
                     className="object-contain"
+                    onBurst={(burst) => jolting.current?.(burst)}
                 />
             </div>
 
@@ -621,9 +657,10 @@ export default function Hero() {
                             Available for work
                         </p>
 
-                        {/* `js-steady`: arrives with the frame, never tears
-                            with it. A control that jumps under the cursor is a
-                            control you have to chase. */}
+                        {/* `js-steady`: arrives with the page's other buttons,
+                            on the glitch, and never tears with it. A control
+                            that jumps under the cursor is a control you have
+                            to chase. */}
                         <div
                             data-anim="fade"
                             className="js-body js-steady order-2 flex justify-center md:order-none md:col-start-2 md:row-start-1 md:justify-self-center">

@@ -6,14 +6,19 @@ import { motionEnabled, onDprChange, pageCovered } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * PrismDrift — a WebGL split-and-tear glitch, ported from the Framer
+ * PrismDrift — a WebGL glitch through glass, first ported from the Framer
  * component of the same name and rewired for this site: the source is a
  * transparent cut-out rather than a filled photo, so sampling is premultiplied
  * and letterboxed (`object-contain`) instead of cover-fit, and the effect fires
  * on its own random cadence instead of on hover.
  *
- * At rest the canvas is a plain resample of the image — zero split, zero grain
- * — so nothing about the portrait changes between bursts.
+ * Each burst snaps the portrait behind rippled glass for a split second — the
+ * glass the site's cards sit behind: the figure bends with the ripple, its
+ * colours split red one way and blue the other, and its edge catches a glint.
+ * The rare jolt is a deeper ripple.
+ *
+ * At rest the canvas is a plain resample of the image — no ripple, no split,
+ * no glint — so nothing about the portrait changes between bursts.
  */
 
 const VERTEX_SHADER = `
@@ -35,22 +40,13 @@ const FRAGMENT_SHADER = `
   uniform sampler2D uTexture;  // the cut-out, premultiplied
   uniform vec2 uImageSize;     // natural size, for contain-fit math
   uniform float uTime;         // seconds
-  uniform float uIntensityPx;  // current split distance in pixels
+  uniform float uIntensityPx;  // how far the glass splits the colours, in pixels
+  uniform float uRipplePx;     // how far the rippled glass bends the figure, in pixels
   uniform float uAngle;        // split direction, radians
-  uniform float uNoise;        // 0-1, organic jitter + grain amount
+  uniform float uGlint;        // the light the glass catches on the figure's edge, 0-1
 
-  // The two edges the split tears into, and the weights that read a copy's
-  // brightness. Cool greys either side of neutral — nothing here is a hue.
-  const vec3 LUMA = vec3(0.299, 0.587, 0.114);
-  const vec3 ASH = vec3(0.78, 0.82, 0.90);
-  const vec3 SMOKE = vec3(0.20, 0.21, 0.25);
-
-  // cheap hash-based pseudo random, used for jitter + film grain
-  float hash(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
-  }
+  // The light the glass catches: the cards' own pale glint.
+  const vec3 GLINT = vec3(0.86, 0.9, 0.96);
 
   // object-contain style UV remap: the whole figure stays in frame, with the
   // letterbox around it left empty rather than smeared out from the edges
@@ -70,50 +66,42 @@ const FRAGMENT_SHADER = `
     return texture2D(uTexture, uv) * inside.x * inside.y;
   }
 
+  // The figure at a point of the canvas.
+  vec4 figure(vec2 p) { return sampleImage(containUv(p)); }
+
   void main() {
-    vec2 uv = containUv(vUv);
-    vec2 dir = vec2(cos(uAngle), sin(uAngle));
-    vec2 pxToUv = dir / uResolution;
+    vec2 px = 1.0 / uResolution;
 
-    // per-copy jitter so the split feels alive rather than a static offset
-    float jitterA = (hash(uv * 400.0 + uTime) - 0.5) * uNoise;
-    float jitterB = (hash(uv * 400.0 - uTime) - 0.5) * uNoise;
+    // Rippled glass: a few close swells across the frame — the cards' own
+    // slow wave, run quick and tight. At rest it moves nothing.
+    vec2 cp = vUv * vec2(uResolution.x / uResolution.y, 1.0) * 4.0;
+    vec2 swell = vec2(
+      sin(cp.y * 3.6 + uTime * 11.0) + 0.6 * sin(cp.x * 2.8 - uTime * 8.5 + cp.y * 1.5),
+      cos(cp.x * 3.4 - uTime * 10.0) + 0.6 * cos(cp.y * 2.6 + uTime * 7.5 - cp.x * 1.3)
+    );
+    vec2 p = vUv + swell * uRipplePx * px;
 
-    vec4 colorAhead = sampleImage(uv + pxToUv * uIntensityPx * (1.0 + jitterA));
-    vec4 colorCenter = sampleImage(uv);
-    vec4 colorBehind = sampleImage(uv - pxToUv * uIntensityPx * (1.0 + jitterB));
+    // Through it the colours split, red one way and blue the other, as the
+    // cards' glass splits them. Premultiplied, so the widest of the three
+    // alphas bounds every channel and the fringe fades out on its own; and
+    // at zero split the three are one sample, the portrait as it is.
+    vec2 dir = vec2(cos(uAngle), sin(uAngle)) * uIntensityPx * px;
+    vec4 r = figure(p + dir);
+    vec4 g = figure(p);
+    vec4 b = figure(p - dir);
+    vec4 c = vec4(r.r, g.g, b.b, max(g.a, max(r.a, b.a)));
 
-    // The split, as ink rather than as a broken signal.
-    //
-    // The Framer original keeps R from one copy, G from the centre and B from
-    // the other, which is a chromatic aberration by construction: the moment
-    // the copies part, the edges go magenta and cyan. Here the two outer
-    // copies are read as brightness only and laid back over the centre
-    // *tinted* — pale ash leading, near-black smoke trailing — so the figure
-    // tears into a wet double of itself and no hue is ever invented.
-    //
-    // Both are differences against the centre, which is what keeps the resting
-    // frame honest: at zero split all three samples are identical, both terms
-    // vanish, and what is left is a plain resample of the portrait.
-    float lumCenter = dot(colorCenter.rgb, LUMA);
-    float lumAhead = dot(colorAhead.rgb, LUMA);
-    float lumBehind = dot(colorBehind.rgb, LUMA);
+    // And the glass catches the light along the figure's edge, glinting
+    // where the swell rises.
+    if (uGlint > 0.0) {
+      vec2 e = px * 2.0;
+      float gx = figure(p + vec2(e.x, 0.0)).a - figure(p - vec2(e.x, 0.0)).a;
+      float gy = figure(p + vec2(0.0, e.y)).a - figure(p - vec2(0.0, e.y)).a;
+      float glint = clamp(length(vec2(gx, gy)), 0.0, 1.0) * (0.55 + 0.45 * swell.x / 1.6) * uGlint * 0.8;
+      c = vec4(c.rgb * (1.0 - glint) + GLINT * glint, c.a + glint * (1.0 - c.a));
+    }
 
-    // premultiplied channels, so the widest of the three alphas still bounds
-    // every one of them and the fringe fades out on its own
-    float alpha = max(colorCenter.a, max(colorAhead.a, colorBehind.a));
-    vec3 result = colorCenter.rgb
-      + ASH * (lumAhead - lumCenter) * 0.95
-      + SMOKE * (lumBehind - lumCenter) * 1.15;
-
-    // fine grain tied to the same noise control, kept inside the silhouette so
-    // the empty frame around it stays clean
-    float grain = (hash(vUv * uResolution.xy + uTime * 60.0) - 0.5) * uNoise * 0.08;
-    result += grain * alpha;
-
-    // Premultiplied colour may never run past its own alpha, and the tinted
-    // ghosts above are free to push it there on a hard hit.
-    gl_FragColor = vec4(clamp(result, 0.0, alpha), alpha);
+    gl_FragColor = c;
   }
 `;
 
@@ -149,6 +137,11 @@ function createProgram(gl: WebGLRenderingContext) {
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
+/* At a burst's peak, how far the glass splits the colours and how far its
+   ripple bends the figure, as shares of the burst's intensity. */
+const SPLIT_SHARE = 0.4;
+const RIPPLE_SHARE = 0.5;
+
 // left, right, and the four diagonals — straight up/down reads too much like
 // a bounce, so it's left out
 const NUDGE_DIRECTIONS: readonly [number, number][] = [
@@ -169,6 +162,15 @@ const pickNudge = (minDistance = 2, maxDistance = 7) => {
     return { x: dx * distance * norm, y: dy * distance * norm };
 };
 
+/* How long a burst lasts, in milliseconds, the rare jolt's included: a
+   split second, there and gone. */
+const BURST_MS: readonly [number, number] = [28, 55];
+const JOLT_MS: readonly [number, number] = [30, 60];
+
+/** A burst of the component's own, as it fires: how long it lasts, in
+    milliseconds, and whether it is the rare deeper jolt. */
+export type PrismDriftBurst = { duration: number; big: boolean };
+
 /** A burst the page can fire itself, on top of the component's own cadence. */
 export type PrismDriftHandle = {
     burst: (options?: { multiplier?: number; distance?: number; duration?: number }) => void;
@@ -180,17 +182,19 @@ type Props = {
     priority?: boolean;
     /** Applied to the underlying image — the canvas always matches its box. */
     className?: string;
-    /** Max offset of the two ghost copies, in CSS pixels, at a burst peak. */
+    /** A burst's strength at its peak, in CSS pixels — the colours split by
+        `SPLIT_SHARE` of it, the ripple bends by `RIPPLE_SHARE`. */
     intensity?: number;
     /** Same, but used from the `lg` breakpoint up. Defaults to `intensity * 1.8`. */
     desktopIntensity?: number;
     /** Split direction, degrees — each burst jitters around it. */
     angle?: number;
-    /** Jitter + grain, 0-1. */
-    noise?: number;
     /** Seconds of quiet between bursts; a fresh gap is rolled after each one. */
     minDelay?: number;
     maxDelay?: number;
+    /** Told as each of the component's own bursts fires — not one fired
+        through the handle — so what is round the portrait can glitch with it. */
+    onBurst?: (burst: PrismDriftBurst) => void;
     /** Handle for firing a burst from outside — see `PrismDriftHandle`. */
     ref?: Ref<PrismDriftHandle>;
 };
@@ -203,9 +207,9 @@ export default function PrismDrift({
     intensity = 14,
     desktopIntensity = intensity * 1.8,
     angle = 20,
-    noise = 0.06,
     minDelay = 0.5,
     maxDelay = 6,
+    onBurst,
     ref,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -230,9 +234,9 @@ export default function PrismDrift({
     // paint rather than during render — the loop reads it on the next frame
     // either way, and a ref written mid-render is a bug waiting for
     // concurrent rendering to find it.
-    const liveRef = useRef({ intensity, desktopIntensity, angle, noise, minDelay, maxDelay });
+    const liveRef = useRef({ intensity, desktopIntensity, angle, minDelay, maxDelay, onBurst });
     useEffect(() => {
-        liveRef.current = { intensity, desktopIntensity, angle, noise, minDelay, maxDelay };
+        liveRef.current = { intensity, desktopIntensity, angle, minDelay, maxDelay, onBurst };
     });
 
     useEffect(() => {
@@ -268,8 +272,9 @@ export default function PrismDrift({
             uImageSize: gl.getUniformLocation(program, "uImageSize"),
             uTime: gl.getUniformLocation(program, "uTime"),
             uIntensityPx: gl.getUniformLocation(program, "uIntensityPx"),
+            uRipplePx: gl.getUniformLocation(program, "uRipplePx"),
             uAngle: gl.getUniformLocation(program, "uAngle"),
-            uNoise: gl.getUniformLocation(program, "uNoise"),
+            uGlint: gl.getUniformLocation(program, "uGlint"),
         };
 
         // 1x1 placeholder so unit 0 is valid before the image finishes loading
@@ -316,7 +321,7 @@ export default function PrismDrift({
         };
 
         /* Whether the picture on screen still matches what the uniforms say.
-           Between bursts every frame is identical — no split, no grain, no
+           Between bursts every frame is identical — no ripple, no split, no
            nudge — so the resting frame is drawn once and then the GPU is left
            alone until something actually changes it. Anything that invalidates
            what is on the canvas sets this. */
@@ -343,7 +348,7 @@ export default function PrismDrift({
         // them rather than waiting on the component's 15-25s schedule. It
         // borrows the same path, so an ambient jolt cannot land on top of one
         // of these: the next one is pushed out of the way here too.
-        burstRef.current = ({ multiplier = 4, distance = 34, duration = 90 } = {}) => {
+        burstRef.current = ({ multiplier = 4, distance = 34, duration = JOLT_MS[1] } = {}) => {
             const now = performance.now();
             const nudge = pickNudge(distance * 0.6, distance);
             state.megaUntil = now + duration;
@@ -413,8 +418,9 @@ export default function PrismDrift({
                 // a burst snaps on and snaps back off within a split second —
                 // the gap before the next one is rolled fresh every time, so
                 // the cadence never settles
-                state.burstUntil = now + rand(40, 90);
+                state.burstUntil = now + rand(BURST_MS[0], BURST_MS[1]);
                 state.nextAt = state.burstUntil + rand(live.minDelay, live.maxDelay) * 1000;
+                live.onBurst?.({ duration: state.burstUntil - now, big: false });
                 state.angleJitter = rand(-25, 25);
                 state.peak = rand(0.55, 1.35);
                 // a little nudge — left, right, or one of the four diagonals
@@ -429,8 +435,9 @@ export default function PrismDrift({
                 // a rare, much bigger jolt — same directions, way more
                 // distance, over in a split second at full strength (no ease
                 // in/out, it's just there and then it's gone)
-                state.megaUntil = now + rand(40, 90);
+                state.megaUntil = now + rand(JOLT_MS[0], JOLT_MS[1]);
                 state.megaNextAt = state.megaUntil + rand(15, 25) * 1000;
+                live.onBurst?.({ duration: state.megaUntil - now, big: true });
                 const bigNudge = pickNudge(24, 42);
                 state.megaNudgeX = bigNudge.x;
                 state.megaNudgeY = bigNudge.y;
@@ -451,17 +458,17 @@ export default function PrismDrift({
             if (settled && !needsDraw) return;
             needsDraw = !settled;
 
-            // dips to 90% opacity for the burst, snaps back to 100% the
-            // instant it ends — same envelope as the split/grain uniforms
-            container.style.opacity = String(1 - mixClamped * 0.1);
-            // the nudge snaps to position for the burst and snaps back the
-            // instant it ends — no easing — so it reads as a teleport, not a
-            // slide. A mega jolt overrides the regular nudge while it's live.
+            // The portrait never fades for a burst: glass bends it and splits
+            // it, but it stays whole. The nudge snaps to position for the
+            // burst and snaps back the instant it ends — no easing — so it
+            // reads as a teleport, not a slide. A mega jolt overrides the
+            // regular nudge while it's live.
             const nudging = now < state.burstUntil;
             const activeNudgeX = megaActive ? state.megaNudgeX : nudging ? state.nudgeX : 0;
             const activeNudgeY = megaActive ? state.megaNudgeY : nudging ? state.nudgeY : 0;
             container.style.transform = `translate(${activeNudgeX}px, ${activeNudgeY}px)`;
 
+            // The burst's strength: the jolt's own, deeper, while it lasts.
             const intensityPx = megaActive
                 ? intensity * state.megaMultiplier
                 : intensity * state.mix;
@@ -470,9 +477,10 @@ export default function PrismDrift({
             gl.uniform1i(uniforms.uTexture, 0);
             gl.uniform2f(uniforms.uImageSize, state.imageWidth, state.imageHeight);
             gl.uniform1f(uniforms.uTime, now / 1000);
-            gl.uniform1f(uniforms.uIntensityPx, intensityPx * state.dpr);
+            gl.uniform1f(uniforms.uIntensityPx, intensityPx * SPLIT_SHARE * state.dpr);
+            gl.uniform1f(uniforms.uRipplePx, intensityPx * RIPPLE_SHARE * state.dpr);
             gl.uniform1f(uniforms.uAngle, ((live.angle + state.angleJitter) * Math.PI) / 180);
-            gl.uniform1f(uniforms.uNoise, live.noise * (megaActive ? 1 : mixClamped));
+            gl.uniform1f(uniforms.uGlint, megaActive ? 1 : mixClamped);
 
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -485,7 +493,6 @@ export default function PrismDrift({
             cancelAnimationFrame(rafId);
             uploadRef.current = null;
             burstRef.current = null;
-            container.style.opacity = "";
             container.style.transform = "";
             stopDprWatch();
             resizeObserver.disconnect();

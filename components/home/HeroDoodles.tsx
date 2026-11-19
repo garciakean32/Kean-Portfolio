@@ -582,7 +582,7 @@ const HeroDoodles = forwardRef<HeroDoodlesHandle>(function HeroDoodles(_, handle
             stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="pointer-events-none absolute left-0 top-0 z-20 text-white opacity-90"
+            className="js-doodles pointer-events-none absolute left-0 top-0 z-20 text-white opacity-90"
         >
             {(["page", "name", "head"] as Ride[]).map((ride) => (
                 <g
