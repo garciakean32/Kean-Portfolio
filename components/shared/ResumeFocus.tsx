@@ -17,6 +17,8 @@ const TAP_ZOOM = 2.5;
 const PAD = 20;
 const FOOT = 72;
 const EDGE = 24;
+/* The corner of the page on screen, whatever its scale — the dialog's own. */
+const RADIUS = 14;
 
 type View = { s: number; x: number; y: number };
 type Point = { x: number; y: number };
@@ -52,10 +54,23 @@ function zoomAbout(from: View, p: Point, k: number): View {
  * screen — and zoomed as a picture from there, so nothing has to redraw
  * under a finger.
  */
-export default function ResumeFocus({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
+export default function ResumeFocus({
+    url,
+    title,
+    from,
+    onClose,
+}: {
+    url: string;
+    title: string;
+    /** The page in the dialog — the one this comes forward out of. */
+    from?: React.RefObject<HTMLElement | null>;
+    onClose: () => void;
+}) {
     const root = useRef<HTMLDivElement>(null);
+    const shade = useRef<HTMLDivElement>(null);
     const stage = useRef<HTMLDivElement>(null);
     const canvas = useRef<HTMLCanvasElement>(null);
+    const still = useRef<HTMLCanvasElement>(null);
     const readout = useRef<HTMLSpanElement>(null);
     const closer = useRef<HTMLButtonElement>(null);
     const view = useRef<View>({ s: 1, x: 0, y: 0 });
@@ -70,7 +85,7 @@ export default function ResumeFocus({ url, title, onClose }: { url: string; titl
         const el = stage.current;
         if (!el) return;
         const { s, x, y } = view.current;
-        gsap.set(el, { x, y, scale: s, xPercent: -50, yPercent: -50 });
+        gsap.set(el, { x, y, scale: s, xPercent: -50, yPercent: -50, borderRadius: RADIUS / s });
         if (readout.current) readout.current.textContent = `${Math.round(s * 100)}%`;
     };
 
@@ -99,12 +114,44 @@ export default function ResumeFocus({ url, title, onClose }: { url: string; titl
         return { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 };
     };
 
+    // The dialog's page: its box (what holds the page, inside its frame), and
+    // where the page here would have to be to lie exactly over it.
+    const source = () => from?.current?.parentElement ?? null;
+    const over = (el: HTMLElement): View | null => {
+        const r = root.current?.getBoundingClientRect();
+        const b = el.getBoundingClientRect();
+        if (!r || !b.width || !fit.current.w) return null;
+        return {
+            s: b.width / fit.current.w,
+            x: b.left + b.width / 2 - (r.left + r.width / 2),
+            y: b.top + b.height / 2 - (r.top + r.height / 2),
+        };
+    };
+    const chrome = () => root.current?.querySelectorAll("[data-chrome]") ?? [];
+
+    // Out: the page goes back into its place in the dialog, the shade and
+    // the controls going with it, and the dialog's own page is shown again
+    // only once this one is lying on it.
     const leave = () => {
         if (leaving.current) return;
         leaving.current = true;
         const el = root.current;
+        const back = source();
         if (!el || !motionEnabled()) return onClose();
-        gsap.to(el, { autoAlpha: 0, duration: 0.25, ease: "power2.in", onComplete: onClose });
+        const to = back && over(back);
+        gsap.killTweensOf(view.current);
+        const done = () => {
+            if (back) gsap.set(back, { clearProps: "visibility" });
+            onClose();
+        };
+        if (!to) {
+            gsap.to(el, { autoAlpha: 0, duration: 0.25, ease: "power2.in", onComplete: done });
+            return;
+        }
+        gsap.timeline({ onComplete: done })
+            .to(chrome(), { autoAlpha: 0, duration: 0.15, ease: "power2.in" }, 0)
+            .to(view.current, { ...to, duration: 0.5, ease: "power3.inOut", onUpdate: apply }, 0)
+            .to(shade.current, { autoAlpha: 0, duration: 0.4, ease: "power2.in" }, 0.1);
     };
 
     // The fitted size, for the screen as it is.
@@ -126,6 +173,7 @@ export default function ResumeFocus({ url, title, onClose }: { url: string; titl
 
     // The page, drawn once, large.
     const shaped = useEffectEvent((ratio: number) => {
+        if (Math.abs(ratio - aspect.current) < 1e-3) return;
         aspect.current = ratio;
         measure();
     });
@@ -151,26 +199,48 @@ export default function ResumeFocus({ url, title, onClose }: { url: string; titl
         };
     }, [url]);
 
-    // In: the shade, and the page settling up into place; focus to the X.
+    // In: the dialog's page itself comes forward — this one starts lying
+    // exactly over it, showing what it already shows, and the dialog's is
+    // hidden under it, so there is only ever the one page. The shade and the
+    // controls follow it in. Focus to the X.
     const arrive = useEffectEvent(() => {
         closer.current?.focus();
         const el = root.current;
         if (!el) return;
-        if (!motionEnabled()) {
-            gsap.set(el, { autoAlpha: 1 });
-            return;
+        const back = source();
+        const drawn = back?.querySelector("canvas");
+        const c = still.current;
+        if (drawn && c && drawn.width) {
+            c.width = drawn.width;
+            c.height = drawn.height;
+            c.getContext("2d")?.drawImage(drawn, 0, 0);
         }
-        return gsap
-            .timeline()
-            .fromTo(el, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: "power2.out" })
-            .fromTo(view.current, { s: 0.9 }, { s: 1, duration: 0.6, ease: "expo.out", onUpdate: apply }, 0.05);
+        if (back) gsap.set(back, { visibility: "hidden" });
+        gsap.set(el, { autoAlpha: 1 });
+        const start = back && over(back);
+        if (!motionEnabled()) return;
+        const tl = gsap.timeline();
+        if (start) {
+            Object.assign(view.current, start);
+            apply();
+            tl.to(view.current, { s: 1, x: 0, y: 0, duration: 0.65, ease: "power3.inOut", onUpdate: apply }, 0);
+        } else {
+            tl.fromTo(view.current, { s: 0.9 }, { s: 1, duration: 0.6, ease: "expo.out", onUpdate: apply }, 0.05);
+        }
+        return tl
+            .fromTo(shade.current, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.45, ease: "power2.out" }, 0.1)
+            .fromTo(chrome(), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: "power2.out" }, 0.45);
     });
     useEffect(() => {
         const tl = arrive();
+        const back = from?.current?.parentElement;
         return () => {
             tl?.kill();
+            // However this goes — its X, or going back, which takes it away
+            // at once — the dialog keeps its page.
+            if (back) gsap.set(back, { clearProps: "visibility" });
         };
-    }, []);
+    }, [from]);
 
     // Hands: a drag moves it, two fingers pinch it, a double tap or click
     // zooms in on the spot or back out to fit; the wheel zooms about the
@@ -306,38 +376,47 @@ export default function ResumeFocus({ url, title, onClose }: { url: string; titl
             role="dialog"
             aria-modal="true"
             aria-label={`${title}, up close`}
-            className="invisible fixed inset-0 z-[140] cursor-grab touch-none select-none overflow-hidden bg-black/95 active:cursor-grabbing"
+            className="invisible fixed inset-0 z-[140] cursor-grab touch-none select-none overflow-hidden active:cursor-grabbing"
         >
+            <div ref={shade} aria-hidden="true" className="absolute inset-0 bg-black/95" />
+
+            {/* The page wears the rim it wore in the dialog's glass frame, so
+                the two are the same thing at the hand-off. */}
             <div
                 ref={stage}
-                className="absolute left-1/2 top-1/2 overflow-hidden rounded-sm bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)]"
+                className="absolute left-1/2 top-1/2 overflow-hidden bg-white shadow-[-1.5px_0_0_rgba(0,157,255,0.55),1.5px_0_0_rgba(255,64,160,0.45),0_0_0_1px_rgba(255,255,255,0.1),0_20px_60px_-15px_rgba(0,0,0,0.9)]"
             >
+                {!ready && !failed && (
+                    <span className="absolute inset-0 grid place-items-center">
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/15 border-t-black/60" />
+                    </span>
+                )}
+                {/* The dialog's drawing of the page, shown until the large one
+                    is ready over it. */}
+                <canvas ref={still} aria-hidden="true" className="absolute inset-0 h-full w-full" />
                 <canvas
                     ref={canvas}
                     role="img"
                     aria-label={title}
-                    className={cn("h-full w-full transition-opacity duration-300", ready ? "opacity-100" : "opacity-0")}
+                    className={cn("relative h-full w-full transition-opacity duration-300", ready ? "opacity-100" : "opacity-0")}
                 />
-                {!ready && (
-                    <div className="absolute inset-0 grid place-items-center text-[#111111]">
-                        {failed ? (
-                            <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener"
-                                className="font-mono text-label uppercase underline underline-offset-4"
-                            >
-                                Open it in a new tab
-                            </a>
-                        ) : (
-                            <span className="h-5 w-5 animate-spin rounded-full border-2 border-black/15 border-t-black/60" />
-                        )}
+                {failed && (
+                    <div className="absolute inset-0 grid place-items-center bg-white text-[#111111]">
+                        <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener"
+                            className="font-mono text-label uppercase underline underline-offset-4"
+                        >
+                            Open it in a new tab
+                        </a>
                     </div>
                 )}
             </div>
 
             <button
                 ref={closer}
+                data-chrome=""
                 type="button"
                 onClick={leave}
                 aria-label="Close up-close view"
@@ -346,7 +425,9 @@ export default function ResumeFocus({ url, title, onClose }: { url: string; titl
                 <X size={20} strokeWidth={1.8} aria-hidden="true" />
             </button>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-2">
+            <div
+                data-chrome=""
+                className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] flex flex-col items-center gap-2">
                 <div className="pointer-events-auto flex cursor-default items-center gap-1 rounded-full border border-white/10 bg-black/70 p-1 backdrop-blur-md">
                     <button type="button" onClick={() => zoomBy(1 / STEP)} aria-label="Zoom out" className={tool}>
                         <ZoomOut size={18} strokeWidth={1.8} aria-hidden="true" />
