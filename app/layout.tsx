@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import PressBounce from "@/components/shared/PressBounce";
 import Providers from "@/components/shared/Providers";
 import SmoothScroll from "@/components/shared/SmoothScroll";
 import ScrollDock from "@/components/shared/ScrollDock";
@@ -113,6 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </head>
             <body>
                 <SmoothScroll />
+                <PressBounce />
                 <Providers>
                     <a
                         href="#main"
