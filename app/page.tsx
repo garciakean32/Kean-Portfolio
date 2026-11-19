@@ -1,6 +1,6 @@
 import Hero from "@/components/home/Hero";
 import Intro from "@/components/sections/Intro";
-import About, { Experience } from "@/components/sections/About";
+import About, { Experience, Works } from "@/components/sections/About";
 import VideoIntro from "@/components/sections/VideoIntro";
 import Contact from "@/components/sections/Contact";
 
@@ -11,9 +11,9 @@ import Contact from "@/components/sections/Contact";
  * and `lib/sections` owns both the scroll to a section and the question of
  * which one you are currently in.
  *
- * It runs dark from top to bottom: who I am, how I got here, a short video
- * introduction, and a way to get in touch — each at least a screen of its
- * own, so no section crowds the next.
+ * It runs dark from top to bottom: who I am, how I got here, what I have
+ * built, a short video introduction, and a way to get in touch — each at
+ * least a screen of its own, so no section crowds the next.
  */
 /* Rebuilt at most once a day. The page is otherwise built once, at deploy,
    and the "years of coding" in the about section is worked out from a start
@@ -28,6 +28,7 @@ export default function HomePage() {
             <Intro />
             <About />
             <Experience />
+            <Works />
             <VideoIntro />
             <Contact />
         </>

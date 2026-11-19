@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { RevealText } from "@/components/motion/Reveal";
 import Sketch from "@/components/shared/Sketch";
 import { ThreadLines, useThread } from "@/components/shared/Thread";
-import { loopArrow, turn } from "@/components/shared/doodles";
+import { dashed, loopArrow, turn } from "@/components/shared/doodles";
 import { LabelInput } from "@/components/ui/label-input";
 import { personal } from "@/lib/data";
 import { dropLine, type Pt2 } from "@/lib/hand";
@@ -21,30 +21,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
    the way it is going. */
 const PLANE: Pt2[][] = (() => {
     const [trail] = loopArrow([0, 0], [168, 52]);
-    const DASH = 9;
-    const GAP = 7;
-    const dashes: Pt2[][] = [];
-    let cur: Pt2[] = [trail[0]];
-    let on = true;
-    let left = DASH;
-    for (let i = 1; i < trail.length; i++) {
-        let [ax, ay] = trail[i - 1];
-        const [bx, by] = trail[i];
-        let seg = Math.hypot(bx - ax, by - ay);
-        while (seg > left) {
-            const k = left / seg;
-            const at: Pt2 = [ax + (bx - ax) * k, ay + (by - ay) * k];
-            if (on) dashes.push([...cur, at]);
-            else cur = [at];
-            on = !on;
-            [ax, ay] = at;
-            seg -= left;
-            left = on ? DASH : GAP;
-        }
-        left -= seg;
-        if (on) cur.push([bx, by]);
-    }
-    if (on && cur.length > 1) dashes.push(cur);
+    const dashes = dashed(trail, 9, 7);
 
     const end = trail[trail.length - 1];
     const before = trail[trail.length - 4];
@@ -201,16 +178,8 @@ export default function Contact() {
                     </span>
 
                     <h2 className="mt-8 font-display text-d4 font-bold tracking-[-0.035em] text-ink md:mt-12">
-                        <RevealText
-                            text="Tell me what you"
-                            innerClassName="justify-center lg:justify-start"
-                        />
-                        <RevealText
-                            text="have in mind."
-                            delay={0.18}
-                            className="text-ink-3"
-                            innerClassName="justify-center lg:justify-start"
-                        />
+                        <RevealText text="Tell me what you" />
+                        <RevealText text="have in mind." delay={0.18} className="text-ink-3" />
                     </h2>
 
                     <p className="mx-auto mt-6 max-w-measure text-copy text-ink-2 md:mt-8 lg:mx-0">
@@ -219,7 +188,6 @@ export default function Contact() {
                             delay={0.3}
                             stagger={0.012}
                             distance={12}
-                            innerClassName="justify-center lg:justify-start"
                             onDone={showWhere}
                         />
                     </p>

@@ -450,18 +450,6 @@ html[data-motion="on"][data-intro="running"] [data-chrome] {
   );
 }
 
-/* The frame a portrait is set against. Sits behind its figure and offset past
-   one corner of it, deliberately larger, so the photograph reads as something
-   laid onto a drawn frame rather than boxed inside one.
-
-   The rule itself is drawn in the markup now — see `Portrait` in About.tsx,
-   where the four edges are one line of type running around a rounded
-   rectangle rather than a border. All that is left here is the placement. */
-.plate {
-  position: absolute;
-  pointer-events: none;
-}
-
 /* Paper grain — one fixed layer, no per-element cost */
 .grain {
   position: fixed;
@@ -1153,6 +1141,29 @@ textarea.lbi-field {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Ccircle cx='15' cy='15' r='14' fill='none' stroke='white' stroke-width='1.5'/%3E%3Ccircle cx='15' cy='15' r='12.5' fill='none' stroke='black' stroke-opacity='0.6' stroke-width='1'/%3E%3C/svg%3E")
       15 15,
     cell;
+}
+
+/* ------------------------------------------------------------------
+   Glass edges
+   ------------------------------------------------------------------ */
+
+/* The edge of a slab of glass on a dark ground — the top of a phone's bar of
+   stops under an open experience card: one fine light line, tinted along its
+   inner side the way the reel's glass splits the light, and a glint that
+   runs along it now and then. Set at the top of what it edges. */
+.glass-edge {
+  height: 1px;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.6), rgb(255 255 255 / 0)) -40% 0 / 22% 100% no-repeat,
+    rgb(255 255 255 / 0.13);
+  box-shadow: 0 1px 0 rgb(0 157 255 / 0.2);
+  animation: glass-glint 9s linear infinite;
+}
+
+@keyframes glass-glint {
+  0% { background-position: -40% 0, 0 0; }
+  55%,
+  100% { background-position: 140% 0, 0 0; }
 }
 
 /* ------------------------------------------------------------------

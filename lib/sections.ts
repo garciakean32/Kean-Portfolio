@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { sections } from "@/lib/data";
 import { getLenis } from "@/lib/lenis";
-import { ScrollTrigger } from "@/lib/motion";
+import { ScrollTrigger, motionEnabled } from "@/lib/motion";
 
 /** The line down the viewport a section has to cross to count as "current". */
 const ACTIVE_LINE = 0.35;
@@ -127,6 +127,34 @@ export function scrollToSection(id: string) {
         return;
     }
     window.scrollTo({ top: y, behavior: prefersReduced() ? "auto" : "smooth" });
+}
+
+/**
+ * Brings the page round until `el` sits in the middle of the screen, so a
+ * page spreading out of it starts from the centre of a settled page rather
+ * than one that jumps. Resolves at once if it is already there, or when
+ * motion is off. `immediate` puts it there at once either way — for a page
+ * that is still covered, folding back into it.
+ */
+export function centreOn(el: HTMLElement, { immediate = false } = {}): Promise<void> | null {
+    const r = el.getBoundingClientRect();
+    const by = r.top + r.height / 2 - window.innerHeight / 2;
+    if (Math.abs(by) < 8) return null;
+    const lenis = getLenis();
+    if (!lenis || immediate || !motionEnabled()) {
+        window.scrollBy(0, by);
+        return null;
+    }
+    const duration = Math.min(1, Math.max(0.5, Math.abs(by) / 900));
+    return new Promise((resolve) => {
+        lenis.scrollTo(lenis.scroll + by, {
+            duration,
+            easing: (t) => 1 - Math.pow(1 - t, 3),
+            lock: true,
+            force: true,
+            onComplete: () => resolve(),
+        });
+    });
 }
 
 /**

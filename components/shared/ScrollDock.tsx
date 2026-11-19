@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+    AppWindow,
     BriefcaseBusiness,
     House,
     Mail,
@@ -15,11 +16,12 @@ import { gsap, ScrollTrigger, motionEnabled, useIsomorphicLayoutEffect } from "@
 import { JUMP_MS, scrollToSection, useActiveSection } from "@/lib/sections";
 
 /* One mark per section, and plain enough that nobody has to learn them: a
-   house, a figure, a briefcase, a camera, an envelope. */
+   house, a figure, a briefcase, a browser window, a camera, an envelope. */
 const ICONS: Record<string, LucideIcon> = {
     top: House,
     about: User,
     experience: BriefcaseBusiness,
+    works: AppWindow,
     video: Video,
     contact: Mail,
 };

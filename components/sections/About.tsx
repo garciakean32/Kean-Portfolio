@@ -1,15 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import SectionMark from "@/components/shared/SectionMark";
 import Sketch from "@/components/shared/Sketch";
-import { loopArrow } from "@/components/shared/doodles";
-import { RevealText } from "@/components/motion/Reveal";
+import { dashed, loopArrow, turn } from "@/components/shared/doodles";
+import { RevealBlock, RevealText } from "@/components/motion/Reveal";
+import GlassFrame from "@/components/shared/GlassFrame";
 import { Portrait, driftPortraits, masthead } from "@/components/shared/Portrait";
 import { ThreadLines, type Thread } from "@/components/shared/Thread";
 import { TextMorph } from "@/components/ui/text-morph";
 import ExperienceDialog from "@/components/sections/ExperienceDialog";
-import { aboutFacts, personal } from "@/lib/data";
+import WorksDialog from "@/components/sections/WorksDialog";
+import { aboutFacts, personal, works } from "@/lib/data";
 import { bowLine, dropLine, handLine, sineInOut, type Pt2 } from "@/lib/hand";
 import { fadeUp, gsap, motionEnabled, useGsap } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -76,13 +79,12 @@ export default function About() {
                             {/* One line at a time, each a beat after the
                                 last, so the name reads down the page. */}
                             <h3 className={cn(POSTER, masthead.title)}>
-                                <RevealText text="Hello, I'm" innerClassName={masthead.centred} />
-                                <RevealText text="Kean Valgere" delay={0.18} innerClassName={masthead.centred} />
+                                <RevealText text="Hello, I'm" />
+                                <RevealText text="Kean Valgere" delay={0.18} />
                                 <RevealText
                                     text="Garcia"
                                     delay={0.36}
                                     className="text-ink-3"
-                                    innerClassName={masthead.centred}
                                 />
                             </h3>
 
@@ -92,7 +94,6 @@ export default function About() {
                                     delay={0.4}
                                     stagger={0.012}
                                     distance={12}
-                                    innerClassName={masthead.centred}
                                 />
                             </p>
                         </div>
@@ -304,6 +305,101 @@ function useFactsLoop(
  * story itself as a full-screen carousel of cards has the next one to itself.
  */
 export function Experience() {
+    return (
+        <Chapter id="experience" label="Experience" call="arrows" button={ExperienceDialog}>
+            <Portrait
+                src="/images/kean grad.jpg"
+                alt={`${personal.name} at his college graduation`}
+                className="lg:col-span-4"
+            />
+
+            <div className={cn(masthead.text, "lg:col-span-7 lg:col-start-6")}>
+                <h3 className={cn(POSTER, masthead.title)}>
+                    <RevealText text="My" />
+                    <RevealText text="Experience" delay={0.18} className="text-ink-3" />
+                </h3>
+                <p className={cn(masthead.copy, "lg:mt-8")}>
+                    <RevealText
+                        text="Every step that brought me here, from university to the work I do now — the places that taught me, the things I made along the way, and what each one added to how I build. Open them all with the button below."
+                        delay={0.3}
+                        stagger={0.012}
+                        distance={12}
+                    />
+                </p>
+            </div>
+        </Chapter>
+    );
+}
+
+/**
+ * What I have built — the experience section's twin, the other way about:
+ * the title and a word on the works first, then the newest of them behind a
+ * pane of glass where the photograph would be. Its button opens the works as
+ * a white page over this one, the way the experience's opens its cards, and
+ * the mouse on it sends dashed trails in at it from round the screen
+ * rather than the experience's arrows.
+ */
+export function Works() {
+    const latest = works[0];
+
+    return (
+        <Chapter id="works" label="Works" call="works" button={WorksDialog}>
+            <div className={cn(masthead.text, "lg:col-span-5")}>
+                <h3 className={cn(POSTER, masthead.title)}>
+                    <RevealText text="My" />
+                    <RevealText text="Works" delay={0.18} className="text-ink-3" />
+                </h3>
+                <p className={cn(masthead.copy, "lg:mt-8")}>
+                    <RevealText
+                        text="The websites I have built and am happy to show — what each one is for, and whether it is out in the world yet or still being tested. Open them all with the button below."
+                        delay={0.3}
+                        stagger={0.012}
+                        distance={12}
+                    />
+                </p>
+            </div>
+
+            {latest && (
+                <RevealBlock className="mx-auto w-full max-w-xl lg:col-span-6 lg:col-start-7 lg:mx-0 lg:max-w-none">
+                    <GlassFrame inner="aspect-[16/10]">
+                        <Image
+                            src={latest.image}
+                            alt={`The top of the ${latest.title} home page`}
+                            fill
+                            quality={90}
+                            sizes="(min-width: 640px) 36rem, 100vw"
+                            className="object-cover object-top"
+                        />
+                    </GlassFrame>
+                </RevealBlock>
+            )}
+        </Chapter>
+    );
+}
+
+/**
+ * The experience and works sections, built the same way: a masthead with a
+ * screen to itself — the label over the title, its words and a picture, laid
+ * on the masthead's grid by `children` — and the button that opens the rest
+ * on the next screen, with a pen drawing at it while the mouse is on it —
+ * `call`: arrows in from round the screen, or dashed trails; see
+ * `CallDrawing`. `button` is that button, handed the hold that keeps the
+ * drawing up while its page opens, and the word that the page has closed
+ * again.
+ */
+function Chapter({
+    id,
+    label,
+    call,
+    button: Button,
+    children,
+}: {
+    id: string;
+    label: string;
+    call: "arrows" | "works";
+    button: React.ComponentType<{ beforeOpen: () => Promise<void> | undefined; onClosed: () => void }>;
+    children: React.ReactNode;
+}) {
     const scope = useGsap<HTMLElement>((el) => {
         const q = gsap.utils.selector(el);
 
@@ -321,7 +417,7 @@ export function Experience() {
     const target = useRef<HTMLDivElement>(null);
     const thread = useThread(scope, head, target);
     const cta = useRef<HTMLDivElement>(null);
-    const calls = useCallArrows(cta, target);
+    const calls = useCalls(cta, target, call);
     const [pointing, setPointing] = useState(false);
     const [held, setHeld] = useState(false);
     const ink = useRef({ p: 0 });
@@ -353,49 +449,24 @@ export function Experience() {
     };
 
     return (
-        <section id="experience" ref={scope} className="relative overflow-hidden bg-paper">
+        <section id={id} ref={scope} className="relative overflow-hidden bg-paper">
             <div className={SCREEN}>
                 <div className={cn("js-story shell mx-auto w-full max-w-shell", masthead.column)}>
-                    <SectionMark as="h2" label="Experience" className="js-story-mark" />
+                    <SectionMark as="h2" label={label} className="js-story-mark" />
 
                     <div ref={head} className={masthead.grid}>
-                        <Portrait
-                            src="/images/kean grad.jpg"
-                            alt={`${personal.name} at his college graduation`}
-                            className="lg:col-span-4"
-                        />
-
-                        <div className={cn(masthead.text, "lg:col-span-7 lg:col-start-6")}>
-                            <h3 className={cn(POSTER, masthead.title)}>
-                                <RevealText text="My" innerClassName={masthead.centred} />
-                                <RevealText
-                                    text="Experience"
-                                    delay={0.18}
-                                    className="text-ink-3"
-                                    innerClassName={masthead.centred}
-                                />
-                            </h3>
-                            <p className={cn(masthead.copy, "lg:mt-8")}>
-                                <RevealText
-                                    text="Every step that brought me here, from university to the work I do now — the places that taught me, the things I made along the way, and what each one added to how I build. Open them all with the button below."
-                                    delay={0.3}
-                                    stagger={0.012}
-                                    distance={12}
-                                    innerClassName={masthead.centred}
-                                />
-                            </p>
-                        </div>
+                        {children}
                     </div>
                 </div>
             </div>
 
             {/* The button, on a screen of its own — and, while a mouse is on
-                it or once it is pressed, five arrows at it from round the
-                screen; see `CallArrows`. Most of a screen below `lg`, and
-                no arrows on a phone. */}
+                it or once it is pressed, the pen's calls at it; see
+                `CallDrawing`. Most of a screen below `lg`, and no calls on
+                a phone. */}
             <div ref={cta} className="js-story-cta relative flex min-h-[65svh] items-center justify-center lg:min-h-[100svh]">
                 {calls && (
-                    <CallArrows
+                    <CallDrawing
                         art={calls}
                         on={pointing || held}
                         ink={ink}
@@ -424,10 +495,7 @@ export function Experience() {
                         }}
                         onPointerLeave={() => setPointing(false)}
                     >
-                        <ExperienceDialog
-                            beforeOpen={holdArrows}
-                            onClosed={() => setHeld(false)}
-                        />
+                        <Button beforeOpen={holdArrows} onClosed={() => setHeld(false)} />
                     </div>
                 </div>
             </div>
@@ -504,14 +572,14 @@ function useThread(
     return path;
 }
 
-/* The calls, round the button clockwise from the top left — the thread has
-   the top to itself, and the foot below the button too. Each starts off the
-   edge of the screen (`from`, in fractions of it), passes through `via`, and
-   comes in to a tip off one side of the button — `tip` is which side, -1, 0
-   or 1 across and down, then how far past it in pixels — the last stretch
-   coming in from `come`, in pixels from the tip. `at` is its beat in the
-   drawing: the top left and the bottom together, then the top right, the
-   bottom left, and the bottom right last. */
+/* The experience button's calls, round it clockwise from the top left — the
+   thread has the top to itself, and the foot below the button too. Each
+   starts off the edge of the screen (`from`, in fractions of it), passes
+   through `via`, and comes in to a tip off one side of the button — `tip` is
+   which side, -1, 0 or 1 across and down, then how far past it in pixels —
+   the last stretch coming in from `come`, in pixels from the tip. `at` is its
+   beat in the drawing: the top left and the bottom together, then the top
+   right, the bottom left, and the bottom right last. */
 const CALLS: {
     from: Pt2;
     via: Pt2[];
@@ -542,20 +610,229 @@ const ARROW_TIME = 0.9;
 const STAGGER = 0.1;
 const CLEAR_TIME = 1.2;
 
+/* The works button's calls: four trails in at the button from round the
+   screen, no two alike — a loop, a wave, a double curl and a long swoop —
+   each dashed its own way, the trail the paper plane leaves in the contact
+   section, and ending in an open arrowhead with a little click at its tip.
+   They fill the screen the way the experience's arrows do, coming in to the
+   button's corners so the thread down the middle stays clear.
+
+   `from` is where a trail starts, in fractions of the screen; `tip` is which
+   corner of the button it ends at, -1 or 1 across and down, then how far off
+   it in pixels; `line` its shape; `dash` its dashes and the gaps between
+   them, in pixels — a dash as short as the line is wide is a dot; `at` its
+   beat. Every shape bows away from the middle of the screen. */
+type TrailLine = "loop" | "wave" | "curl" | "swoop";
+const TRAILS: {
+    from: Pt2;
+    tip: [number, number, number, number];
+    line: TrailLine;
+    dash: [number, number];
+    width: number;
+    at: number;
+}[] = [
+    { from: [-0.03, 0.16], tip: [-1, -1, -22, -16], line: "loop", dash: [11, 8], width: 2.4, at: 0 },
+    { from: [0.8, -0.04], tip: [1, -1, 22, -16], line: "wave", dash: [6, 6], width: 2.1, at: 1 },
+    { from: [0.14, 1.04], tip: [-1, 1, -22, 16], line: "curl", dash: [1.5, 8], width: 2.8, at: 2 },
+    { from: [1.03, 0.62], tip: [1, 1, 22, 16], line: "swoop", dash: [18, 9], width: 2.2, at: 3 },
+];
+/* How long each trail takes to draw, how far apart their beats are, and how
+   long they all take to rewind. */
+const TRAIL_TIME = 1;
+const TRAIL_STAGGER = 0.12;
+const TRAIL_CLEAR = 1;
+
+/* What the pen draws in one go — an arrow's shaft and then its head, a
+   trail's dashes and then its pointer — starting on its own beat (`at`, in
+   seconds) and taking `time` to draw, lifting `lift` pixels' worth of line
+   between its strokes. */
+type Stroke = { d: string; len: number; width: number };
+type Group = { strokes: Stroke[]; at: number; time: number; lift: number };
+type Calls = { w: number; h: number; groups: Group[]; clear: number };
+
+/* The five arrows at the experience button, in from off the screen's edges. */
+function arrowGroups(o: DOMRect, b: DOMRect): Group[] {
+    const cx = b.left - o.left + b.width / 2;
+    const cy = b.top - o.top + b.height / 2;
+    return CALLS.map((call, i) => {
+        const [sx, sy, dx, dy] = call.tip;
+        const tip: Pt2 = [cx + (sx * b.width) / 2 + dx, cy + (sy * b.height) / 2 + dy];
+        const back = call.come;
+        const come: Pt2 = [tip[0] + back[0], tip[1] + back[1]];
+        const pts: Pt2[] = [
+            [call.from[0] * o.width, call.from[1] * o.height],
+            ...call.via.map(([x, y]): Pt2 => [x * o.width, y * o.height]),
+            come,
+            tip,
+        ];
+        const shaft = handLine(pts, i * 1.7 + 0.4);
+
+        // An open head, one stroke barb to tip to barb, lined up with the
+        // way the shaft arrives — not quite even, as a hand's is.
+        const l = Math.hypot(back[0], back[1]);
+        const ux = back[0] / l;
+        const uy = back[1] / l;
+        const barb = (turn: number, size: number): Pt2 => [
+            tip[0] + (ux * Math.cos(turn) - uy * Math.sin(turn)) * size,
+            tip[1] + (ux * Math.sin(turn) + uy * Math.cos(turn)) * size,
+        ];
+        const a = barb(0.52, 21 + (i % 3));
+        const c = barb(-0.44, 17 + (i % 2) * 2);
+        return {
+            strokes: [
+                { d: shaft.d, len: shaft.len, width: call.width },
+                {
+                    d: `M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${tip[0].toFixed(1)} ${tip[1].toFixed(1)} L${c[0].toFixed(1)} ${c[1].toFixed(1)}`,
+                    len: Math.hypot(a[0] - tip[0], a[1] - tip[1]) + Math.hypot(c[0] - tip[0], c[1] - tip[1]),
+                    width: call.width,
+                },
+            ],
+            at: call.at * STAGGER,
+            time: ARROW_TIME,
+            lift: LIFT_HEAD,
+        };
+    });
+}
+
+/* A polyline as a path, with its length. */
+function asStroke(pts: Pt2[], width: number): Stroke {
+    let len = 0;
+    for (let k = 1; k < pts.length; k++) len += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+    return { d: `M${pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L")}`, len, width };
+}
+
+/* A trail's line from `s` to `t`, bowing to the side `away` points by
+   `amount` of its full bow — the loop is the arrows' own, with the one loop
+   on the way, and only turns; the others are drawn here. Each runs straight
+   into `t` at its end, so a head lines up. */
+function trailLine(shape: TrailLine, s: Pt2, t: Pt2, away: Pt2, amount = 1): Pt2[] {
+    if (shape === "loop") return loopArrow(s, t, away[1] > 0)[0];
+    const dx = t[0] - s[0];
+    const dy = t[1] - s[1];
+    const len = Math.hypot(dx, dy);
+    const [ux, uy] = [dx / len, dy / len];
+    // the side of the line `away` is on
+    let [nx, ny] = [-uy, ux];
+    if (nx * away[0] + ny * away[1] < 0) [nx, ny] = [-nx, -ny];
+    const pts: Pt2[] = [];
+    for (let i = 0; i <= 96; i++) {
+        const k = i / 96;
+        let along = k * len;
+        let side = 0;
+        if (shape === "wave") {
+            // two and a half swells, dying away into the button
+            side = Math.sin(k * Math.PI * 5) * len * 0.055 * (1 - k * 0.8) + Math.sin(k * Math.PI) * len * 0.06;
+        } else if (shape === "curl") {
+            // two small curls on the way, then straight in
+            const r = Math.max(10, len * 0.045 * amount);
+            for (const [a, b] of [
+                [0.2, 0.34],
+                [0.46, 0.6],
+            ]) {
+                const u = Math.min(1, Math.max(0, (k - a) / (b - a)));
+                if (u > 0 && u < 1) {
+                    along -= r * Math.sin(u * Math.PI * 2);
+                    side += r * (1 - Math.cos(u * Math.PI * 2));
+                }
+            }
+            side += Math.sin(k * Math.PI) * len * 0.08;
+        } else {
+            // one long swing out to the side and back in
+            side = Math.sin(k * Math.PI) * len * 0.3 * (1 - k * 0.4);
+        }
+        if (shape !== "curl") side *= amount;
+        else side -= Math.sin(k * Math.PI) * len * 0.08 * (1 - amount);
+        pts.push([s[0] + ux * along + nx * side, s[1] + uy * along + ny * side]);
+    }
+    return pts;
+}
+
+/* How far inside the screen's edges a trail keeps, once it is on it. */
+const TRAIL_EDGE = 10;
+
+/* Whether a line, once it has come onto a screen `w` by `h`, stays on it. */
+function staysOn(line: Pt2[], w: number, h: number) {
+    const on = ([x, y]: Pt2) => x >= TRAIL_EDGE && x <= w - TRAIL_EDGE && y >= TRAIL_EDGE && y <= h - TRAIL_EDGE;
+    const first = line.findIndex(on);
+    return first >= 0 && line.slice(first).every(on);
+}
+
+/* The trails at the works button, in the screen's own pixels: each line
+   from off the screen's edge to just off a corner of the button, cut into
+   its own dashes — counted back from the tip, so it always arrives on one —
+   then an open arrowhead lined up with the way it arrives, and three short
+   strokes past the tip for its click. */
+function trailGroups(o: DOMRect, b: DOMRect): Group[] {
+    const cx = b.left - o.left + b.width / 2;
+    const cy = b.top - o.top + b.height / 2;
+    return TRAILS.map((trail) => {
+        const [sx, sy, dx, dy] = trail.tip;
+        const tip: Pt2 = [cx + (sx * b.width) / 2 + dx, cy + (sy * b.height) / 2 + dy];
+        const start: Pt2 = [trail.from[0] * o.width, trail.from[1] * o.height];
+        // Away from the middle of the screen — up for the top two, down for
+        // the bottom two — and whole on the screen: a trail may come in from
+        // past its edge, but once on it, it stays on it. One that would run a
+        // curl or a swell back off it bows the other way, or less, until it
+        // fits.
+        const away: Pt2 = [0, sy];
+        const back: Pt2 = [0, -sy];
+        const tries: [Pt2, number][] = [
+            [away, 1],
+            [away, 0.7],
+            [back, 1],
+            [back, 0.7],
+            [away, 0.4],
+            [back, 0.4],
+            [away, 0],
+        ];
+        let line = trailLine(trail.line, start, tip, away);
+        for (const [side, amount] of tries) {
+            line = trailLine(trail.line, start, tip, side, amount);
+            if (staysOn(line, o.width, o.height)) break;
+        }
+        const [dash, gap] = trail.dash;
+        const dashes = dashed([...line].reverse(), dash, gap)
+            .map((pts) => asStroke([...pts].reverse(), trail.width))
+            .reverse();
+
+        const [ax, ay] = line[line.length - 4] ?? line[0];
+        const l = Math.hypot(ax - tip[0], ay - tip[1]) || 1;
+        const [bx, by] = [(ax - tip[0]) / l, (ay - tip[1]) / l];
+        const size = 17;
+        const barb = (deg: number, k: number): Pt2 => turn([tip[0] + bx * size * k, tip[1] + by * size * k], tip, deg);
+        const head = asStroke([barb(30, 1), tip, barb(-27, 0.88)], trail.width);
+
+        const heading = Math.atan2(-by, -bx);
+        const clicks = [-0.85, 0, 0.85].map((spread) =>
+            asStroke(
+                [
+                    [tip[0] + Math.cos(heading + spread) * 8, tip[1] + Math.sin(heading + spread) * 8],
+                    [tip[0] + Math.cos(heading + spread) * 15, tip[1] + Math.sin(heading + spread) * 15],
+                ],
+                1.8
+            )
+        );
+
+        return {
+            strokes: [...dashes, head, ...clicks],
+            at: trail.at * TRAIL_STAGGER,
+            time: TRAIL_TIME,
+            lift: gap,
+        };
+    });
+}
+
 /**
- * The calls' strokes in the screen's own pixels, in the order the pen takes
- * them — each shaft, then its head — measured from where the button actually
- * is and redrawn whenever the screen changes size.
+ * A button's calls — the experience's arrows or the works' trails — in the
+ * screen's own pixels, in the order the pen takes them, measured from where
+ * the button actually is and redrawn whenever the screen changes size.
  */
-function useCallArrows(
+function useCalls(
     screen: React.RefObject<HTMLElement | null>,
-    button: React.RefObject<HTMLElement | null>
+    button: React.RefObject<HTMLElement | null>,
+    kind: "arrows" | "works"
 ) {
-    const [art, setArt] = useState<{
-        w: number;
-        h: number;
-        strokes: { d: string; len: number; width: number }[];
-    } | null>(null);
+    const [art, setArt] = useState<Calls | null>(null);
 
     useLayoutEffect(() => {
         const box = screen.current;
@@ -564,68 +841,36 @@ function useCallArrows(
 
         const measure = () => {
             const o = box.getBoundingClientRect();
-            const b = end.getBoundingClientRect();
-            const cx = b.left - o.left + b.width / 2;
-            const cy = b.top - o.top + b.height / 2;
             if (o.width < NARROW) {
                 setArt(null);
                 return;
             }
-
-            const strokes = CALLS.flatMap((call, i) => {
-                const [sx, sy, dx, dy] = call.tip;
-                const tip: Pt2 = [cx + (sx * b.width) / 2 + dx, cy + (sy * b.height) / 2 + dy];
-                const back = call.come;
-                const come: Pt2 = [tip[0] + back[0], tip[1] + back[1]];
-                const pts: Pt2[] = [
-                    [call.from[0] * o.width, call.from[1] * o.height],
-                    ...call.via.map(([x, y]): Pt2 => [x * o.width, y * o.height]),
-                    come,
-                    tip,
-                ];
-                const shaft = handLine(pts, i * 1.7 + 0.4);
-
-                // An open head, one stroke barb to tip to barb, lined up with
-                // the way the shaft arrives — not quite even, as a hand's is.
-                const l = Math.hypot(back[0], back[1]);
-                const ux = back[0] / l;
-                const uy = back[1] / l;
-                const barb = (turn: number, size: number): Pt2 => [
-                    tip[0] + (ux * Math.cos(turn) - uy * Math.sin(turn)) * size,
-                    tip[1] + (ux * Math.sin(turn) + uy * Math.cos(turn)) * size,
-                ];
-                const a = barb(0.52, 21 + (i % 3));
-                const c = barb(-0.44, 17 + (i % 2) * 2);
-                return [
-                    { d: shaft.d, len: shaft.len, width: call.width },
-                    {
-                        d: `M${a[0].toFixed(1)} ${a[1].toFixed(1)} L${tip[0].toFixed(1)} ${tip[1].toFixed(1)} L${c[0].toFixed(1)} ${c[1].toFixed(1)}`,
-                        len: Math.hypot(a[0] - tip[0], a[1] - tip[1]) + Math.hypot(c[0] - tip[0], c[1] - tip[1]),
-                        width: call.width,
-                    },
-                ];
+            const b = end.getBoundingClientRect();
+            setArt({
+                w: Math.round(o.width),
+                h: Math.round(o.height),
+                groups: kind === "arrows" ? arrowGroups(o, b) : trailGroups(o, b),
+                clear: kind === "arrows" ? CLEAR_TIME : TRAIL_CLEAR,
             });
-
-            setArt({ w: Math.round(o.width), h: Math.round(o.height), strokes });
         };
 
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(box);
         return () => observer.disconnect();
-    }, [screen, button]);
+    }, [screen, button, kind]);
 
     return art;
 }
 
 /**
- * Five more arrows at the button, from every other way into the screen, for
- * as long as the pointer is on it.
+ * The calls at a button, for as long as the pointer is on it.
  *
- * They are drawn there and then, the way a hand would — all five at once,
- * on their beats (`at`): the shaft in from off the edge and then its head,
- * the pen easing in and out of every stroke and lifting between. When the
- * pointer leaves they all take themselves back off together, each the way
+ * They are drawn there and then, the way a hand would — every group at
+ * once, on its own beat: an arrow's shaft in from off the edge and then its
+ * head, a trail dash by dash and then its pointer — the pen easing in and out
+ * of every stroke and lifting between. When the pointer leaves it all takes
+ * itself back off together, the way
  * the doodle's Clear takes a drawing — last point first, all the way back to
  * the first, easing in and out over the whole. Either way, it carries on from
  * wherever the other left off.
@@ -633,13 +878,13 @@ function useCallArrows(
  * `ink` is how far through the whole drawing it is, 0..1, held by the page
  * so the button can see it; `onDrawn` is called each time it is all in.
  */
-function CallArrows({
+function CallDrawing({
     art,
     on,
     ink,
     onDrawn,
 }: {
-    art: NonNullable<ReturnType<typeof useCallArrows>>;
+    art: Calls;
     on: boolean;
     ink: React.RefObject<{ p: number }>;
     onDrawn: () => void;
@@ -651,13 +896,9 @@ function CallArrows({
     });
 
     useEffect(() => {
-        const { strokes } = art;
-        const arrows = strokes.length / 2;
-        const drawTime = ARROW_TIME + STAGGER * Math.max(...CALLS.map((c) => c.at));
-        // Each arrow's share of the whole, and how far apart the beats are,
-        // both as fractions of it.
-        const span = ARROW_TIME / drawTime;
-        const step = STAGGER / drawTime;
+        const { groups, clear } = art;
+        const strokes = groups.flatMap((g) => g.strokes);
+        const drawTime = Math.max(...groups.map((g) => g.at + g.time));
 
         const stroke = (i: number, k: number) => {
             const el = lines.current[i];
@@ -668,13 +909,15 @@ function CallArrows({
             el.style.visibility = shown > 0.5 ? "visible" : "hidden";
         };
         const paint = () => {
-            for (let a = 0; a < arrows; a++) {
-                const shaft = strokes[a * 2].len;
-                const head = strokes[a * 2 + 1].len;
-                const run = shaft + LIFT_HEAD + head;
-                const pen = Math.min(1, Math.max(0, (ink.current.p - CALLS[a].at * step) / span)) * run;
-                stroke(a * 2, pen / shaft);
-                stroke(a * 2 + 1, (pen - shaft - LIFT_HEAD) / head);
+            const now = ink.current.p * drawTime;
+            let i = 0;
+            for (const g of groups) {
+                const run = g.strokes.reduce((sum, s) => sum + s.len, 0) + g.lift * (g.strokes.length - 1);
+                let pen = Math.min(1, Math.max(0, (now - g.at) / g.time)) * run;
+                for (const s of g.strokes) {
+                    stroke(i++, pen / s.len);
+                    pen -= s.len + g.lift;
+                }
             }
         };
         paint();
@@ -690,7 +933,7 @@ function CallArrows({
               })
             : gsap.to(ink.current, {
                   p: 0,
-                  duration: CLEAR_TIME * p,
+                  duration: clear * p,
                   ease: "power1.inOut",
                   onUpdate: paint,
               });
@@ -699,6 +942,11 @@ function CallArrows({
             tween.kill();
         };
     }, [on, art, ink]);
+
+    // Where each group's strokes start in the flat list the painter walks.
+    const first = art.groups.map((_, gi) =>
+        art.groups.slice(0, gi).reduce((sum, g) => sum + g.strokes.length, 0)
+    );
 
     return (
         <svg
@@ -712,17 +960,24 @@ function CallArrows({
             strokeLinejoin="round"
             className="pointer-events-none absolute left-0 top-0 text-ink opacity-85"
         >
-            {art.strokes.map((s, i) => (
-                <path
-                    key={i}
-                    ref={(el) => {
-                        lines.current[i] = el;
-                    }}
-                    d={s.d}
-                    strokeWidth={s.width}
-                    strokeDasharray={s.len}
-                    className="invisible"
-                />
+            {art.groups.map((g, gi) => (
+                <g key={gi}>
+                    {g.strokes.map((s, si) => {
+                        const i = first[gi] + si;
+                        return (
+                            <path
+                                key={i}
+                                ref={(el) => {
+                                    lines.current[i] = el;
+                                }}
+                                d={s.d}
+                                strokeWidth={s.width}
+                                strokeDasharray={s.len}
+                                className="invisible"
+                            />
+                        );
+                    })}
+                </g>
             ))}
         </svg>
     );

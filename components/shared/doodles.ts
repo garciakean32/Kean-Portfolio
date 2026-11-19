@@ -159,3 +159,31 @@ export function loopArrow(s: Pt2, t: Pt2, flip = false): Pt2[][] {
     const barb = (deg: number, k: number): Pt2 => turn([t[0] + bx * size * k, t[1] + by * size * k], t, deg);
     return [line, [barb(30, 1), t, t, barb(-28, 0.85)]];
 }
+
+/* A line as dashes, `dash` pixels drawn and `gap` left out in turn along it —
+   the trail a paper plane or a pointer leaves. Each dash is its own stroke. */
+export function dashed(line: Pt2[], dash: number, gap: number): Pt2[][] {
+    const out: Pt2[][] = [];
+    let cur: Pt2[] = [line[0]];
+    let on = true;
+    let left = dash;
+    for (let i = 1; i < line.length; i++) {
+        let [ax, ay] = line[i - 1];
+        const [bx, by] = line[i];
+        let seg = Math.hypot(bx - ax, by - ay);
+        while (seg > left) {
+            const k = left / seg;
+            const at: Pt2 = [ax + (bx - ax) * k, ay + (by - ay) * k];
+            if (on) out.push([...cur, at]);
+            else cur = [at];
+            on = !on;
+            [ax, ay] = at;
+            seg -= left;
+            left = on ? dash : gap;
+        }
+        left -= seg;
+        if (on) cur.push([bx, by]);
+    }
+    if (on && cur.length > 1) out.push(cur);
+    return out;
+}

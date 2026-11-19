@@ -64,12 +64,11 @@ export default function VideoIntro() {
                     <div className={masthead.grid}>
                         <div className={cn(masthead.text, "lg:col-span-7")}>
                             <p className={cn("font-display text-d4 font-bold tracking-[-0.035em] text-ink", masthead.title)}>
-                                <RevealText text="In my own" innerClassName={masthead.centred} />
+                                <RevealText text="In my own" />
                                 <RevealText
                                     text="words."
                                     delay={0.18}
                                     className="text-ink-3"
-                                    innerClassName={masthead.centred}
                                 />
                             </p>
 
@@ -79,7 +78,6 @@ export default function VideoIntro() {
                                     delay={0.3}
                                     stagger={0.012}
                                     distance={12}
-                                    innerClassName={masthead.centred}
                                 />
                             </p>
                         </div>

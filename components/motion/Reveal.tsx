@@ -23,6 +23,23 @@ const LANDED = 0.4;
    instant its first pixel is. */
 const IN_VIEW = "0px 0px -12% 0px";
 
+let pen: CanvasRenderingContext2D | null = null;
+
+/**
+ * How far in from the edge of its own box a line's first letter puts down
+ * ink, in ems — its left side bearing. An "h" stands a good deal further in
+ * than a "T", so two left-aligned lines starting on them do not look it; set
+ * at display size the difference is plain to see.
+ */
+function inkStart(text: string, style: CSSStyleDeclaration) {
+    const first = text.trim()[0];
+    if (!first) return 0;
+    pen ??= document.createElement("canvas").getContext("2d");
+    if (!pen) return 0;
+    pen.font = `${style.fontStyle} ${style.fontWeight} 100px ${style.fontFamily}`;
+    return -pen.measureText(first).actualBoundingBoxLeft / 100;
+}
+
 /**
  * Text that reveals word by word when it scrolls into view.
  *
@@ -32,11 +49,15 @@ const IN_VIEW = "0px 0px -12% 0px";
  *
  * Headings take the component's word-to-word stagger; a paragraph passes a
  * much smaller one, so a long one still lands in well under a second.
+ *
+ * The words flow as text, aligned by whatever the line sits in: a line wraps
+ * at a space and never starts on one. Left-aligned, the line also steps back
+ * by its first letter's side bearing, so its ink — not its box — is what
+ * lines up with the lines above and below it.
  */
 export function RevealText({
     text,
     className,
-    innerClassName,
     delay = 0,
     stagger,
     distance,
@@ -45,8 +66,6 @@ export function RevealText({
     text: string;
     /* on the line's own box */
     className?: string;
-    /* on the row of words — `justify-center` for a centred line */
-    innerClassName?: string;
     /* after arriving in view, seconds — to follow the line before it */
     delay?: number;
     stagger?: number;
@@ -78,6 +97,24 @@ export function RevealText({
         };
     }, [delay]);
 
+    // Measured again whenever the line changes width — which is also when a
+    // breakpoint can have centred it — and once the page's fonts are in.
+    useEffect(() => {
+        const el = box.current;
+        if (!el) return;
+        const align = () => {
+            const style = getComputedStyle(el);
+            const left = style.textAlign === "left" || style.textAlign === "start";
+            const shift = left ? inkStart(text, style) : 0;
+            el.style.marginLeft = Math.abs(shift) > 0.002 ? `${(-shift).toFixed(3)}em` : "";
+        };
+        align();
+        document.fonts?.ready.then(align);
+        const observer = new ResizeObserver(align);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [text]);
+
     // Landed is not finished: the ease puts a word in place in well under
     // half its time and spends the rest settling out of the blur, so waiting
     // for the animation to end leaves a beat of nothing after the words look
@@ -102,11 +139,16 @@ export function RevealText({
                 distance={distance}
                 transition={{ duration: DURATION, ease: EASE }}
                 onRevealStart={started}
-                className={innerClassName}
+                // Inline, not the row of flex items it ships as: in a row the
+                // space between two words is an item of its own, and where a
+                // line wraps it can be the one that starts the next line,
+                // pushing that line in by a space.
+                className="inline whitespace-normal"
                 // Each word's clipping box carries a little padding underneath
                 // for descenders; the negative margin gives that height back,
-                // so the lines sit exactly as far apart as the type says.
-                maskClassName="-mb-1"
+                // and hanging it from the top of the line keeps the lines
+                // exactly as far apart as the type says.
+                maskClassName="-mb-1 align-top"
             />
         </span>
     );
